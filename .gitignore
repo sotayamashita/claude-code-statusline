@@ -1,1 +1,6 @@
 /target
+
+# Ignore Serena output files except project.yml
+# @see {@link https://github.com/oraios/serena}
+.serena/*
+!.serena/project.yml
