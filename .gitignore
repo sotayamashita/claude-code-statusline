@@ -1,5 +1,9 @@
 /target
 
+# Ignore Claude Code Local Settings
+# @see {@link https://docs.anthropic.com/en/docs/claude-code/settings#settings-files}
+.claude/settings.local.json
+
 # Ignore Serena output files except project.yml
 # @see {@link https://github.com/oraios/serena}
 .serena/*
