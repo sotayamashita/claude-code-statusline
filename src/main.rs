@@ -1,9 +1,9 @@
 use clap::Parser;
 
 #[derive(Parser)]
-#[command(name = "beacon")]
-#[command(version = "0.1.0")]
-#[command(about = "A lightweight status line generator for Claude Code")]
+#[command(name = env!("CARGO_PKG_NAME"))]
+#[command(version = env!("CARGO_PKG_VERSION"))]
+#[command(about = env!("CARGO_PKG_DESCRIPTION"))]
 struct Cli {
     // 後でサブコマンドを追加予定
 }
