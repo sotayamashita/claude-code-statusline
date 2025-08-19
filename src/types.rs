@@ -6,7 +6,8 @@ use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
 pub struct ClaudeInput {
-    pub hook_event_name: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub hook_event_name: Option<String>,  // Optional - not always present
     pub session_id: String,
     pub transcript_path: String,
     pub cwd: String,

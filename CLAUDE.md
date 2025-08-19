@@ -58,13 +58,37 @@ cargo rm <package_name>
 - **NEVER** specify version when adding libraries - let cargo choose the latest compatible version
 
 ### Testing Claude Code Integration
-```bash
-# Build release binary
-cargo build --release
 
-# Test status line directly
-echo '{"hook_event_name":"Status","session_id":"abc123","transcript_path":"/path/to/transcript.json","cwd":"/current/directory","model":{"id":"claude-opus","display_name":"Opus"},"workspace":{"current_dir":"/current/directory","project_dir":"/project/root"},"version":"1.0.0","output_style":{"name":"default"}}' | ./target/release/beacon
+#### Development Workflow & Responsibilities
+
+**Claude Code (Assistant) responsibilities:**
+1. Write and modify code
+2. Build release binary: `cargo build --release`
+3. Copy to .claude directory: `cp target/release/beacon .claude/beacon`
+4. Set execute permissions: `chmod +x .claude/beacon`
+5. Check debug logs if requested (e.g., `/tmp/beacon-debug.log`)
+6. Add debug logging when troubleshooting issues
+7. Update .claude/settings.local.json configuration
+
+**User responsibilities:**
+1. Open new Claude Code session in separate terminal for testing
+2. Check actual status line display in the new session
+3. Report back what is displayed or any issues
+4. Check debug logs (e.g., `/tmp/beacon-debug.log`)
+5. Confirm when status line is working correctly
+
+**Testing commands:**
+```bash
+# Build and deploy (Claude Code runs these)
+cargo build --release
+cp target/release/beacon .claude/beacon
+chmod +x .claude/beacon
+
+# Test status line directly (for debugging)
+echo '{"session_id":"abc123","transcript_path":"/path/to/transcript.json","cwd":"/current/directory","model":{"id":"claude-opus","display_name":"Opus"},"workspace":{"current_dir":"/current/directory","project_dir":"/project/root"},"version":"1.0.0","output_style":{"name":"default"}}' | ./target/release/beacon
 ```
+
+**Note:** The `hook_event_name` field is optional and may not be present in actual Claude Code JSON input.
 
 ## Architecture
 
