@@ -40,6 +40,23 @@ cargo test
 cargo doc --open
 ```
 
+### Dependency Management
+```bash
+# Add a new dependency (NEVER specify version)
+cargo add <package_name>
+
+# Add a dev dependency
+cargo add --dev <package_name>
+
+# Remove a dependency
+cargo rm <package_name>
+```
+
+**IMPORTANT**: 
+- **ALWAYS** use `cargo add` command to add libraries
+- **NEVER** edit Cargo.toml directly to add dependencies
+- **NEVER** specify version when adding libraries - let cargo choose the latest compatible version
+
 ### Testing Claude Code Integration
 ```bash
 # Build release binary

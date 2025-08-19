@@ -1,6 +1,6 @@
 # Beacon - Phase 1 TODO List
 
-> このファイルは [plan.md](./plan.md) の Phase 1 を詳細化したタスクリストです。
+> このファイルは @docs/plan.md の Phase 1 を詳細化したタスクリストです。
 > 各タスクは約10分で完了できるように設計されています。
 
 ## Phase 1: MVP タスクリスト
