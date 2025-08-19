@@ -19,9 +19,9 @@
 - ✅ テストの追加（config.rs, parser.rs, modules）
 - ✅ デバッグ機能のリファクタリング（DebugLoggerモジュール）
 - ✅ Context構造体（アプリケーション全体のデータと設定を一元管理）
+- ✅ ModuleConfig相当の機能（DirectoryConfig, ClaudeModelConfigとして実装済み）
 
 ### 未実装の機能
-- ⏳ ModuleConfig構造体（各モジュールの個別設定）
 - ⏳ エラーハンドリングの改善（anyhow使用）
 
 ### 1. プロジェクト初期設定 (20分) ✅
@@ -105,9 +105,10 @@
 ### 6. Module traitの定義 (20分) ✅
 - [x] Module trait を定義 (10分)
   - name(), should_display(), render()メソッド
-- [ ] ModuleConfigの基本構造を定義 (10分)
-  - style, formatフィールド
-  - 各モジュールの共通設定として使用
+- [x] ~~ModuleConfigの基本構造を定義~~ → 実装済み (10分)
+  - DirectoryConfigとClaudeModelConfigが既に各モジュール固有の設定として存在
+  - types/config.rsにstyle, formatフィールドを含む個別設定として実装済み
+  - 汎用的なModuleConfig構造体は不要と判断
 
 ### 7. Directory モジュールの実装 (30分) ✅
 - [x] DirectoryModule構造体を作成 (10分)
@@ -183,7 +184,6 @@
 ## 次のステップ
 
 Phase 1 の残りタスク：
-- ModuleConfigの実装
 - エラーハンドリングの改善（anyhow導入）
 
 Phase 1 完了後：
