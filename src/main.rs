@@ -3,11 +3,13 @@ use std::io::{self, Read};
 
 // Import modules
 mod config;
+mod debug;
 mod modules;
 mod parser;
 mod types;
 
 use config::Config;
+use debug::DebugLogger;
 use modules::{ClaudeModelModule, DirectoryModule, Module};
 use parser::parse_claude_input;
 use types::claude::ClaudeInput;
@@ -42,46 +44,24 @@ struct Cli {
 
 fn main() {
     let _cli = Cli::parse();
-    
+
     // Load configuration
     let config = Config::load();
 
-    // Debug: write to file in project tmp directory (only if debug mode is enabled)
-    let debug_file = "./tmp/beacon-debug.log";
-    use std::fs::OpenOptions;
-    use std::io::Write as IoWrite;
+    // Initialize debug logger
+    let logger = DebugLogger::new(config.debug);
+    logger.log_execution_start();
+    logger.log_config(config.debug, config.command_timeout);
 
     // Read JSON from stdin
     let mut buffer = String::new();
     match io::stdin().read_to_string(&mut buffer) {
         Ok(_) => {
-            // Debug: log to file (only if debug mode is enabled)
-            if config.debug {
-                if let Ok(mut file) = OpenOptions::new()
-                    .create(true)
-                    .append(true)
-                    .open(debug_file)
-                {
-                    writeln!(file, "--- New execution ---").ok();
-                    writeln!(file, "Config loaded: debug={}, command_timeout={}", config.debug, config.command_timeout).ok();
-                    writeln!(file, "Input length: {} bytes", buffer.len()).ok();
-                    if !buffer.is_empty() {
-                        writeln!(
-                            file,
-                            "First 500 chars: {}",
-                            &buffer[..buffer.len().min(500)]
-                        )
-                        .ok();
-                    }
-                }
-            }
+            logger.log_input(&buffer);
 
             // Check if buffer is empty (no piped input)
             if buffer.trim().is_empty() {
-                // Debug: log to stderr (only if debug mode is enabled)
-                if config.debug {
-                    eprintln!("[DEBUG] Empty input received");
-                }
+                logger.log_stderr("Empty input received");
                 // No JSON input, display default status line without newline
                 print!("Failed to build status line due to empty input");
                 io::Write::flush(&mut io::stdout()).unwrap();
@@ -91,50 +71,17 @@ fn main() {
             // Parse JSON into ClaudeInput struct
             match parse_claude_input(&buffer) {
                 Ok(input) => {
-                    // Debug: log successful parse to file (only if debug mode is enabled)
-                    if config.debug {
-                        if let Ok(mut file) = OpenOptions::new()
-                            .create(true)
-                            .append(true)
-                            .open(debug_file)
-                        {
-                            writeln!(
-                                file,
-                                "SUCCESS: Model={}, CWD={}",
-                                input.model.display_name, input.cwd
-                            )
-                            .ok();
-                        }
-                    }
+                    logger.log_success(&input.model.display_name, &input.cwd);
 
                     // Generate and output status line
                     let prompt = generate_prompt(&input);
-
-                    // Debug: log generated prompt to file (only if debug mode is enabled)
-                    if config.debug {
-                        if let Ok(mut file) = OpenOptions::new()
-                            .create(true)
-                            .append(true)
-                            .open(debug_file)
-                        {
-                            writeln!(file, "Generated: {}", prompt).ok();
-                        }
-                    }
+                    logger.log_prompt(&prompt);
 
                     print!("{}", prompt); // No newline for status line
                     io::Write::flush(&mut io::stdout()).unwrap();
                 }
                 Err(e) => {
-                    // Debug: log error to file (only if debug mode is enabled)
-                    if config.debug {
-                        if let Ok(mut file) = OpenOptions::new()
-                            .create(true)
-                            .append(true)
-                            .open(debug_file)
-                        {
-                            writeln!(file, "ERROR: {}", e).ok();
-                        }
-                    }
+                    logger.log_error(&e.to_string());
 
                     // On error, output a fallback status line (not error message)
                     // Error details go to stderr for debugging
