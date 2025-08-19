@@ -11,7 +11,7 @@ impl DirectoryModule {
             current_dir: PathBuf::from(cwd),
         }
     }
-    
+
     /// Abbreviate home directory to ~
     fn abbreviate_home(&self, path: &PathBuf) -> String {
         if let Ok(home) = std::env::var("HOME") {
@@ -28,11 +28,11 @@ impl Module for DirectoryModule {
     fn name(&self) -> &str {
         "directory"
     }
-    
+
     fn should_display(&self) -> bool {
         true // Always display directory
     }
-    
+
     fn render(&self) -> String {
         self.abbreviate_home(&self.current_dir)
     }
@@ -41,14 +41,14 @@ impl Module for DirectoryModule {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_directory_module() {
         let module = DirectoryModule::new("/Users/test/projects");
         assert_eq!(module.name(), "directory");
         assert!(module.should_display());
     }
-    
+
     #[test]
     fn test_home_abbreviation() {
         // Note: set_var is unsafe in Rust 1.77+

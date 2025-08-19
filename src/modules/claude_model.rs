@@ -16,11 +16,11 @@ impl Module for ClaudeModelModule {
     fn name(&self) -> &str {
         "claude_model"
     }
-    
+
     fn should_display(&self) -> bool {
         !self.model_name.is_empty()
     }
-    
+
     fn render(&self) -> String {
         format!("<{}>", self.model_name)
     }
@@ -29,7 +29,7 @@ impl Module for ClaudeModelModule {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_claude_model_module() {
         let module = ClaudeModelModule::new("Opus");
@@ -37,7 +37,7 @@ mod tests {
         assert!(module.should_display());
         assert_eq!(module.render(), "<Opus>");
     }
-    
+
     #[test]
     fn test_empty_model_name() {
         let module = ClaudeModelModule::new("");

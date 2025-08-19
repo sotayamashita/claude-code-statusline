@@ -93,11 +93,26 @@ echo '{"session_id":"abc123","transcript_path":"/path/to/transcript.json","cwd":
 ## Architecture
 
 ### Project Structure
-- @src/main.rs - Entry point, handles JSON from stdin
-- @src/config/ - TOML configuration management
-- @src/modules/ - Status line modules (directory, git, model display)
-- @src/context.rs - Shared execution context
-- @docs/ - Comprehensive documentation
+
+```
+src/
+├── main.rs           # Entry point, handles JSON from stdin, orchestrates modules
+├── parser.rs         # JSON parsing for Claude Code input
+├── config.rs         # Configuration loading from TOML files
+├── types/            # Type definitions
+│   ├── mod.rs        # Module declarations
+│   ├── claude.rs     # Claude Code JSON input structures (ClaudeInput, ModelInfo, etc.)
+│   └── config.rs     # Configuration structures (Config, DirectoryConfig, etc.)
+└── modules/          # Status line modules
+```
+
+**File Responsibilities:**
+- `main.rs`: Reads stdin, parses JSON, generates status line output
+- `parser.rs`: Validates and deserializes Claude Code JSON input
+- `config.rs`: Loads user configuration from `~/.config/beacon/config.toml`
+- `types/claude.rs`: Defines input data structures from Claude Code
+- `types/config.rs`: Defines configuration structures with defaults
+- `modules/*.rs`: Individual status line components implementing Module trait
 
 ### Key Design Patterns
 - **Module System**: Each status component implements the Module trait

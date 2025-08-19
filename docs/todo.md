@@ -11,15 +11,18 @@
 - ✅ 基本的なCLI構造（clap使用）
 - ✅ JSON入力の解析（serde/serde_json使用）
 - ✅ Module traitとモジュールシステム
-- ✅ 3つのコアモジュール（Directory, Character, ClaudeModel）
+- ✅ 2つのコアモジュール（Directory, ClaudeModel）
 - ✅ 単一行出力とClaude Code統合
 - ✅ エラー時のフォールバック表示
+- ✅ 設定ファイル（Config構造体、TOML読み込み）
+- ✅ プロジェクト構造の整理（types/, config.rs, modules/）
+- ✅ テストの追加（config.rs, parser.rs, modules）
 
 ### 未実装の機能
-- ⏳ 設定ファイル（Config構造体、TOML読み込み）
 - ⏳ Context構造体
-- ⏳ ModuleConfig構造体
+- ⏳ ModuleConfig構造体（各モジュールの個別設定）
 - ⏳ エラーハンドリングの改善（anyhow使用）
+- ⏳ デバッグ機能のリファクタリング
 
 ### 1. プロジェクト初期設定 (20分) ✅
 - [x] src/main.rsに基本的なmain関数を作成 (10分)
@@ -47,7 +50,7 @@
   - `#[derive(Debug, Deserialize)]`
   - hook_event_name, session_id, cwdなどのフィールド
 - [x] ModelInfo/WorkspaceInfo/OutputStyle構造体を定義 (10分)
-  - types.rsモジュールに分離
+  - types/claude.rsモジュールに分離
   - 公式ドキュメントの構造に準拠
 - [x] stdinからJSONを読み込むテストコード作成 (10分)
   - test-input.jsonを作成
@@ -56,22 +59,23 @@
   - Rustベストプラクティスに従った構造
   - 3つのテストケース（正常、エラー、必須フィールド欠落）
 
-### 4. 設定ファイルの基本実装 (40分)
-- [ ] Config構造体を定義 (10分)
+### 4. 設定ファイルの基本実装 (40分) ✅
+- [x] Config構造体を定義 (10分)
   - formatフィールド
   - command_timeoutフィールド
   - debugフィールド（デバッグモードの有効/無効）
-- [ ] デフォルト設定を定義 (10分)
+  - types/config.rsに実装
+- [x] デフォルト設定を定義 (10分)
   - Default traitの実装
-  - 基本的なformat文字列の設定
+  - 基本的なformat文字列の設定: "$directory $claude_model"
   - debug: falseをデフォルトに
-- [ ] TOML設定ファイルの読み込み (10分)
+- [x] TOML設定ファイルの読み込み (10分)
   - `~/.config/beacon/config.toml`のパスを構築
   - ファイルが存在しない場合のデフォルト処理
-- [ ] デバッグモードの切り替え実装 (10分)
-  - config.tomlのdebugフラグでデバッグログの有効/無効を制御
-  - デバッグログを./tmp/beacon-debug.logに出力
-  - デバッグモード有効時はステータスラインに「[DEBUG: ./tmp/beacon-debug.log]」を表示
+  - config.rsにload()メソッドを実装
+- [x] 設定のテストを追加 (10分)
+  - 6つのテストケースを実装
+  - デフォルト値、TOML解析、パス構築のテスト
 
 ### 4.1. デバッグ機能のリファクタリング (30分)
 - [ ] 現在のハードコードされたデバッグ実装を削除 (10分)
@@ -84,7 +88,6 @@
 - [ ] 設定ベースのデバッグ切り替えを実装 (10分)
   - 環境変数 BEACON_DEBUG でも制御可能に
   - デバッグ有効時のみログファイルを作成
-  - ログローテーション機能（ファイルサイズ制限）
 
 ### 5. Context構造体の実装 (20分)
 - [ ] Context構造体を定義 (10分)
@@ -98,6 +101,7 @@
   - name(), should_display(), render()メソッド
 - [ ] ModuleConfigの基本構造を定義 (10分)
   - style, formatフィールド
+  - 各モジュールの共通設定として使用
 
 ### 7. Directory モジュールの実装 (30分) ✅
 - [x] DirectoryModule構造体を作成 (10分)
@@ -109,12 +113,11 @@
   - dirs::home_dir()を使用
   - パスの短縮表示
 
-### 8. Character モジュールの実装 (20分) ✅
-- [x] CharacterModule構造体を作成 (10分)
-  - success_symbol, error_symbolの定義
-- [x] Module traitの実装 (10分)
-  - should_display: 常にtrue
-  - render: "❯ "を返すシンプル実装
+### 8. Character モジュール（削除済み）
+- [x] ~~CharacterModule構造体を作成~~ → 削除
+  - Claude Codeのステータスラインは出力専用のため不要
+  - docs/removed-features.mdに削除理由を記載
+  - ✅ CharacterConfig関連のコードも完全削除（後方互換性不要）
 
 ### 9. Claude Model モジュールの実装 (20分) ✅
 - [x] ClaudeModelModule構造体を作成 (10分)
@@ -141,21 +144,41 @@
   - リリースビルドを.claude/beaconに配置
 - [x] エンドツーエンドテストの実行 (10分)
   - `echo '{"hook_event_name":"Status",...}' | cargo run`
-  - 期待される出力: "~/projects/beacon <Opus> ❯ "
+  - 期待される出力: "~/projects/beacon <Opus>"
+
+### 12. プロジェクト構造の整理 (30分) ✅
+- [x] 型定義の整理 (10分)
+  - types/claude.rs: Claude Code入力の型
+  - types/config.rs: 設定の型とデフォルト値
+  - types/mod.rsから不要な再エクスポートを削除
+- [x] 設定ロジックの分離 (10分)
+  - config.rs: 設定のロードロジックのみ
+  - config/ディレクトリを廃止し、単一ファイルに
+- [x] CLAUDE.mdの更新 (10分)
+  - プロジェクト構造を明確に記載
+  - 各ファイルの責務を明記
 
 ## 完了基準
 - [x] Claude CodeのJSON入力を正しく処理できる
-- [x] 3つの基本モジュール（directory, character, claude_model）が動作する
+- [x] 2つの基本モジュール（directory, claude_model）が動作する
 - [x] 単一行のステータスラインが出力される
 - [x] エラーが発生してもパニックしない（基本的なエラーハンドリング実装済み）
+- [x] 設定ファイルの構造が整備されている
+- [x] テストカバレッジが十分（13個のテストがすべて成功）
 
 ## 注意事項
 - ANSIカラーコードは後回し（[Phase 2](./plan.md#phase-2-core-features-week-2---add-more-modules)で実装）
 - Git関連機能は実装しない（[Phase 2](./plan.md#phase-2-core-features-week-2---add-more-modules)で実装）
-- 複雑なエラーハンドリングは避ける（anyhow::Resultで統一）
+- 複雑なエラーハンドリングは避ける（anyhow::Resultで統一予定）
 - パフォーマンス最適化は考えない（[Phase 4](./plan.md#phase-4-advanced-optional---for-continued-learning)で実装）
 
 ## 次のステップ
+
+Phase 1 の残りタスク：
+- デバッグ機能のリファクタリング
+- Context構造体の実装
+- ModuleConfigの実装
+- エラーハンドリングの改善（anyhow導入）
 
 Phase 1 完了後：
 - → [Phase 2: Core Features](./plan.md#phase-2-core-features-week-2---add-more-modules)

@@ -1,4 +1,4 @@
-use crate::types::ClaudeInput;
+use crate::types::claude::ClaudeInput;
 
 /// Parse JSON string into ClaudeInput
 pub fn parse_claude_input(json_str: &str) -> Result<ClaudeInput, serde_json::Error> {
@@ -32,7 +32,7 @@ mod tests {
 
         let result = parse_claude_input(json_str);
         assert!(result.is_ok());
-        
+
         let input = result.unwrap();
         assert_eq!(input.session_id, "test-session-123");
         assert_eq!(input.model.display_name, "Opus");
