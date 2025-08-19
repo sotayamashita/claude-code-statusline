@@ -1,8 +1,11 @@
 use clap::Parser;
+use std::io::{self, Read};
 
-// Import types from the types module
+// Import modules
 mod types;
-use types::ClaudeInput;
+mod parser;
+
+use parser::parse_claude_input;
 
 #[derive(Parser)]
 #[command(name = env!("CARGO_PKG_NAME"))]
@@ -14,5 +17,35 @@ struct Cli {
 
 fn main() {
     let _cli = Cli::parse();
-    println!("Hello, Beacon!");
+    
+    // Read JSON from stdin
+    let mut buffer = String::new();
+    match io::stdin().read_to_string(&mut buffer) {
+        Ok(_) => {
+            // Check if buffer is empty (no piped input)
+            if buffer.trim().is_empty() {
+                // No JSON input, display default prompt
+                println!("No json input detected");
+                return;
+            }
+            
+            // Parse JSON into ClaudeInput struct
+            match parse_claude_input(&buffer) {
+                Ok(input) => {
+                    // Successfully parsed, print debug info for now
+                    println!("Received Claude Code input:");
+                    println!("  Model: {}", input.model.display_name);
+                    println!("  CWD: {}", input.cwd);
+                    println!("  Session: {}", input.session_id);
+                }
+                Err(e) => {
+                    eprintln!("Failed to parse JSON: {}", e);
+                    eprintln!("Raw input: {}", buffer);
+                }
+            }
+        }
+        Err(e) => {
+            eprintln!("Failed to read from stdin: {}", e);
+        }
+    }
 }
