@@ -135,3 +135,25 @@
 
 タスク:
 - [ ] /clear を呼ぶと TodoWriter ツールがリセットされるのか調査する
+
+### リファクタリングタスク依頼
+
+依頼内容：
+```
+@docs/todo-phase1.md が完了しました。
+
+ゴール：
+Phase 1 の実装したもののリファクタリングを行います。
+
+手順：
+1. use sub agent, @docs/spec.md を理解
+2. use sub agent, @docs/statusline.md を理解
+3. use sub agent, @docs/plan.md の Phase 1 の内容を理解
+4. use sub agent, Rust の CLI 実装に関する最新のベストプラクティスを websearch tool を使って検索
+5. use sub agent for each tool, context7 と deepwiki tool を使ってこのレポジトリが参考にしている https://github.com/starship/starship の振る舞いを理解
+6. 1~5までの理解・調査内容を統合して、このレポジトリの実装と比較
+7. リファクタリングするべきポイントを優先度別に提案。コード変更は絶対にしない。リファクタリング内容を説明するときは必ず、何を・なぜリファクタリングするのか明確に説明。私は Rust初心者なので可能な限りわかりやすく説明。TypeScript の知識はあるので TypeScript を例に出して説明することも可能。
+
+sub agent の使い方
+- 並列実行可能
+```
