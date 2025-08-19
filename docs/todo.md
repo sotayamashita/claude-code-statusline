@@ -7,44 +7,40 @@
 
 [plan.md - Phase 1](./plan.md#phase-1-mvp-week-1---minimum-viable-product) の実装詳細：
 
-### 1. プロジェクト初期設定 (30分)
-- [ ] Cargo.tomlに基本的な依存関係を追加 (10分)
-  - `clap = { version = "4.5", features = ["derive"] }`
-  - `serde = { version = "1.0", features = ["derive"] }`
-  - `serde_json = "1.0"`
-  - `toml = "0.8"`
-  - `anyhow = "1.0"`
-  - `dirs = "5.0"`
-- [ ] src/main.rsに基本的なmain関数を作成 (10分)
-  - `anyhow::Result`を使った基本的なエラーハンドリング
+### 1. プロジェクト初期設定 (30分) ✅
+- [x] src/main.rsに基本的なmain関数を作成 (10分)
   - "Hello, Beacon!"を出力するだけの最小実装
-- [ ] プロジェクトがビルドできることを確認 (10分)
+- [x] プロジェクトがビルドできることを確認 (10分)
   - `cargo build`
   - `cargo run`
 
-### 2. CLI構造の実装 (30分)
-- [ ] CLIの引数構造体を定義 (10分)
+### 2. CLI構造の実装 (30分) ✅
+- [x] clapクレートを追加 (10分)
+  - `cargo add clap --features derive`
+- [x] CLIの引数構造体を定義 (10分)
   - `use clap::Parser`
   - `#[derive(Parser)]`構造体の作成
-  - version, about情報の追加
-- [ ] サブコマンドの骨組みを作成 (10分)
-  - configサブコマンドの定義
-  - modulesサブコマンドの定義
-- [ ] ヘルプメッセージが正しく表示されることを確認 (10分)
+  - version, about情報をenv!マクロでCargo.tomlから取得
+- [x] ヘルプメッセージが正しく表示されることを確認 (10分)
   - `cargo run -- --help`
-  - `cargo run -- config --help`
+  - `cargo run -- --version`
 
-### 3. JSON入力の処理 (40分)
-- [ ] ClaudeInput構造体を定義 (10分)
+### 3. JSON入力の処理 (50分) ✅
+- [x] serde/serde_jsonクレートを追加 (10分)
+  - `cargo add serde --features derive`
+  - `cargo add serde_json`
+- [x] ClaudeInput構造体を定義 (10分)
   - `#[derive(Debug, Deserialize)]`
   - hook_event_name, session_id, cwdなどのフィールド
-- [ ] ModelInfo構造体を定義 (10分)
-  - id, display_nameフィールド
-- [ ] WorkspaceInfo構造体を定義 (10分)
-  - current_dir, project_dirフィールド
-- [ ] stdinからJSONを読み込むテストコード作成 (10分)
-  - テスト用のJSONファイルを作成
-  - `cat test.json | cargo run`で動作確認
+- [x] ModelInfo/WorkspaceInfo/OutputStyle構造体を定義 (10分)
+  - types.rsモジュールに分離
+  - 公式ドキュメントの構造に準拠
+- [x] stdinからJSONを読み込むテストコード作成 (10分)
+  - test-input.jsonを作成
+  - `cat test-input.json | cargo run`で動作確認
+- [x] parser.rsモジュールと単体テストを追加 (10分)
+  - Rustベストプラクティスに従った構造
+  - 3つのテストケース（正常、エラー、必須フィールド欠落）
 
 ### 4. 設定ファイルの基本実装 (30分)
 - [ ] Config構造体を定義 (10分)
@@ -104,15 +100,18 @@
   - 改行を含まない出力
   - print!()でstdoutに出力
 
-### 11. 統合テスト (20分)
-- [ ] テスト用JSONファイルを作成 (10分)
-  - Claude Codeからの実際の入力例を模倣
-- [ ] エンドツーエンドテストの実行 (10分)
+### 11. 統合テスト (20分) ✅
+- [x] テスト用JSONファイルを作成 (10分)
+  - test-input.jsonを作成
+- [x] Claude Code設定を追加 (10分)
+  - .claude/settings.local.jsonに設定追加
+  - リリースビルドを.claude/beaconに配置
+- [x] エンドツーエンドテストの実行 (10分)
   - `echo '{"hook_event_name":"Status",...}' | cargo run`
   - 期待される出力: "~/projects/beacon <Opus> ❯ "
 
 ## 完了基準
-- [ ] Claude CodeのJSON入力を正しく処理できる
+- [x] Claude CodeのJSON入力を正しく処理できる
 - [ ] 3つの基本モジュール（directory, character, claude_model）が動作する
 - [ ] 単一行のステータスラインが出力される
 - [ ] エラーが発生してもパニックしない
