@@ -9,12 +9,16 @@ pub struct ClaudeInput {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub hook_event_name: Option<String>,
     pub session_id: String,
-    pub transcript_path: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub transcript_path: Option<String>,
     pub cwd: String,
     pub model: ModelInfo,
-    pub workspace: WorkspaceInfo,
-    pub version: String,
-    pub output_style: OutputStyle,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub workspace: Option<WorkspaceInfo>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub version: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub output_style: Option<OutputStyle>,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -26,7 +30,8 @@ pub struct ModelInfo {
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct WorkspaceInfo {
     pub current_dir: String,
-    pub project_dir: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub project_dir: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]

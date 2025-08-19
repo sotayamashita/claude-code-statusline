@@ -18,9 +18,9 @@
 - ✅ プロジェクト構造の整理（types/, config.rs, modules/）
 - ✅ テストの追加（config.rs, parser.rs, modules）
 - ✅ デバッグ機能のリファクタリング（DebugLoggerモジュール）
+- ✅ Context構造体（アプリケーション全体のデータと設定を一元管理）
 
 ### 未実装の機能
-- ⏳ Context構造体
 - ⏳ ModuleConfig構造体（各モジュールの個別設定）
 - ⏳ エラーハンドリングの改善（anyhow使用）
 
@@ -89,12 +89,18 @@
   - 環境変数 BEACON_DEBUG でも制御可能に
   - デバッグ有効時のみログファイルを作成（/tmp/beacon-debug.log）
 
-### 5. Context構造体の実装 (20分)
-- [ ] Context構造体を定義 (10分)
+### 5. Context構造体の実装 (20分) ✅
+- [x] Context構造体を定義 (10分)
   - ClaudeInputからの情報を保持
   - 現在のディレクトリ情報
-- [ ] Contextのnewメソッドを実装 (10分)
+  - プロジェクトルートとConfig情報も含む
+- [x] Contextのnewメソッドを実装 (10分)
   - ClaudeInputを受け取ってContextを生成
+  - workspace情報からproject_rootを取得
+- [x] モジュールをContext対応に修正
+  - DirectoryModule::from_context()を追加
+  - ClaudeModelModule::from_context()を追加
+  - generate_prompt()関数をContext対応に変更
 
 ### 6. Module traitの定義 (20分) ✅
 - [x] Module trait を定義 (10分)
@@ -164,8 +170,9 @@
 - [x] 単一行のステータスラインが出力される
 - [x] エラーが発生してもパニックしない（基本的なエラーハンドリング実装済み）
 - [x] 設定ファイルの構造が整備されている
-- [x] テストカバレッジが十分（13個のテストがすべて成功）
+- [x] テストカバレッジが十分（15個のテストがすべて成功）
 - [x] デバッグ機能が設定ベースで制御可能（設定ファイル or 環境変数）
+- [x] Context構造体でデータと設定を一元管理
 
 ## 注意事項
 - ANSIカラーコードは後回し（[Phase 2](./plan.md#phase-2-core-features-week-2---add-more-modules)で実装）
@@ -176,7 +183,6 @@
 ## 次のステップ
 
 Phase 1 の残りタスク：
-- Context構造体の実装
 - ModuleConfigの実装
 - エラーハンドリングの改善（anyhow導入）
 

@@ -12,20 +12,20 @@ use config::Config;
 use debug::DebugLogger;
 use modules::{ClaudeModelModule, DirectoryModule, Module};
 use parser::parse_claude_input;
-use types::claude::ClaudeInput;
+use types::context::Context;
 
-/// Generate the status line prompt from ClaudeInput
-fn generate_prompt(input: &ClaudeInput) -> String {
+/// Generate the status line prompt from Context
+fn generate_prompt(context: &Context) -> String {
     let mut segments = Vec::new();
 
     // Directory module
-    let dir_module = DirectoryModule::new(&input.cwd);
+    let dir_module = DirectoryModule::from_context(context);
     if dir_module.should_display() {
         segments.push(dir_module.render());
     }
 
     // Claude model module
-    let model_module = ClaudeModelModule::new(&input.model.display_name);
+    let model_module = ClaudeModelModule::from_context(context);
     if model_module.should_display() {
         segments.push(model_module.render());
     }
@@ -73,8 +73,11 @@ fn main() {
                 Ok(input) => {
                     logger.log_success(&input.model.display_name, &input.cwd);
 
+                    // Create context from input and config
+                    let context = Context::new(input, config);
+
                     // Generate and output status line
-                    let prompt = generate_prompt(&input);
+                    let prompt = generate_prompt(&context);
                     logger.log_prompt(&prompt);
 
                     print!("{}", prompt); // No newline for status line

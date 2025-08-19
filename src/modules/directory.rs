@@ -1,4 +1,5 @@
 use super::Module;
+use crate::types::context::Context;
 use std::path::PathBuf;
 
 pub struct DirectoryModule {
@@ -9,6 +10,12 @@ impl DirectoryModule {
     pub fn new(cwd: &str) -> Self {
         Self {
             current_dir: PathBuf::from(cwd),
+        }
+    }
+    
+    pub fn from_context(context: &Context) -> Self {
+        Self {
+            current_dir: context.current_dir.clone(),
         }
     }
 

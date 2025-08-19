@@ -1,4 +1,5 @@
 use super::Module;
+use crate::types::context::Context;
 
 pub struct ClaudeModelModule {
     model_name: String,
@@ -8,6 +9,12 @@ impl ClaudeModelModule {
     pub fn new(display_name: &str) -> Self {
         Self {
             model_name: display_name.to_string(),
+        }
+    }
+    
+    pub fn from_context(context: &Context) -> Self {
+        Self {
+            model_name: context.model_display_name().to_string(),
         }
     }
 }
