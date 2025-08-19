@@ -11,7 +11,7 @@ impl ClaudeModelModule {
             model_name: display_name.to_string(),
         }
     }
-    
+
     pub fn from_context(context: &Context) -> Self {
         Self {
             model_name: context.model_display_name().to_string(),

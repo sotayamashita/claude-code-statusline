@@ -1,21 +1,17 @@
 pub use crate::types::config::Config;
+use anyhow::Result;
 use std::fs;
 use std::path::PathBuf;
 
 impl Config {
-    pub fn load() -> Self {
+    pub fn load() -> Result<Self> {
         let config_path = get_config_path();
 
         if config_path.exists() {
-            match fs::read_to_string(&config_path) {
-                Ok(contents) => match toml::from_str(&contents) {
-                    Ok(config) => config,
-                    Err(_) => Config::default(),
-                },
-                Err(_) => Config::default(),
-            }
+            let contents = fs::read_to_string(&config_path)?;
+            Ok(toml::from_str(&contents).unwrap_or_default())
         } else {
-            Config::default()
+            Ok(Config::default())
         }
     }
 }
@@ -57,7 +53,7 @@ mod tests {
     fn test_load_missing_config_returns_default() {
         // Note: This test may use actual config file if it exists
         // The test name is misleading - it's testing Config::load() in general
-        let config = Config::load();
+        let config = Config::load().unwrap();
         assert_eq!(config.format, "$directory $claude_model");
         // If config file exists with command_timeout = 300, that will be loaded
         // If not, default 500 will be used

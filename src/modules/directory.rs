@@ -12,7 +12,7 @@ impl DirectoryModule {
             current_dir: PathBuf::from(cwd),
         }
     }
-    
+
     pub fn from_context(context: &Context) -> Self {
         Self {
             current_dir: context.current_dir.clone(),

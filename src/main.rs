@@ -1,3 +1,4 @@
+use anyhow::Result;
 use clap::Parser;
 use std::io::{self, Read};
 
@@ -42,11 +43,11 @@ struct Cli {
     // 後でサブコマンドを追加予定
 }
 
-fn main() {
+fn main() -> Result<()> {
     let _cli = Cli::parse();
 
     // Load configuration
-    let config = Config::load();
+    let config = Config::load()?;
 
     // Initialize debug logger
     let logger = DebugLogger::new(config.debug);
@@ -55,49 +56,43 @@ fn main() {
 
     // Read JSON from stdin
     let mut buffer = String::new();
-    match io::stdin().read_to_string(&mut buffer) {
-        Ok(_) => {
-            logger.log_input(&buffer);
+    io::stdin().read_to_string(&mut buffer)?;
+    logger.log_input(&buffer);
 
-            // Check if buffer is empty (no piped input)
-            if buffer.trim().is_empty() {
-                logger.log_stderr("Empty input received");
-                // No JSON input, display default status line without newline
-                print!("Failed to build status line due to empty input");
-                io::Write::flush(&mut io::stdout()).unwrap();
-                return;
-            }
+    // Check if buffer is empty (no piped input)
+    if buffer.trim().is_empty() {
+        logger.log_stderr("Empty input received");
+        // No JSON input, display default status line without newline
+        print!("Failed to build status line due to empty input");
+        io::Write::flush(&mut io::stdout())?;
+        return Ok(());
+    }
 
-            // Parse JSON into ClaudeInput struct
-            match parse_claude_input(&buffer) {
-                Ok(input) => {
-                    logger.log_success(&input.model.display_name, &input.cwd);
+    // Parse JSON into ClaudeInput struct
+    match parse_claude_input(&buffer) {
+        Ok(input) => {
+            logger.log_success(&input.model.display_name, &input.cwd);
 
-                    // Create context from input and config
-                    let context = Context::new(input, config);
+            // Create context from input and config
+            let context = Context::new(input, config);
 
-                    // Generate and output status line
-                    let prompt = generate_prompt(&context);
-                    logger.log_prompt(&prompt);
+            // Generate and output status line
+            let prompt = generate_prompt(&context);
+            logger.log_prompt(&prompt);
 
-                    print!("{}", prompt); // No newline for status line
-                    io::Write::flush(&mut io::stdout()).unwrap();
-                }
-                Err(e) => {
-                    logger.log_error(&e.to_string());
-
-                    // On error, output a fallback status line (not error message)
-                    // Error details go to stderr for debugging
-                    eprintln!("Failed to parse JSON: {}", e);
-                    print!("Failed to build status line due to invalid json"); // Fallback status line
-                    io::Write::flush(&mut io::stdout()).unwrap();
-                }
-            }
+            print!("{}", prompt); // No newline for status line
+            io::Write::flush(&mut io::stdout())?;
         }
         Err(e) => {
-            eprintln!("Failed to read from stdin: {}", e);
-            print!("Failed to build status line due to unexpected error"); // Fallback status line
-            io::Write::flush(&mut io::stdout()).unwrap();
+            logger.log_error(&e.to_string());
+
+            // On error, output a fallback status line (not error message)
+            // Error details go to stderr for debugging
+            eprintln!("Failed to parse JSON: {}", e);
+            print!("Failed to build status line due to invalid json"); // Fallback status line
+            io::Write::flush(&mut io::stdout())?;
         }
     }
+
+    Ok(())
 }

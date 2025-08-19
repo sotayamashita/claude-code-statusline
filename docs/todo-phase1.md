@@ -20,9 +20,7 @@
 - ✅ デバッグ機能のリファクタリング（DebugLoggerモジュール）
 - ✅ Context構造体（アプリケーション全体のデータと設定を一元管理）
 - ✅ ModuleConfig相当の機能（DirectoryConfig, ClaudeModelConfigとして実装済み）
-
-### 未実装の機能
-- ⏳ エラーハンドリングの改善（anyhow使用）
+- ✅ エラーハンドリングの改善（anyhow使用）
 
 ### 1. プロジェクト初期設定 (20分) ✅
 - [x] src/main.rsに基本的なmain関数を作成 (10分)
@@ -169,7 +167,7 @@
 - [x] Claude CodeのJSON入力を正しく処理できる
 - [x] 2つの基本モジュール（directory, claude_model）が動作する
 - [x] 単一行のステータスラインが出力される
-- [x] エラーが発生してもパニックしない（基本的なエラーハンドリング実装済み）
+- [x] エラーが発生してもパニックしない（anyhow::Resultで統一的なエラーハンドリング実装済み）
 - [x] 設定ファイルの構造が整備されている
 - [x] テストカバレッジが十分（15個のテストがすべて成功）
 - [x] デバッグ機能が設定ベースで制御可能（設定ファイル or 環境変数）
@@ -178,15 +176,14 @@
 ## 注意事項
 - ANSIカラーコードは後回し（[Phase 2](./plan.md#phase-2-core-features-week-2---add-more-modules)で実装）
 - Git関連機能は実装しない（[Phase 2](./plan.md#phase-2-core-features-week-2---add-more-modules)で実装）
-- 複雑なエラーハンドリングは避ける（anyhow::Resultで統一予定）
+- ✅ エラーハンドリングはanyhow::Resultで統一済み
 - パフォーマンス最適化は考えない（[Phase 4](./plan.md#phase-4-advanced-optional---for-continued-learning)で実装）
 
-## 次のステップ
+## Phase 1 完了 🎉
 
-Phase 1 の残りタスク：
-- エラーハンドリングの改善（anyhow導入）
+全てのPhase 1タスクが完了しました！
 
-Phase 1 完了後：
+### 次のステップ
 - → [Phase 2: Core Features](./plan.md#phase-2-core-features-week-2---add-more-modules)
 - → [Phase 3: Polish](./plan.md#phase-3-polish-week-3---improve-quality)
 - → [Phase 4: Advanced](./plan.md#phase-4-advanced-optional---for-continued-learning)

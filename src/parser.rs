@@ -1,8 +1,9 @@
 use crate::types::claude::ClaudeInput;
+use anyhow::Result;
 
 /// Parse JSON string into ClaudeInput
-pub fn parse_claude_input(json_str: &str) -> Result<ClaudeInput, serde_json::Error> {
-    serde_json::from_str(json_str)
+pub fn parse_claude_input(json_str: &str) -> Result<ClaudeInput> {
+    Ok(serde_json::from_str(json_str)?)
 }
 
 #[cfg(test)]
