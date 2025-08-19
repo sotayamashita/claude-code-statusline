@@ -7,7 +7,7 @@ mod parser;
 mod modules;
 
 use parser::parse_claude_input;
-use modules::{Module, DirectoryModule, CharacterModule, ClaudeModelModule};
+use modules::{Module, DirectoryModule, ClaudeModelModule};
 use types::ClaudeInput;
 
 /// Generate the status line prompt from ClaudeInput
@@ -20,19 +20,13 @@ fn generate_prompt(input: &ClaudeInput) -> String {
         segments.push(dir_module.render());
     }
     
-    // Claude model module
+    // Claude model module  
     let model_module = ClaudeModelModule::new(&input.model.display_name);
     if model_module.should_display() {
         segments.push(model_module.render());
     }
     
-    // Character module (prompt symbol)
-    let char_module = CharacterModule::new();
-    if char_module.should_display() {
-        segments.push(char_module.render());
-    }
-    
-    // Join segments with spaces
+    // セグメントを結合（スペースで区切る）
     segments.join(" ")
 }
 
@@ -73,8 +67,8 @@ fn main() {
             if buffer.trim().is_empty() {
                 // Debug: log to stderr
                 eprintln!("[DEBUG] Empty input received");
-                // No JSON input, display default prompt without newline
-                print!("~/projects ❯ ");
+                // No JSON input, display default status line without newline
+                print!("~/projects <Opus>");
                 io::Write::flush(&mut io::stdout()).unwrap();
                 return;
             }
@@ -120,7 +114,7 @@ fn main() {
                     // On error, output a fallback status line (not error message)
                     // Error details go to stderr for debugging
                     eprintln!("Failed to parse JSON: {}", e);
-                    print!("~/projects ❯ "); // Fallback status line
+                    print!("~/projects <Opus>"); // Fallback status line
                     io::Write::flush(&mut io::stdout()).unwrap();
                 }
             }

@@ -1,5 +1,10 @@
 use super::Module;
 
+/// Character モジュール（現在未使用）
+/// 
+/// Claude Code のステータスラインはユーザー入力を受け付けないため、
+/// Starship のようなプロンプト記号は不要。
+/// 将来的に別の用途で使用する可能性を考慮して保持
 pub struct CharacterModule {
     success_symbol: String,
     error_symbol: String,
@@ -10,7 +15,7 @@ impl CharacterModule {
     pub fn new() -> Self {
         Self {
             success_symbol: "❯".to_string(),
-            error_symbol: "❯".to_string(), // Can be different in the future
+            error_symbol: "❯".to_string(),
             is_error: false,
         }
     }
@@ -28,7 +33,7 @@ impl Module for CharacterModule {
     }
     
     fn should_display(&self) -> bool {
-        true // Always display prompt character
+        false  // Claude Code では使用しない
     }
     
     fn render(&self) -> String {
@@ -48,7 +53,7 @@ mod tests {
     fn test_character_module() {
         let module = CharacterModule::new();
         assert_eq!(module.name(), "character");
-        assert!(module.should_display());
+        assert!(!module.should_display());
         assert_eq!(module.render(), "❯");
     }
 }
