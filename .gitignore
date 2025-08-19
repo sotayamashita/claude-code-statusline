@@ -11,3 +11,9 @@
 # @see {@link https://github.com/oraios/serena}
 .serena/*
 !.serena/project.yml
+
+# Ignore fixture file (temporary. will be removed after Phase 3)
+test-input.json
+
+# Ignore debug logs
+/tmp/

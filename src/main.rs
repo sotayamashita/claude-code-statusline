@@ -47,8 +47,8 @@ struct Cli {
 fn main() {
     let _cli = Cli::parse();
     
-    // Debug: write to file
-    let debug_file = "/tmp/beacon-debug.log";
+    // Debug: write to file in project tmp directory
+    let debug_file = "./tmp/beacon-debug.log";
     use std::fs::OpenOptions;
     use std::io::Write as IoWrite;
     
