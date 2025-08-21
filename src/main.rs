@@ -1,5 +1,6 @@
 use anyhow::Result;
 use clap::Parser;
+use std::collections::HashMap;
 use std::io::{self, Read};
 
 // Import modules
@@ -12,34 +13,39 @@ mod types;
 use config::Config;
 use debug::DebugLogger;
 use modules::{ModuleConfig, handle_module};
-use parser::parse_claude_input;
+use parser::{extract_modules_from_format, parse_claude_input, parse_format};
 use types::context::Context;
 
 /// Generate the status line prompt from Context
 fn generate_prompt(context: &Context) -> String {
-    let mut segments = Vec::new();
+    // Get format string from config (default: "$directory $claude_model")
+    let format = &context.config.format;
 
-    // Use the central dispatcher to create modules
-    // This allows for dynamic module loading based on configuration
-    let module_names = vec!["directory", "claude_model"];
+    // Extract module names from format string
+    let module_names = extract_modules_from_format(format);
 
-    for name in module_names {
+    // Collect module outputs
+    let mut module_outputs = HashMap::new();
+
+    for name in &module_names {
         if let Some(module) = handle_module(name, context) {
             // Select module-specific config from context
-            let module_config: &dyn ModuleConfig = match name {
+            let module_config: &dyn ModuleConfig = match name.as_str() {
                 "directory" => &context.config.directory,
                 "claude_model" => &context.config.claude_model,
+                "character" => continue, // Character module not implemented yet
                 _ => continue,
             };
 
             if module.should_display(context, module_config) {
-                segments.push(module.render(context, module_config));
+                let output = module.render(context, module_config);
+                module_outputs.insert(name.clone(), output);
             }
         }
     }
 
-    // セグメントを結合（スペースで区切る）
-    segments.join(" ")
+    // Use format parser to generate final output
+    parse_format(format, context, &module_outputs)
 }
 
 #[derive(Parser)]
