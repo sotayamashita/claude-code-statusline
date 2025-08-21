@@ -48,16 +48,18 @@ status: Done
   - モジュール追加時に毎回同じボイラープレートコードが必要
   - 設定やコンテキストの変更が困難（各モジュールを個別に更新する必要がある）
 
-**何を**: render()メソッドの引数を追加
+**何を**: render()とshould_display()メソッドの引数を追加
 
 ```rust
 // 現在
 pub trait Module {
+    fn should_display(&self) -> bool;
     fn render(&self) -> String;
 }
 
 // リファクタリング後
 pub trait Module {
+    fn should_display(&self, context: &Context, config: &dyn ModuleConfig) -> bool;
     fn render(&self, context: &Context, config: &dyn ModuleConfig) -> String;
 }
 ```
