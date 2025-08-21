@@ -36,7 +36,7 @@ pub fn handle_module(name: &str, context: &Context) -> Option<Box<dyn Module>> {
 
 ### 2. Moduleトレイトの改善
 
-status: Todo
+status: Done
 
 **なぜ**: 
 - 現在のトレイトは`render(&self) -> String`のシグネチャで、モジュールが独立して動作することを前提としている
