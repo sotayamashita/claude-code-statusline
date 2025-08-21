@@ -11,8 +11,8 @@ pub fn parse_claude_input(json_str: &str) -> Result<ClaudeInput> {
 /// Parse format string and replace variables with module outputs
 ///
 /// Example:
-/// - Input: "$directory $claude_model"
-/// - Output: Vec of module names in order: ["directory", "claude_model"]
+/// - Input: format = "$directory $claude_model", module_outputs = {"directory": "~/project", "claude_model": "Opus"}
+/// - Output: "~/project Opus"
 pub fn parse_format(
     format: &str,
     _context: &Context,
