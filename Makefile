@@ -7,4 +7,5 @@ install-hooks:
 	@echo "📎 Installing git hooks..."
 	@mkdir -p $(GIT_HOOKS_DIR)
 	@cp $(HOOKS_DIR)/pre-commit.sh $(GIT_HOOKS_DIR)/pre-commit
+	@chmod +x $(GIT_HOOKS_DIR)/pre-commit
 	@echo "✅ pre-commit installed"

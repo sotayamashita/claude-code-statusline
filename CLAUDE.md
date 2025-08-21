@@ -8,6 +8,12 @@ Beacon is a lightweight status line generator for Claude Code, written in Rust. 
 
 ## Commands
 
+### Git Hooks Setup
+```bash
+# Install pre-commit hooks
+make install-hooks
+```
+
 ### Build & Run
 ```bash
 # Build the project

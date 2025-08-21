@@ -80,7 +80,7 @@ fn main() -> Result<()> {
             let prompt = generate_prompt(&context);
             logger.log_prompt(&prompt);
 
-            print!("{}", prompt); // No newline for status line
+            print!("{prompt}"); // No newline for status line
             io::Write::flush(&mut io::stdout())?;
         }
         Err(e) => {
@@ -88,7 +88,7 @@ fn main() -> Result<()> {
 
             // On error, output a fallback status line (not error message)
             // Error details go to stderr for debugging
-            eprintln!("Failed to parse JSON: {}", e);
+            eprintln!("Failed to parse JSON: {e}");
             print!("Failed to build status line due to invalid json"); // Fallback status line
             io::Write::flush(&mut io::stdout())?;
         }

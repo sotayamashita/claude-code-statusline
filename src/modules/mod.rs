@@ -1,6 +1,7 @@
 /// Trait that all status line modules must implement
 pub trait Module {
     /// Returns the name of the module
+    #[allow(dead_code)]
     fn name(&self) -> &str;
 
     /// Determines if this module should be displayed

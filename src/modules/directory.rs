@@ -1,12 +1,13 @@
 use super::Module;
 use crate::types::context::Context;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 pub struct DirectoryModule {
     current_dir: PathBuf,
 }
 
 impl DirectoryModule {
+    #[allow(dead_code)]
     pub fn new(cwd: &str) -> Self {
         Self {
             current_dir: PathBuf::from(cwd),
@@ -20,7 +21,7 @@ impl DirectoryModule {
     }
 
     /// Abbreviate home directory to ~
-    fn abbreviate_home(&self, path: &PathBuf) -> String {
+    fn abbreviate_home(&self, path: &Path) -> String {
         if let Ok(home) = std::env::var("HOME") {
             let home_path = PathBuf::from(&home);
             if let Ok(relative) = path.strip_prefix(&home_path) {

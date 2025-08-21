@@ -6,6 +6,7 @@ pub struct ClaudeModelModule {
 }
 
 impl ClaudeModelModule {
+    #[allow(dead_code)]
     pub fn new(display_name: &str) -> Self {
         Self {
             model_name: display_name.to_string(),

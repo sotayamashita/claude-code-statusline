@@ -8,6 +8,7 @@ pub struct Context {
     pub input: ClaudeInput,
 
     /// Application configuration
+    #[allow(dead_code)]
     pub config: Config,
 
     /// Current working directory (processed)
@@ -15,6 +16,7 @@ pub struct Context {
 
     /// Project root directory (e.g., git repository root)
     /// Will be populated in Phase 2 when git support is added
+    #[allow(dead_code)]
     pub project_root: Option<PathBuf>,
 }
 
@@ -39,6 +41,7 @@ impl Context {
     }
 
     /// Get the current directory as a string
+    #[allow(dead_code)]
     pub fn current_dir_str(&self) -> &str {
         &self.input.cwd
     }

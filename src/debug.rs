@@ -35,14 +35,14 @@ impl DebugLogger {
             .append(true)
             .open(&self.log_file)
         {
-            writeln!(file, "{}", message).ok();
+            writeln!(file, "{message}").ok();
         }
     }
 
     /// Log to stderr if debug mode is enabled
     pub fn log_stderr(&self, message: &str) {
         if self.enabled {
-            eprintln!("[DEBUG] {}", message);
+            eprintln!("[DEBUG] {message}");
         }
     }
 
@@ -54,8 +54,7 @@ impl DebugLogger {
     /// Log configuration information
     pub fn log_config(&self, debug: bool, command_timeout: u64) {
         self.log(&format!(
-            "Config loaded: debug={}, command_timeout={}",
-            debug, command_timeout
+            "Config loaded: debug={debug}, command_timeout={command_timeout}"
         ));
     }
 
@@ -72,20 +71,21 @@ impl DebugLogger {
 
     /// Log successful parse
     pub fn log_success(&self, model: &str, cwd: &str) {
-        self.log(&format!("SUCCESS: Model={}, CWD={}", model, cwd));
+        self.log(&format!("SUCCESS: Model={model}, CWD={cwd}"));
     }
 
     /// Log generated prompt
     pub fn log_prompt(&self, prompt: &str) {
-        self.log(&format!("Generated: {}", prompt));
+        self.log(&format!("Generated: {prompt}"));
     }
 
     /// Log error
     pub fn log_error(&self, error: &str) {
-        self.log(&format!("ERROR: {}", error));
+        self.log(&format!("ERROR: {error}"));
     }
 
     /// Check if debug mode is enabled
+    #[allow(dead_code)]
     pub fn is_enabled(&self) -> bool {
         self.enabled
     }
