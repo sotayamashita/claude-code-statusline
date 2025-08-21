@@ -1,13 +1,16 @@
 use super::{Module, ModuleConfig};
 use crate::types::context::Context;
 
+/// Module that displays the current Claude model name
 pub struct ClaudeModelModule;
 
 impl ClaudeModelModule {
+    /// Create a new ClaudeModelModule instance
     pub fn new() -> Self {
         Self
     }
 
+    /// Create from Context (kept for compatibility)
     pub fn from_context(_context: &Context) -> Self {
         Self::new()
     }

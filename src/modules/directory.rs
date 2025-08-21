@@ -2,13 +2,16 @@ use super::{Module, ModuleConfig};
 use crate::types::context::Context;
 use std::path::Path;
 
+/// Module that displays the current working directory with HOME abbreviation
 pub struct DirectoryModule;
 
 impl DirectoryModule {
+    /// Create a new DirectoryModule instance
     pub fn new() -> Self {
         Self
     }
 
+    /// Create from Context (kept for compatibility)
     pub fn from_context(_context: &Context) -> Self {
         Self::new()
     }
