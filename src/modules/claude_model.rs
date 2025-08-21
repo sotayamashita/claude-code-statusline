@@ -1,22 +1,15 @@
-use super::Module;
+use super::{Module, ModuleConfig};
 use crate::types::context::Context;
 
-pub struct ClaudeModelModule {
-    model_name: String,
-}
+pub struct ClaudeModelModule;
 
 impl ClaudeModelModule {
-    #[allow(dead_code)]
-    pub fn new(display_name: &str) -> Self {
-        Self {
-            model_name: display_name.to_string(),
-        }
+    pub fn new() -> Self {
+        Self
     }
 
-    pub fn from_context(context: &Context) -> Self {
-        Self {
-            model_name: context.model_display_name().to_string(),
-        }
+    pub fn from_context(_context: &Context) -> Self {
+        Self::new()
     }
 }
 
@@ -25,30 +18,73 @@ impl Module for ClaudeModelModule {
         "claude_model"
     }
 
-    fn should_display(&self) -> bool {
-        !self.model_name.is_empty()
+    fn should_display(&self, context: &Context, _config: &dyn ModuleConfig) -> bool {
+        !context.model_display_name().is_empty()
     }
 
-    fn render(&self) -> String {
-        format!("<{}>", self.model_name)
+    fn render(&self, context: &Context, _config: &dyn ModuleConfig) -> String {
+        format!("<{}>", context.model_display_name())
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::config::Config;
+    use crate::modules::EmptyConfig;
+    use crate::types::claude::{ClaudeInput, ModelInfo};
 
     #[test]
     fn test_claude_model_module() {
-        let module = ClaudeModelModule::new("Opus");
+        let module = ClaudeModelModule::new();
+
+        // Create a mock ClaudeInput with model info
+        let input = ClaudeInput {
+            hook_event_name: None,
+            session_id: "test".to_string(),
+            transcript_path: None,
+            cwd: "/test".to_string(),
+            model: ModelInfo {
+                id: "claude-opus".to_string(),
+                display_name: "Opus".to_string(),
+            },
+            workspace: None,
+            version: None,
+            output_style: None,
+        };
+
+        let config = Config::default();
+        let context = Context::new(input, config);
+        let module_config = EmptyConfig;
+
         assert_eq!(module.name(), "claude_model");
-        assert!(module.should_display());
-        assert_eq!(module.render(), "<Opus>");
+        assert!(module.should_display(&context, &module_config));
+        assert_eq!(module.render(&context, &module_config), "<Opus>");
     }
 
     #[test]
     fn test_empty_model_name() {
-        let module = ClaudeModelModule::new("");
-        assert!(!module.should_display());
+        let module = ClaudeModelModule::new();
+
+        // Create a mock ClaudeInput with empty model display name
+        let input = ClaudeInput {
+            hook_event_name: None,
+            session_id: "test".to_string(),
+            transcript_path: None,
+            cwd: "/test".to_string(),
+            model: ModelInfo {
+                id: "test".to_string(),
+                display_name: "".to_string(), // Empty display name
+            },
+            workspace: None,
+            version: None,
+            output_style: None,
+        };
+
+        let config = Config::default();
+        let context = Context::new(input, config);
+        let module_config = EmptyConfig;
+
+        assert!(!module.should_display(&context, &module_config));
     }
 }

@@ -11,7 +11,7 @@ mod types;
 
 use config::Config;
 use debug::DebugLogger;
-use modules::handle_module;
+use modules::{EmptyConfig, handle_module};
 use parser::parse_claude_input;
 use types::context::Context;
 
@@ -23,10 +23,13 @@ fn generate_prompt(context: &Context) -> String {
     // This allows for dynamic module loading based on configuration
     let module_names = vec!["directory", "claude_model"];
 
+    // For now, use EmptyConfig as we don't have module-specific configs yet
+    let config = EmptyConfig;
+
     for name in module_names {
         if let Some(module) = handle_module(name, context) {
-            if module.should_display() {
-                segments.push(module.render());
+            if module.should_display(context, &config) {
+                segments.push(module.render(context, &config));
             }
         }
     }
