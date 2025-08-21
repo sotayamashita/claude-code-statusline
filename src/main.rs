@@ -11,7 +11,7 @@ mod types;
 
 use config::Config;
 use debug::DebugLogger;
-use modules::handle_module;
+use modules::{ModuleConfig, handle_module};
 use parser::parse_claude_input;
 use types::context::Context;
 
@@ -25,8 +25,15 @@ fn generate_prompt(context: &Context) -> String {
 
     for name in module_names {
         if let Some(module) = handle_module(name, context) {
-            if module.should_display() {
-                segments.push(module.render());
+            // Select module-specific config from context
+            let module_config: &dyn ModuleConfig = match name {
+                "directory" => &context.config.directory,
+                "claude_model" => &context.config.claude_model,
+                _ => continue,
+            };
+
+            if module.should_display(context, module_config) {
+                segments.push(module.render(context, module_config));
             }
         }
     }

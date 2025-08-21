@@ -166,6 +166,134 @@ echo '{"model":{"display_name":"Opus"},"workspace":{"current_dir":"/home/user/pr
 
 これらのテンプレートを組み合わせることで、どのようなプロジェクトでも効果的にClaude Codeを活用できます。
 
+# Claude Code タスク実行プロンプトテンプレート（改善版）
+
+## CodeRabbitレビューへの対応プロンプト
+
+### PRレビューコメントの取得と対応（改善版）
+
+"""
+CodeRabbitからPR #[番号] にレビューコメントが来ました。以下の手順で対応してください：
+
+1. まず、gh コマンドで未解決のPRコメントのみを取得してTodoWriteツールでタスクを作成
+2. 各コメントを個別のタスクとして実装
+3. タスクごとに個別のコミットを作成
+4. 最後にPRコメントで対応完了を英語で報告
+
+実行手順：
+- 未解決コメントのみを取得：
+  ```bash
+  gh api repos/[owner]/[repo]/pulls/[PR番号]/comments \
+    --jq '.[] | select(.body | contains("✅ Addressed") | not) | 
+           select(.body | contains("🛠️ Refactor suggestion") or 
+                  .body | contains("⚠️ Potential issue") or 
+                  .body | contains("💡 Codebase verification")) | 
+           {id: .id, path: .path, line: .line, body: .body}'
+  ```
+- TodoWriteツールで各コメントをタスクとして管理
+- 各タスクを個別にコミット（メッセージ例: `fix: address PR #[番号] review - [簡潔な説明]`）
+- git push
+- 完了報告を英語で投稿：
+  ```bash
+  gh pr comment [PR番号] --body "## Review Comments Addressed
+
+  All CodeRabbit review comments have been addressed:
+  
+  - ✅ [具体的な修正内容1]
+  - ✅ [具体的な修正内容2]
+  
+  Each fix has been committed separately for easier review."
+  ```
+- 投稿後、コメントURL（例: https://github.com/[owner]/[repo]/pull/[番号]#issuecomment-[ID]）が返す
+"""
+
+### 改善点の説明
+
+1. **未解決コメントのフィルタリング**
+   - `"✅ Addressed"` を含まないコメントのみを対象に
+   - CodeRabbitの主要なラベル（Refactor suggestion、Potential issue、Codebase verification）でフィルタリング
+   - JSON形式で必要な情報（id、path、line、body）を構造化して取得
+
+2. **英語での完了報告**
+   - プロフェッショナルな英語テンプレートを用意
+   - 修正内容を箇条書きで明確に記載
+   - レビューしやすいよう個別コミットであることを明記
+
+3. **コミットメッセージの統一**
+   - Conventional Commits形式（`fix:` プレフィックス）
+   - PR番号を含めて追跡可能に
+   - 簡潔で明確な説明を追加
+
+### 実例：実際のPR対応
+
+```bash
+# PR #42 のCodeRabbitコメントに対応する場合
+
+# 1. 未解決コメントを取得
+gh api repos/sotayamashita/beacon/pulls/42/comments \
+  --jq '.[] | select(.body | contains("✅ Addressed") | not) | 
+         select(.body | contains("🛠️") or 
+                .body | contains("⚠️") or 
+                .body | contains("💡")) | 
+         {id: .id, path: .path, line: .line, 
+          summary: (.body | split("\n")[0])}'
+
+# 2. 各修正を個別コミット
+git add src/module.rs
+git commit -m "fix: address PR #42 review - add error handling for edge case"
+
+git add tests/module_test.rs  
+git commit -m "fix: address PR #42 review - add test coverage for new edge case"
+
+# 3. プッシュ
+git push
+
+# 4. 完了報告
+gh pr comment 42 --body "## Review Comments Addressed
+
+All CodeRabbit review comments have been addressed:
+
+- ✅ Added error handling for edge case in module.rs
+- ✅ Added comprehensive test coverage for the new edge case
+- ✅ Updated documentation to reflect the changes
+
+Each fix has been committed separately for easier review.
+
+Commits:
+- abc1234: fix: address PR #42 review - add error handling for edge case
+- def5678: fix: address PR #42 review - add test coverage for new edge case"
+```
+
+### より効率的なワークフロー
+
+```bash
+# スクリプト化した一括処理の例
+
+# 1. コメントIDと内容を変数に格納
+COMMENTS=$(gh api repos/sotayamashita/beacon/pulls/42/comments \
+  --jq '.[] | select(.body | contains("✅ Addressed") | not) | 
+         select(.body | contains("🛠️") or .body | contains("⚠️")) | 
+         @json')
+
+# 2. TodoWriteツールで管理しながら処理
+echo "$COMMENTS" | jq -r '.[] | .body' | while read -r comment; do
+  # 各コメントに対して対応
+  # TodoWriteツールでタスク化
+  # 実装とコミット
+done
+
+# 3. 一括で完了報告を生成
+SUMMARY=$(git log --oneline -n 5 | grep "PR #42" | sed 's/^/- /')
+gh pr comment 42 --body "## Review Comments Addressed
+
+All CodeRabbit review comments have been addressed.
+
+Recent commits:
+$SUMMARY
+
+Each fix has been committed separately for easier review."
+```
+
 ## Claude Code公式ベストプラクティス
 
 [Claude Code Common workflows公式ドキュメント](https://docs.anthropic.com/en/docs/claude-code/common-workflows)より：

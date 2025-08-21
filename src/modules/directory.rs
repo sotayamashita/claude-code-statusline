@@ -1,30 +1,28 @@
-use super::Module;
+use super::{Module, ModuleConfig};
 use crate::types::context::Context;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
-pub struct DirectoryModule {
-    current_dir: PathBuf,
-}
+/// Module that displays the current working directory with HOME abbreviation
+pub struct DirectoryModule;
 
 impl DirectoryModule {
-    #[allow(dead_code)]
-    pub fn new(cwd: &str) -> Self {
-        Self {
-            current_dir: PathBuf::from(cwd),
-        }
+    /// Create a new DirectoryModule instance
+    pub fn new() -> Self {
+        Self
     }
 
-    pub fn from_context(context: &Context) -> Self {
-        Self {
-            current_dir: context.current_dir.clone(),
-        }
+    /// Create from Context (kept for compatibility)
+    pub fn from_context(_context: &Context) -> Self {
+        Self::new()
     }
 
     /// Abbreviate home directory to ~
     fn abbreviate_home(&self, path: &Path) -> String {
         if let Ok(home) = std::env::var("HOME") {
-            let home_path = PathBuf::from(&home);
-            if let Ok(relative) = path.strip_prefix(&home_path) {
+            if let Ok(relative) = path.strip_prefix(&home) {
+                if relative.as_os_str().is_empty() {
+                    return "~".to_string();
+                }
                 return format!("~/{}", relative.display());
             }
         }
@@ -37,33 +35,117 @@ impl Module for DirectoryModule {
         "directory"
     }
 
-    fn should_display(&self) -> bool {
-        true // Always display directory
+    fn should_display(&self, _context: &Context, config: &dyn ModuleConfig) -> bool {
+        // Check if the module is disabled in config
+        if let Some(cfg) = config
+            .as_any()
+            .downcast_ref::<crate::types::config::DirectoryConfig>()
+        {
+            return !cfg.disabled;
+        }
+        true // Default to displaying if no config found
     }
 
-    fn render(&self) -> String {
-        self.abbreviate_home(&self.current_dir)
+    fn render(&self, context: &Context, _config: &dyn ModuleConfig) -> String {
+        self.abbreviate_home(&context.current_dir)
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::config::Config;
+    use crate::types::claude::{ClaudeInput, ModelInfo};
 
     #[test]
     fn test_directory_module() {
-        let module = DirectoryModule::new("/Users/test/projects");
+        let module = DirectoryModule::new();
+
+        // Create a mock ClaudeInput
+        let input = ClaudeInput {
+            hook_event_name: None,
+            session_id: "test".to_string(),
+            transcript_path: None,
+            cwd: "/Users/test/projects".to_string(),
+            model: ModelInfo {
+                id: "test".to_string(),
+                display_name: "Test".to_string(),
+            },
+            workspace: None,
+            version: None,
+            output_style: None,
+        };
+
+        let config = Config::default();
+        let context = Context::new(input, config);
+
         assert_eq!(module.name(), "directory");
-        assert!(module.should_display());
+        assert!(module.should_display(&context, &context.config.directory));
     }
 
     #[test]
-    fn test_home_abbreviation() {
+    fn test_home_directory_abbreviation() {
+        let module = DirectoryModule::new();
+
+        // Save original HOME environment variable
+        let original_home = std::env::var("HOME").ok();
+
+        // Set HOME environment variable for testing
         // Note: set_var is unsafe in Rust 1.77+
-        // For now, we'll skip this test as it requires unsafe block
-        // In production, HOME is already set by the system
-        let module = DirectoryModule::new("/Users/test/projects");
-        // Can't easily test without setting HOME env var
-        assert_eq!(module.name(), "directory");
+        unsafe {
+            std::env::set_var("HOME", "/Users/test");
+        }
+
+        // Test exact HOME directory
+        let input_home = ClaudeInput {
+            hook_event_name: None,
+            session_id: "test".to_string(),
+            transcript_path: None,
+            cwd: "/Users/test".to_string(),
+            model: ModelInfo {
+                id: "test".to_string(),
+                display_name: "Test".to_string(),
+            },
+            workspace: None,
+            version: None,
+            output_style: None,
+        };
+
+        let config = Config::default();
+        let context_home = Context::new(input_home, config.clone());
+        assert_eq!(
+            module.render(&context_home, &context_home.config.directory),
+            "~"
+        );
+
+        // Test subdirectory of HOME
+        let input_subdir = ClaudeInput {
+            hook_event_name: None,
+            session_id: "test".to_string(),
+            transcript_path: None,
+            cwd: "/Users/test/projects".to_string(),
+            model: ModelInfo {
+                id: "test".to_string(),
+                display_name: "Test".to_string(),
+            },
+            workspace: None,
+            version: None,
+            output_style: None,
+        };
+
+        let context_subdir = Context::new(input_subdir, config);
+        assert_eq!(
+            module.render(&context_subdir, &context_subdir.config.directory),
+            "~/projects"
+        );
+
+        // Restore original HOME environment variable
+        unsafe {
+            if let Some(home) = original_home {
+                std::env::set_var("HOME", home);
+            } else {
+                std::env::remove_var("HOME");
+            }
+        }
     }
 }

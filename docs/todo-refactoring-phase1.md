@@ -6,7 +6,7 @@
 
 ### 1. モジュールシステムの改善
 
-status: Todo
+status: Done
 
 **なぜ**: 現在の実装は各モジュールをmain.rsで直接インスタンス化していて、以下の問題がある：
 
@@ -36,20 +36,30 @@ pub fn handle_module(name: &str, context: &Context) -> Option<Box<dyn Module>> {
 
 ### 2. Moduleトレイトの改善
 
-status: Todo
+status: Done
 
-**なぜ**: 現在のトレイトが設定とコンテキストを受け取れない
+**なぜ**: 
+- 現在のトレイトは`render(&self) -> String`のシグネチャで、モジュールが独立して動作することを前提としている
+- しかし実際には、各モジュールは以下の情報にアクセスする必要がある：
+  - **Context（実行時情報）**: 現在のディレクトリ、Claudeモデル情報、セッションIDなど、Claude Codeから受け取った動的な情報
+  - **Config（ユーザー設定）**: 各モジュールの表示形式、色、有効/無効の設定など、config.tomlから読み込んだ静的な設定
+- 現在のアプローチでは、各モジュールの構造体に必要なデータを個別にコピーしなければならず、以下の問題がある：
+  - データの重複と不整合のリスク
+  - モジュール追加時に毎回同じボイラープレートコードが必要
+  - 設定やコンテキストの変更が困難（各モジュールを個別に更新する必要がある）
 
-**何を**: render()メソッドの引数を追加
+**何を**: render()とshould_display()メソッドの引数を追加
 
 ```rust
 // 現在
 pub trait Module {
+    fn should_display(&self) -> bool;
     fn render(&self) -> String;
 }
 
 // リファクタリング後
 pub trait Module {
+    fn should_display(&self, context: &Context, config: &dyn ModuleConfig) -> bool;
     fn render(&self, context: &Context, config: &dyn ModuleConfig) -> String;
 }
 ```

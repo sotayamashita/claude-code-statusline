@@ -1,4 +1,6 @@
+use crate::modules::ModuleConfig;
 use serde::{Deserialize, Serialize};
+use std::any::Any;
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Config {
@@ -131,4 +133,33 @@ fn default_claude_model_style() -> String {
 
 fn default_claude_model_symbol() -> String {
     "<".to_string()
+}
+
+// ModuleConfig implementations
+impl ModuleConfig for DirectoryConfig {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn format(&self) -> &str {
+        &self.format
+    }
+
+    fn style(&self) -> &str {
+        &self.style
+    }
+}
+
+impl ModuleConfig for ClaudeModelConfig {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn format(&self) -> &str {
+        &self.format
+    }
+
+    fn style(&self) -> &str {
+        &self.style
+    }
 }
