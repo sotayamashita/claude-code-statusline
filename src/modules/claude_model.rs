@@ -21,7 +21,16 @@ impl Module for ClaudeModelModule {
         "claude_model"
     }
 
-    fn should_display(&self, context: &Context, _config: &dyn ModuleConfig) -> bool {
+    fn should_display(&self, context: &Context, config: &dyn ModuleConfig) -> bool {
+        // Check if the module is disabled in config
+        if let Some(cfg) = config
+            .as_any()
+            .downcast_ref::<crate::types::config::ClaudeModelConfig>()
+        {
+            if cfg.disabled {
+                return false;
+            }
+        }
         !context.model_display_name().trim().is_empty()
     }
 
