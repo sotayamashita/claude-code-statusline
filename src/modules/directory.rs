@@ -35,8 +35,15 @@ impl Module for DirectoryModule {
         "directory"
     }
 
-    fn should_display(&self, _context: &Context, _config: &dyn ModuleConfig) -> bool {
-        true // Always display directory
+    fn should_display(&self, _context: &Context, config: &dyn ModuleConfig) -> bool {
+        // Check if the module is disabled in config
+        if let Some(cfg) = config
+            .as_any()
+            .downcast_ref::<crate::types::config::DirectoryConfig>()
+        {
+            return !cfg.disabled;
+        }
+        true // Default to displaying if no config found
     }
 
     fn render(&self, context: &Context, _config: &dyn ModuleConfig) -> String {
@@ -79,6 +86,9 @@ mod tests {
     #[test]
     fn test_home_directory_abbreviation() {
         let module = DirectoryModule::new();
+
+        // Save original HOME environment variable
+        let original_home = std::env::var("HOME").ok();
 
         // Set HOME environment variable for testing
         // Note: set_var is unsafe in Rust 1.77+
@@ -128,5 +138,14 @@ mod tests {
             module.render(&context_subdir, &context_subdir.config.directory),
             "~/projects"
         );
+
+        // Restore original HOME environment variable
+        unsafe {
+            if let Some(home) = original_home {
+                std::env::set_var("HOME", home);
+            } else {
+                std::env::remove_var("HOME");
+            }
+        }
     }
 }
