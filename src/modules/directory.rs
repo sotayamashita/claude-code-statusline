@@ -17,6 +17,9 @@ impl DirectoryModule {
     fn abbreviate_home(&self, path: &Path) -> String {
         if let Ok(home) = std::env::var("HOME") {
             if let Ok(relative) = path.strip_prefix(&home) {
+                if relative.as_os_str().is_empty() {
+                    return "~".to_string();
+                }
                 return format!("~/{}", relative.display());
             }
         }
@@ -42,7 +45,6 @@ impl Module for DirectoryModule {
 mod tests {
     use super::*;
     use crate::config::Config;
-    use crate::modules::EmptyConfig;
     use crate::types::claude::{ClaudeInput, ModelInfo};
 
     #[test]
@@ -66,9 +68,8 @@ mod tests {
 
         let config = Config::default();
         let context = Context::new(input, config);
-        let module_config = EmptyConfig;
 
         assert_eq!(module.name(), "directory");
-        assert!(module.should_display(&context, &module_config));
+        assert!(module.should_display(&context, &context.config.directory));
     }
 }
