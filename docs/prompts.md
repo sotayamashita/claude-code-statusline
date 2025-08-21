@@ -166,6 +166,77 @@ echo '{"model":{"display_name":"Opus"},"workspace":{"current_dir":"/home/user/pr
 
 これらのテンプレートを組み合わせることで、どのようなプロジェクトでも効果的にClaude Codeを活用できます。
 
+## CodeRabbitレビューへの対応プロンプト
+
+### PRレビューコメントの取得と対応
+
+```
+CodeRabbitからPR #[番号] にレビューコメントが来ました。以下の手順で対応してください：
+
+1. まず、gh コマンドでPRのコメントを取得してTodoWriter ツールでタスクを作成
+2. 各コメントを個別のタスクとして実装
+3. タスクごとに個別のコミットを作成
+4. 最後にPRコメントで対応完了を報告
+
+実行手順：
+- gh pr view [PR番号] --comments で resolve されていないコメント確認
+- gh api repos/[owner]/[repo]/pulls/[PR番号]/comments で詳細取得
+- TodoWriteツールで各コメントをタスクとして管理
+- 各タスクを個別にコミット（メッセージにPR番号を含める）
+- gh pr comment [PR番号] --body "対応内容" で完了報告を投稿
+- 投稿後、コメントURL（例: https://github.com/[owner]/[repo]/pull/[番号]#issuecomment-[ID]）が返される
+```
+
+### 実例：Module trait改善のレビュー対応
+
+```CodeRabbitからPR #6 にレビューコメントが来ました。
+コメントを１つずつ取得してTodoWrite toolで作成してください。
+その後、順番にタスクを実装してコミットしてください。
+
+各タスクで：
+1. 何を修正するか明確に説明
+2. なぜその修正が必要か説明
+3. 実装後にテストを実行
+4. 個別にコミット（メッセージ例: "fix(module): [内容] - Addresses PR #6 review comment"）
+5. すべて完了後、gh pr comment 6 --body で対応内容を報告
+6. 投稿結果例: https://github.com/sotayamashita/beacon/pull/6#issuecomment-3209762453
+```
+
+### 体系的なレビュー対応フロー
+
+```
+PRレビューコメントへの対応を開始します：
+
+フェーズ1: コメント整理
+- gh api でコメント取得
+- TodoWriteツールでタスクリスト作成
+- 優先度（Actionable > Nitpick）で分類
+
+フェーズ2: 実装
+- Actionable comments（必須修正）から対応
+- 各修正を個別コミット
+- テストを追加/更新
+
+フェーズ3: 報告
+- PRコメントで対応内容をサマリー
+- 各コミットハッシュを含める
+- テスト結果を報告
+```
+
+### レビューコメントの分類と対応優先度
+
+```
+以下の優先度でCodeRabbitのコメントに対応してください：
+
+1. 🛠️ Refactor suggestions（必須）
+   - バグ修正
+   - エッジケース対応
+   - セキュリティ問題
+
+各カテゴリごとにコミットをまとめても良いが、
+論理的に独立した変更は個別コミットにする
+```
+
 ## Claude Code公式ベストプラクティス
 
 [Claude Code Common workflows公式ドキュメント](https://docs.anthropic.com/en/docs/claude-code/common-workflows)より：
