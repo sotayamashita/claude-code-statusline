@@ -1,7 +1,12 @@
 use crate::types::context::Context;
+use std::any::Any;
 
 /// Trait for module-specific configuration
-pub trait ModuleConfig {
+pub trait ModuleConfig: Any + Send + Sync {
+    /// Allow downcasting to concrete config types
+    #[allow(dead_code)]
+    fn as_any(&self) -> &dyn Any;
+
     /// Get the format string for this module
     #[allow(dead_code)]
     fn format(&self) -> &str {
@@ -18,7 +23,11 @@ pub trait ModuleConfig {
 /// Default implementation for cases where no config is provided
 pub struct EmptyConfig;
 
-impl ModuleConfig for EmptyConfig {}
+impl ModuleConfig for EmptyConfig {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
 
 /// Trait that all status line modules must implement
 pub trait Module {
