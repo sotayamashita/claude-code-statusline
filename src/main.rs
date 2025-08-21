@@ -11,7 +11,7 @@ mod types;
 
 use config::Config;
 use debug::DebugLogger;
-use modules::{ClaudeModelModule, DirectoryModule, Module};
+use modules::handle_module;
 use parser::parse_claude_input;
 use types::context::Context;
 
@@ -19,16 +19,16 @@ use types::context::Context;
 fn generate_prompt(context: &Context) -> String {
     let mut segments = Vec::new();
 
-    // Directory module
-    let dir_module = DirectoryModule::from_context(context);
-    if dir_module.should_display() {
-        segments.push(dir_module.render());
-    }
+    // Use the central dispatcher to create modules
+    // This allows for dynamic module loading based on configuration
+    let module_names = vec!["directory", "claude_model"];
 
-    // Claude model module
-    let model_module = ClaudeModelModule::from_context(context);
-    if model_module.should_display() {
-        segments.push(model_module.render());
+    for name in module_names {
+        if let Some(module) = handle_module(name, context) {
+            if module.should_display() {
+                segments.push(module.render());
+            }
+        }
     }
 
     // セグメントを結合（スペースで区切る）
