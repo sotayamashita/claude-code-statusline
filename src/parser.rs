@@ -18,29 +18,21 @@ pub fn parse_format(
     _context: &Context,
     module_outputs: &HashMap<String, String>,
 ) -> String {
-    let mut result = format.to_string();
-
-    // Replace each variable with its corresponding output
-    for (module_name, output) in module_outputs {
-        let variable = format!("${module_name}");
-        result = result.replace(&variable, output);
-    }
-
-    // Remove any remaining variables that don't have outputs
-    let remaining_vars: Vec<String> = result
+    // Process the format string token by token to handle variables correctly
+    let tokens: Vec<String> = format
         .split_whitespace()
-        .filter(|s| s.starts_with('$'))
-        .map(|s| s.to_string())
+        .map(|token| {
+            if token.starts_with('$') && token.len() > 1 {
+                let module_name = &token[1..];
+                module_outputs.get(module_name).cloned().unwrap_or_default()
+            } else {
+                token.to_string()
+            }
+        })
+        .filter(|s| !s.is_empty())
         .collect();
 
-    for var in remaining_vars {
-        result = result.replace(&var, "");
-    }
-
-    // Clean up multiple spaces
-    result = result.split_whitespace().collect::<Vec<_>>().join(" ");
-
-    result
+    tokens.join(" ")
 }
 
 /// Extract module names from format string
@@ -148,6 +140,41 @@ mod tests {
         let result = parse_format(format, &context, &module_outputs);
 
         assert_eq!(result, "prefix ~/project middle > suffix");
+    }
+
+    #[test]
+    fn test_parse_format_edge_cases() {
+        let input = ClaudeInput {
+            hook_event_name: Some("Status".to_string()),
+            session_id: "test-123".to_string(),
+            transcript_path: Some("/test/transcript.json".to_string()),
+            cwd: "/test/dir".to_string(),
+            model: ModelInfo {
+                id: "claude-opus".to_string(),
+                display_name: "Opus".to_string(),
+            },
+            workspace: None,
+            version: Some("1.0.0".to_string()),
+            output_style: None,
+        };
+
+        let config = Config::default();
+        let context = Context::new(input, config);
+
+        // Test with substring variable names
+        let mut module_outputs = HashMap::new();
+        module_outputs.insert("dir".to_string(), "short".to_string());
+        module_outputs.insert("directory".to_string(), "long".to_string());
+
+        // Should handle variable names correctly even when one is a substring of another
+        let format = "$directory $dir";
+        let result = parse_format(format, &context, &module_outputs);
+        assert_eq!(result, "long short");
+
+        // Test with variables without whitespace boundaries
+        let format = "prefix$directory suffix";
+        let result = parse_format(format, &context, &module_outputs);
+        assert_eq!(result, "prefix$directory suffix");
     }
 
     #[test]
