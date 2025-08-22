@@ -16,6 +16,12 @@ impl ClaudeModelModule {
     }
 }
 
+impl Default for ClaudeModelModule {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Module for ClaudeModelModule {
     fn name(&self) -> &str {
         "claude_model"
@@ -43,85 +49,76 @@ impl Module for ClaudeModelModule {
 mod tests {
     use super::*;
     use crate::config::Config;
-    use crate::types::claude::{ClaudeInput, ModelInfo};
+    use crate::types::claude::{ClaudeInput, ModelInfo, WorkspaceInfo};
+    use crate::types::context::Context;
+    use rstest::*;
 
-    #[test]
-    fn test_claude_model_module() {
-        let module = ClaudeModelModule::new();
-
-        // Create a mock ClaudeInput with model info
+    /// Helper to create context with specific model
+    fn context_with_model(model_name: &str) -> Context {
         let input = ClaudeInput {
             hook_event_name: None,
-            session_id: "test".to_string(),
+            session_id: "test-session".to_string(),
             transcript_path: None,
-            cwd: "/test".to_string(),
+            cwd: "/test/dir".to_string(),
             model: ModelInfo {
-                id: "claude-opus".to_string(),
-                display_name: "Opus".to_string(),
+                id: format!("claude-{}", model_name.to_lowercase()),
+                display_name: model_name.to_string(),
             },
-            workspace: None,
-            version: None,
+            workspace: Some(WorkspaceInfo {
+                current_dir: "/test/dir".to_string(),
+                project_dir: Some("/test".to_string()),
+            }),
+            version: Some("1.0.0".to_string()),
             output_style: None,
         };
+        Context::new(input, Config::default())
+    }
 
-        let config = Config::default();
-        let context = Context::new(input, config);
+    #[rstest]
+    #[case("Opus", "<Opus>")]
+    #[case("Sonnet", "<Sonnet>")]
+    #[case("Haiku", "<Haiku>")]
+    #[case("Claude-3.5", "<Claude-3.5>")]
+    fn test_model_rendering(#[case] model_name: &str, #[case] expected: &str) {
+        let module = ClaudeModelModule::new();
+        let context = context_with_model(model_name);
 
         assert_eq!(module.name(), "claude_model");
         assert!(module.should_display(&context, &context.config.claude_model));
         assert_eq!(
             module.render(&context, &context.config.claude_model),
-            "<Opus>"
+            expected
         );
     }
 
-    #[test]
-    fn test_empty_model_name() {
+    #[rstest]
+    #[case("", false)]
+    #[case("   ", false)]
+    #[case("\t\n", false)]
+    #[case("Opus", true)]
+    fn test_should_display_with_different_model_names(
+        #[case] model_name: &str,
+        #[case] should_display: bool,
+    ) {
         let module = ClaudeModelModule::new();
+        let context = context_with_model(model_name);
 
-        // Create a mock ClaudeInput with empty model display name
-        let input = ClaudeInput {
-            hook_event_name: None,
-            session_id: "test".to_string(),
-            transcript_path: None,
-            cwd: "/test".to_string(),
-            model: ModelInfo {
-                id: "test".to_string(),
-                display_name: "".to_string(), // Empty display name
-            },
-            workspace: None,
-            version: None,
-            output_style: None,
-        };
-
-        let config = Config::default();
-        let context = Context::new(input, config);
-
-        assert!(!module.should_display(&context, &context.config.claude_model));
+        assert_eq!(
+            module.should_display(&context, &context.config.claude_model),
+            should_display
+        );
     }
 
-    #[test]
-    fn test_whitespace_only_model_name() {
+    #[rstest]
+    fn test_module_metadata() {
         let module = ClaudeModelModule::new();
+        assert_eq!(module.name(), "claude_model");
+    }
 
-        // Create a mock ClaudeInput with whitespace-only model display name
-        let input = ClaudeInput {
-            hook_event_name: None,
-            session_id: "test".to_string(),
-            transcript_path: None,
-            cwd: "/test".to_string(),
-            model: ModelInfo {
-                id: "test".to_string(),
-                display_name: "   ".to_string(), // Whitespace-only display name
-            },
-            workspace: None,
-            version: None,
-            output_style: None,
-        };
-
-        let config = Config::default();
-        let context = Context::new(input, config);
-
-        assert!(!module.should_display(&context, &context.config.claude_model));
+    #[rstest]
+    fn test_from_context_constructor() {
+        let context = context_with_model("Opus");
+        let module = ClaudeModelModule::from_context(&context);
+        assert_eq!(module.name(), "claude_model");
     }
 }

@@ -166,3 +166,124 @@ sub agent の使い方
 > ### 1. モジュールシステムの改善
 > **なぜ**: 現在の実装は各モジュールをmain.rsで直接インスタンス化していて、拡張性が低い
 > **何を**: Starshipのような中央ディスパッチャーパターンを実装
+
+
+### 費用対効果を説明させる
+
+```
+⏺ テストヘルパー追加の「なぜ」を深堀り
+
+  🔴 現在のテストの問題点
+
+  各テストで同じようなセットアップコードが繰り返されている：
+
+  // src/modules/directory.rs のテスト
+  let input = ClaudeInput {
+      hook_event_name: None,
+      session_id: "test".to_string(),
+      transcript_path: None,
+      cwd: "/Users/test/projects".to_string(),
+      model: ModelInfo {
+          id: "claude-opus".to_string(),
+          display_name: "Opus".to_string(),
+      },
+      workspace: Some(WorkspaceInfo {
+          current_dir: "/Users/test/projects".to_string(),
+          project_dir: "/Users/test".to_string(),
+      }),
+      // ... 10行以上のボイラープレート
+  };
+
+  // src/modules/claude_model.rs でも同じコード
+  // src/types/context.rs でも同じコード
+
+  📊 定量的な問題分析
+
+  現在のテストコード（15個のテスト）を分析すると：
+
+  | 問題       | 影響                         |
+  |----------|----------------------------|
+  | 重複行数     | ~200行（各テストで13行×15テスト）      |
+  | 修正箇所     | ClaudeInput構造体変更時に15箇所修正必要 |
+  | 可読性      | セットアップが本質的なテストロジックを隠す      |
+  | メンテナンス時間 | 1つの変更に5-10分（全テスト修正）        |
+
+  🎯 根本原因
+
+  1. 構造体の複雑さ
+    - ClaudeInputは10個以上のフィールドを持つ
+    - ほとんどのテストで必要なのは1-2個のフィールドのみ
+    - しかしRustでは全フィールドの初期化が必要
+  2. テストの焦点のズレ
+  // 本当にテストしたいこと：cwdが正しく処理される
+  // でも20行のセットアップコードに埋もれる
+  3. DRY原則の違反
+    - Don't Repeat Yourself
+    - 同じコードが複数箇所に散在
+
+  💡 テストヘルパーで解決
+
+  // Before: 15行のボイラープレート
+  let input = ClaudeInput { /* 長い初期化 */ };
+
+  // After: 1行で完了
+  let input = test_helpers::claude_input().with_cwd("/test").build();
+
+  🚀 具体的なメリット
+
+  1. 開発速度の向上
+  // 新しいテストが3分で書ける（現在は10分）
+  #[test]
+  fn test_new_feature() {
+      let context = TestContext::default()
+          .with_model("Opus")
+          .build();
+      // すぐにテストロジックに集中できる
+  }
+  2. リファクタリング耐性
+  // ClaudeInputに新フィールド追加時
+  // Before: 15箇所を手動修正
+  // After: test_helpers内の1箇所のみ修正
+  3. テストの可読性向上
+  // テストの意図が明確に
+  #[test]
+  fn test_truncates_long_paths() {
+      let context = TestContext::default()
+          .with_long_path() // ← 意図が明確
+          .build();
+
+      assert!(result.len() <= 30); // ← 本質に集中
+  }
+
+  📈 ROI（投資対効果）分析
+
+  | 項目          | 投資  | リターン              |
+  |-------------|-----|-------------------|
+  | 実装時間        | 30分 | -                 |
+  | 節約時間/テスト    | -   | 5分                |
+  | Phase 2での節約 | -   | 50テスト × 5分 = 250分 |
+  | バグ防止        | -   | 構造体変更時のミス防止       |
+
+  🔍 業界標準の実践
+
+  Rustエコシステムの例：
+
+  - Tokio: tokio_test::block_on
+  - Serde: serde_test::Token
+  - Diesel: diesel::test_helpers
+
+  これらはすべて、複雑なセットアップを簡潔にするヘルパーを提供。
+
+  ⚡ なぜ今すぐ必要か
+
+  1. テスト数の増加: Phase 2で3倍、Phase 3で5倍に
+  2. 構造体の進化: ClaudeInputは今後も変更される
+  3. 新規開発者: テストが書きやすければ貢献しやすい
+
+  テストヘルパーは「今」投資することで、将来の大きなリターンを生む典型例。
+```
+
+感想:
+- これはめちゃくちゃわかりやすい。しかも今後の実装プランも含めて考えている。
+- 🔍 業界標準の実践も含まれる。
+- ⚡ なぜ今すぐ必要かも含まれる
