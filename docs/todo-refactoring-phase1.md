@@ -68,7 +68,7 @@ pub trait Module {
 
 ### 3. フォーマット文字列パーサーの実装
 
-status: Todo
+status: Done
 
 **なぜ**: 現在は固定されたモジュール順序。設定ファイルの`format`フィールドが使われていない
 
@@ -86,7 +86,7 @@ pub fn parse_format(format: &str, context: &Context) -> Vec<String> {
 
 ### 4. エラーハンドリングの改善
 
-status: Todo
+status: Decline
 
 **なぜ**: 現在は単純にエラーメッセージを出力するだけ
 
@@ -111,7 +111,7 @@ match parse_claude_input(&buffer) {
 
 ### 5. Configのモジュール設定分離
 
-status: Todo
+status: Decline
 
 **なぜ**: 現在はConfig構造体に全モジュールの設定が直接定義されている
 
@@ -133,7 +133,7 @@ impl ModuleConfig for DirectoryConfig {}
 
 ### 6. テストヘルパーの追加
 
-status: Todo
+status: Done
 
 **なぜ**: 現在のテストは繰り返しが多く、設定しづらい
 

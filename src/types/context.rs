@@ -55,53 +55,64 @@ impl Context {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::types::claude::{ModelInfo, WorkspaceInfo};
+    use crate::types::claude::{ClaudeInput, ModelInfo, WorkspaceInfo};
+    use rstest::rstest;
 
-    #[test]
-    fn test_context_creation() {
-        let input = ClaudeInput {
-            hook_event_name: Some("Status".to_string()),
-            session_id: "test-123".to_string(),
-            transcript_path: Some("/test/transcript.json".to_string()),
-            cwd: "/test/dir".to_string(),
+    /// Helper to create test ClaudeInput
+    fn create_claude_input(cwd: &str, model: &str, workspace: Option<(&str, &str)>) -> ClaudeInput {
+        ClaudeInput {
+            hook_event_name: None,
+            session_id: "test-session".to_string(),
+            transcript_path: None,
+            cwd: cwd.to_string(),
             model: ModelInfo {
-                id: "claude-opus".to_string(),
-                display_name: "Opus".to_string(),
+                id: format!("claude-{}", model.to_lowercase()),
+                display_name: model.to_string(),
             },
-            workspace: Some(WorkspaceInfo {
-                current_dir: "/test/dir".to_string(),
-                project_dir: Some("/test/project".to_string()),
+            workspace: workspace.map(|(current, project)| WorkspaceInfo {
+                current_dir: current.to_string(),
+                project_dir: Some(project.to_string()),
             }),
             version: Some("1.0.0".to_string()),
             output_style: None,
-        };
-
-        let config = Config::default();
-        let context = Context::new(input, config);
-
-        assert_eq!(context.current_dir_str(), "/test/dir");
-        assert_eq!(context.model_display_name(), "Opus");
-        assert_eq!(context.project_root, Some(PathBuf::from("/test/project")));
+        }
     }
 
-    #[test]
-    fn test_context_without_workspace() {
-        let input = ClaudeInput {
-            hook_event_name: Some("Status".to_string()),
-            session_id: "test-456".to_string(),
-            transcript_path: None,
-            cwd: "/another/dir".to_string(),
-            model: ModelInfo {
-                id: "claude-sonnet".to_string(),
-                display_name: "Sonnet".to_string(),
-            },
-            workspace: None,
-            version: Some("1.0.0".to_string()),
-            output_style: None,
-        };
+    #[rstest]
+    #[case("/test/dir", "Opus")]
+    #[case("/another/dir", "Sonnet")]
+    #[case("/home/user", "Haiku")]
+    fn test_context_creation(#[case] cwd: &str, #[case] model: &str) {
+        let input = create_claude_input(cwd, model, Some((cwd, "/test/project")));
+        let context = Context::new(input, Config::default());
 
-        let config = Config::default();
-        let context = Context::new(input, config);
+        assert_eq!(context.current_dir_str(), cwd);
+        assert_eq!(context.model_display_name(), model);
+    }
+
+    #[rstest]
+    #[case("/test/dir", "/test/project", Some(PathBuf::from("/test/project")))]
+    #[case(
+        "/another/dir",
+        "/another/project",
+        Some(PathBuf::from("/another/project"))
+    )]
+    fn test_context_with_workspace(
+        #[case] cwd: &str,
+        #[case] project: &str,
+        #[case] expected_root: Option<PathBuf>,
+    ) {
+        let input = create_claude_input(cwd, "Opus", Some((cwd, project)));
+        let context = Context::new(input, Config::default());
+
+        assert_eq!(context.current_dir_str(), cwd);
+        assert_eq!(context.project_root, expected_root);
+    }
+
+    #[rstest]
+    fn test_context_without_workspace() {
+        let input = create_claude_input("/another/dir", "Sonnet", None);
+        let context = Context::new(input, Config::default());
 
         assert_eq!(context.current_dir_str(), "/another/dir");
         assert_eq!(context.model_display_name(), "Sonnet");

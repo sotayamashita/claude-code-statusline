@@ -30,6 +30,12 @@ impl DirectoryModule {
     }
 }
 
+impl Default for DirectoryModule {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Module for DirectoryModule {
     fn name(&self) -> &str {
         "directory"
@@ -55,91 +61,77 @@ impl Module for DirectoryModule {
 mod tests {
     use super::*;
     use crate::config::Config;
-    use crate::types::claude::{ClaudeInput, ModelInfo};
+    use crate::types::claude::{ClaudeInput, ModelInfo, WorkspaceInfo};
+    use crate::types::context::Context;
+    use rstest::*;
 
-    #[test]
-    fn test_directory_module() {
-        let module = DirectoryModule::new();
-
-        // Create a mock ClaudeInput
+    /// Fixture for creating test contexts
+    #[fixture]
+    fn test_context() -> Context {
         let input = ClaudeInput {
             hook_event_name: None,
-            session_id: "test".to_string(),
+            session_id: "test-session".to_string(),
             transcript_path: None,
             cwd: "/Users/test/projects".to_string(),
             model: ModelInfo {
-                id: "test".to_string(),
-                display_name: "Test".to_string(),
+                id: "claude-opus".to_string(),
+                display_name: "Opus".to_string(),
             },
-            workspace: None,
-            version: None,
+            workspace: Some(WorkspaceInfo {
+                current_dir: "/Users/test/projects".to_string(),
+                project_dir: Some("/Users/test".to_string()),
+            }),
+            version: Some("1.0.0".to_string()),
             output_style: None,
         };
-
-        let config = Config::default();
-        let context = Context::new(input, config);
-
-        assert_eq!(module.name(), "directory");
-        assert!(module.should_display(&context, &context.config.directory));
+        Context::new(input, Config::default())
     }
 
-    #[test]
-    fn test_home_directory_abbreviation() {
+    /// Helper to create context with specific cwd
+    fn context_with_cwd(cwd: &str) -> Context {
+        let input = ClaudeInput {
+            hook_event_name: None,
+            session_id: "test-session".to_string(),
+            transcript_path: None,
+            cwd: cwd.to_string(),
+            model: ModelInfo {
+                id: "claude-opus".to_string(),
+                display_name: "Opus".to_string(),
+            },
+            workspace: Some(WorkspaceInfo {
+                current_dir: cwd.to_string(),
+                project_dir: Some("/Users/test".to_string()),
+            }),
+            version: Some("1.0.0".to_string()),
+            output_style: None,
+        };
+        Context::new(input, Config::default())
+    }
+
+    #[rstest]
+    fn test_directory_module(test_context: Context) {
+        let module = DirectoryModule::new();
+        assert_eq!(module.name(), "directory");
+        assert!(module.should_display(&test_context, &test_context.config.directory));
+    }
+
+    #[rstest]
+    #[case("/Users/test", "~")]
+    #[case("/Users/test/projects", "~/projects")]
+    #[case("/Users/test/Documents/code", "~/Documents/code")]
+    fn test_home_directory_abbreviation(#[case] cwd: &str, #[case] expected: &str) {
         let module = DirectoryModule::new();
 
-        // Save original HOME environment variable
+        // Save and set HOME environment variable
         let original_home = std::env::var("HOME").ok();
-
-        // Set HOME environment variable for testing
-        // Note: set_var is unsafe in Rust 1.77+
         unsafe {
             std::env::set_var("HOME", "/Users/test");
         }
 
-        // Test exact HOME directory
-        let input_home = ClaudeInput {
-            hook_event_name: None,
-            session_id: "test".to_string(),
-            transcript_path: None,
-            cwd: "/Users/test".to_string(),
-            model: ModelInfo {
-                id: "test".to_string(),
-                display_name: "Test".to_string(),
-            },
-            workspace: None,
-            version: None,
-            output_style: None,
-        };
+        let context = context_with_cwd(cwd);
+        assert_eq!(module.render(&context, &context.config.directory), expected);
 
-        let config = Config::default();
-        let context_home = Context::new(input_home, config.clone());
-        assert_eq!(
-            module.render(&context_home, &context_home.config.directory),
-            "~"
-        );
-
-        // Test subdirectory of HOME
-        let input_subdir = ClaudeInput {
-            hook_event_name: None,
-            session_id: "test".to_string(),
-            transcript_path: None,
-            cwd: "/Users/test/projects".to_string(),
-            model: ModelInfo {
-                id: "test".to_string(),
-                display_name: "Test".to_string(),
-            },
-            workspace: None,
-            version: None,
-            output_style: None,
-        };
-
-        let context_subdir = Context::new(input_subdir, config);
-        assert_eq!(
-            module.render(&context_subdir, &context_subdir.config.directory),
-            "~/projects"
-        );
-
-        // Restore original HOME environment variable
+        // Restore original HOME
         unsafe {
             if let Some(home) = original_home {
                 std::env::set_var("HOME", home);
@@ -147,5 +139,15 @@ mod tests {
                 std::env::remove_var("HOME");
             }
         }
+    }
+
+    #[rstest]
+    #[case("/var/www/html", "/var/www/html")]
+    #[case("/tmp/test", "/tmp/test")]
+    #[case("/usr/local/bin", "/usr/local/bin")]
+    fn test_non_home_paths(#[case] cwd: &str, #[case] expected: &str) {
+        let module = DirectoryModule::new();
+        let context = context_with_cwd(cwd);
+        assert_eq!(module.render(&context, &context.config.directory), expected);
     }
 }
