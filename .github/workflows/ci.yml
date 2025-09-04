@@ -12,19 +12,8 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        toolchain:
-          - stable
-          - beta
-          - nightly
     steps:
       - uses: actions/checkout@v5
-      # This step updates the current toolchain to the version specified in the
-      # workflow matrix, and sets that version as the default. This ensures that
-      # the specified toolchain version is used for all subsequent steps.
-      - name: Update and set toolchain
-        run: rustup update ${{ matrix.toolchain }} && rustup default ${{ matrix.toolchain }}
       - run: cargo fmt -- --check
       - run: cargo clippy
       - run: cargo build --verbose
