@@ -1,7 +1,46 @@
+//! Git status module for displaying repository state
+//!
+//! This module shows the current state of the git repository including
+//! modified files, staged changes, and branch divergence.
+
 use super::{Module, ModuleConfig};
 use crate::types::context::Context;
 
-/// Module that summarizes Git working tree/index state and ahead/behind
+/// Module that summarizes Git working tree and index state
+///
+/// Displays indicators for:
+/// - Modified files (working tree changes)
+/// - Staged files (index changes)
+/// - Untracked files
+/// - Branch ahead/behind status relative to upstream
+/// - Conflicted files during merge
+///
+/// # Configuration
+///
+/// ```toml
+/// [git_status]
+/// format = "[$all_status$ahead_behind]($style)"
+/// style = "bold red"
+/// conflicted = "="
+/// ahead = "⇡"
+/// behind = "⇣"
+/// diverged = "⇕"
+/// untracked = "?"
+/// stashed = "$"
+/// modified = "!"
+/// staged = "+"
+/// renamed = "»"
+/// deleted = "✘"
+/// disabled = false
+/// ```
+///
+/// # Display Format
+///
+/// Shows compact symbols for repository state, e.g.:
+/// - `[!]` - Has modified files
+/// - `[+]` - Has staged changes
+/// - `[⇡3]` - Ahead by 3 commits
+/// - `[⇣2]` - Behind by 2 commits
 pub struct GitStatusModule;
 
 impl GitStatusModule {

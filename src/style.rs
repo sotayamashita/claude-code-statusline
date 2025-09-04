@@ -1,11 +1,46 @@
-/// Minimal ANSI styling utilities for module output
+//! ANSI color and text styling utilities
+//!
+//! This module provides functions for applying ANSI escape codes to
+//! terminal text, enabling colored and styled output in the status line.
+
+/// Applies ANSI styling to text for terminal display
 ///
-/// Supported tokens (space-separated):
-/// - text styles: bold, italic, underline
-/// - colors: black, red, green, yellow, blue, magenta, cyan, white
+/// Takes a text string and a style specification, returning the text
+/// wrapped in appropriate ANSI escape codes.
 ///
-/// Unknown tokens are ignored. If no known tokens are present, the input text
-/// is returned unchanged.
+/// # Arguments
+///
+/// * `text` - The text to style
+/// * `style` - Space-separated style tokens
+///
+/// # Supported Style Tokens
+///
+/// Text styles:
+/// - `bold` - Bold text
+/// - `italic` - Italic text
+/// - `underline` - Underlined text
+///
+/// Colors:
+/// - `black`, `red`, `green`, `yellow`
+/// - `blue`, `magenta`, `cyan`, `white`
+///
+/// # Examples
+///
+/// ```
+/// use beacon::style::apply_style;
+///
+/// let styled = apply_style("Hello", "bold red");
+/// // Returns: "\x1b[1;31mHello\x1b[0m"
+///
+/// let multi = apply_style("World", "bold italic blue");
+/// // Returns: "\x1b[1;3;34mWorld\x1b[0m"
+/// ```
+///
+/// # Notes
+///
+/// - Unknown tokens are silently ignored
+/// - If no valid tokens are found, returns the original text
+/// - Multiple styles can be combined (e.g., "bold red underline")
 pub fn apply_style(text: &str, style: &str) -> String {
     // Table-driven mapping for minimal, portable ANSI codes
     const STYLE_CODES: &[(&str, &str)] = &[("bold", "1"), ("italic", "3"), ("underline", "4")];

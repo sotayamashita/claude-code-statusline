@@ -1,8 +1,33 @@
+//! Git branch module for displaying the current branch name
+//!
+//! This module shows the current git branch or commit SHA when
+//! in a git repository.
+
 use super::{Module, ModuleConfig};
 use crate::types::context::Context;
 use std::process::Command;
 
-/// Module that displays the current Git branch or short SHA when detached
+/// Module that displays the current Git branch
+///
+/// Shows the branch name when on a branch, or a short SHA
+/// when in detached HEAD state. Only displays when inside
+/// a git repository.
+///
+/// # Configuration
+///
+/// ```toml
+/// [git_branch]
+/// format = "[$symbol$branch(:$remote_branch)]($style)"
+/// style = "bold purple"
+/// symbol = ""
+/// disabled = false
+/// ```
+///
+/// # Display Behavior
+///
+/// - Branch name: Shows current branch (e.g., "main", "feature/xyz")
+/// - Detached HEAD: Shows short commit SHA
+/// - Outside repo: Module is hidden
 pub struct GitBranchModule;
 
 impl GitBranchModule {

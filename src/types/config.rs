@@ -1,8 +1,36 @@
+//! Configuration type definitions
+//!
+//! This module defines the configuration structures used for parsing
+//! TOML configuration files. Each module has its own configuration
+//! section with sensible defaults.
+//!
+//! # Configuration File
+//!
+//! The configuration file is located at `~/.config/beacon.toml` and
+//! uses TOML format. All fields are optional and will use defaults
+//! if not specified.
+
 use crate::modules::ModuleConfig;
 use anyhow::{Result, anyhow};
 use serde::{Deserialize, Serialize};
 use std::any::Any;
 
+/// Main configuration structure
+///
+/// Root configuration that contains global settings and module-specific
+/// configurations. All fields have sensible defaults.
+///
+/// # Example
+///
+/// ```toml
+/// format = "$directory $git_branch $claude_model"
+/// command_timeout = 300
+/// debug = true
+///
+/// [directory]
+/// style = "bold blue"
+/// truncation_length = 5
+/// ```
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Config {
     #[serde(default = "default_format")]
@@ -27,6 +55,9 @@ pub struct Config {
     pub git_status: GitStatusConfig,
 }
 
+/// Configuration for the directory module
+///
+/// Controls how the current directory is displayed in the status line.
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct DirectoryConfig {
     #[serde(default = "default_directory_format")]
@@ -45,6 +76,9 @@ pub struct DirectoryConfig {
     pub disabled: bool,
 }
 
+/// Configuration for the Claude model module
+///
+/// Controls how the Claude model information is displayed.
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct ClaudeModelConfig {
     #[serde(default = "default_claude_model_format")]

@@ -1,3 +1,9 @@
+//! Runtime context module
+//!
+//! This module provides the Context structure that combines Claude Code input
+//! with application configuration and provides memoized access to expensive
+//! operations like git repository discovery and directory scanning.
+
 use crate::config::Config;
 use crate::types::claude::ClaudeInput;
 use std::collections::HashSet;
@@ -12,6 +18,17 @@ use std::sync::{Mutex, MutexGuard, OnceLock};
 static REPO_DISCOVER_COUNT: AtomicUsize = AtomicUsize::new(0);
 
 /// Central context structure that holds all runtime data and configuration
+///
+/// The Context combines Claude Code input with application configuration
+/// and provides cached access to expensive operations. It uses OnceLock
+/// for memoization to ensure operations like git repository discovery
+/// only happen once per execution.
+///
+/// # Memoization
+///
+/// - Git repository discovery is cached using OnceLock
+/// - Directory contents scanning is cached using OnceLock
+/// - Both operations are thread-safe and only executed once
 pub struct Context {
     /// Raw input from Claude Code
     pub input: ClaudeInput,
@@ -247,7 +264,10 @@ mod tests {
     }
 }
 
-/// Directory contents summary for quick lookups.
+/// Directory contents summary for quick lookups
+///
+/// Provides a snapshot of directory contents including files,
+/// folders, and file extensions for efficient queries.
 #[allow(dead_code)]
 pub struct DirContents {
     #[allow(dead_code)]

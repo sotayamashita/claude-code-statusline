@@ -1,3 +1,23 @@
+//! Status line module system
+//!
+//! This module provides the infrastructure for modular status line components.
+//! Each module implements the `Module` trait and can be dynamically loaded
+//! based on the format string configuration.
+//!
+//! # Architecture
+//!
+//! - `Module` trait: Core interface for all status components
+//! - `ModuleConfig` trait: Configuration interface for modules
+//! - Factory pattern: Dynamic module creation via `handle_module`
+//! - Timeout protection: Each module execution is time-bounded
+//!
+//! # Available Modules
+//!
+//! - `directory`: Current directory display
+//! - `claude_model`: Claude model information
+//! - `git_branch`: Current git branch
+//! - `git_status`: Git repository status
+
 use crate::debug::DebugLogger;
 use crate::timeout::run_with_timeout;
 use crate::types::context::Context;
@@ -5,6 +25,9 @@ use std::any::Any;
 use std::time::Duration;
 
 /// Trait for module-specific configuration
+///
+/// Each module can have its own configuration section in the TOML file.
+/// This trait provides a common interface for accessing module configurations.
 pub trait ModuleConfig: Any + Send + Sync {
     /// Allow downcasting to concrete config types
     #[allow(dead_code)]
@@ -24,6 +47,8 @@ pub trait ModuleConfig: Any + Send + Sync {
 }
 
 /// Default implementation for cases where no config is provided
+///
+/// Used as a fallback when a module doesn't have specific configuration.
 pub struct EmptyConfig;
 
 impl ModuleConfig for EmptyConfig {
@@ -33,6 +58,16 @@ impl ModuleConfig for EmptyConfig {
 }
 
 /// Trait that all status line modules must implement
+///
+/// This is the core interface for creating status line components.
+/// Each module determines when to display itself and how to render
+/// its output based on the current context.
+///
+/// # Implementation Notes
+///
+/// - Modules should be stateless and thread-safe
+/// - Heavy operations should be cached in Context
+/// - Rendering should complete quickly to avoid timeouts
 pub trait Module: Send + Sync {
     /// Returns the name of the module
     #[allow(dead_code)]
@@ -57,7 +92,19 @@ use git_branch::GitBranchModule;
 use git_status::GitStatusModule;
 
 /// Central module dispatcher - creates module instances based on name
-/// This implements the Factory pattern for dynamic module creation
+///
+/// Implements the Factory pattern for dynamic module creation.
+/// Returns a boxed module instance if the name matches a known module.
+///
+/// # Arguments
+///
+/// * `name` - Module name from the format string (e.g., "directory")
+/// * `context` - Current execution context
+///
+/// # Returns
+///
+/// * `Some(Box<dyn Module>)` - Module instance if name is recognized
+/// * `None` - If the module name is unknown
 pub fn handle_module(name: &str, context: &Context) -> Option<Box<dyn Module>> {
     match name {
         "directory" => Some(Box::new(DirectoryModule::from_context(context))),
@@ -78,9 +125,27 @@ fn module_config_for<'a>(name: &str, context: &'a Context) -> Option<&'a dyn Mod
     }
 }
 
-/// Render a module with a global timeout based on `Config.command_timeout`.
-/// - Returns Some(output) on success
-/// - Returns None on timeout, error, or when not displayed
+/// Renders a module with timeout protection
+///
+/// Executes both `should_display` and `render` methods with a timeout
+/// based on the configuration's `command_timeout` value. This ensures
+/// that slow modules don't block the status line generation.
+///
+/// # Arguments
+///
+/// * `name` - Module name to render
+/// * `context` - Current execution context
+/// * `logger` - Debug logger for error reporting
+///
+/// # Returns
+///
+/// * `Some(String)` - Rendered module output on success
+/// * `None` - On timeout, error, or when module shouldn't display
+///
+/// # Timeout Behavior
+///
+/// If a module exceeds the configured timeout (default 500ms),
+/// it will be skipped and an error logged to stderr.
 pub fn render_module_with_timeout(
     name: &str,
     context: &Context,

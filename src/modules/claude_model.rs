@@ -1,7 +1,32 @@
+//! Claude model module for displaying the active AI model
+//!
+//! This module shows the current Claude model being used in the session
+//! with optional symbol and styling.
+
 use super::{Module, ModuleConfig};
 use crate::types::context::Context;
 
 /// Module that displays the current Claude model name
+///
+/// Renders the Claude model information with automatic compaction
+/// for version numbers (e.g., "Opus 4.1" → "Opus4.1") and
+/// customizable symbol prefix.
+///
+/// # Configuration
+///
+/// ```toml
+/// [claude_model]
+/// format = "[$symbol$model]($style)"
+/// style = "bold yellow"
+/// symbol = "<"
+/// disabled = false
+/// ```
+///
+/// # Display Rules
+///
+/// - Compacts spaces before digits (e.g., "Sonnet 3.5" → "Sonnet3.5")
+/// - Only displays when model name is non-empty
+/// - Can be disabled via configuration
 pub struct ClaudeModelModule;
 
 impl ClaudeModelModule {

@@ -1,8 +1,29 @@
+//! Directory module for displaying the current working directory
+//!
+//! This module shows the current directory path with home directory
+//! abbreviation (~) and optional truncation for long paths.
+
 use super::{Module, ModuleConfig};
 use crate::types::context::Context;
 use std::path::Path;
 
-/// Module that displays the current working directory with HOME abbreviation
+/// Module that displays the current working directory
+///
+/// Features:
+/// - Home directory abbreviation (e.g., `/home/user` → `~`)
+/// - Path truncation for long directories
+/// - Repository-relative paths (when in git repos)
+/// - ANSI color styling support
+///
+/// # Configuration
+///
+/// ```toml
+/// [directory]
+/// format = "[$path]($style)"
+/// style = "bold cyan"
+/// truncation_length = 3
+/// truncate_to_repo = true
+/// ```
 pub struct DirectoryModule;
 
 impl DirectoryModule {

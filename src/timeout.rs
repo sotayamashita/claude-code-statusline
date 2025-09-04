@@ -1,10 +1,53 @@
+//! Timeout execution utilities
+//!
+//! This module provides functions for running operations with time limits,
+//! ensuring that slow operations don't block the status line generation.
+
 use anyhow::Result;
 use std::sync::mpsc;
 use std::thread;
 use std::time::Duration;
 
-/// Run a function with a timeout. Returns Ok(Some(T)) on success, Ok(None) on timeout.
-/// If the task panics or returns an error, it is propagated as Err.
+/// Executes a function with a timeout constraint
+///
+/// Spawns the function in a separate thread and waits for completion
+/// up to the specified duration. This prevents slow operations from
+/// blocking the main thread indefinitely.
+///
+/// # Arguments
+///
+/// * `dur` - Maximum duration to wait for the function to complete
+/// * `f` - The function to execute with timeout protection
+///
+/// # Returns
+///
+/// * `Ok(Some(T))` - Function completed successfully within timeout
+/// * `Ok(None)` - Function timed out
+/// * `Err` - Function panicked or returned an error
+///
+/// # Examples
+///
+/// ```
+/// use beacon::timeout::run_with_timeout;
+/// use std::time::Duration;
+///
+/// let result = run_with_timeout(Duration::from_millis(100), || {
+///     Ok("Success".to_string())
+/// });
+/// assert!(result.unwrap().is_some());
+///
+/// let timeout = run_with_timeout(Duration::from_millis(10), || {
+///     std::thread::sleep(Duration::from_millis(100));
+///     Ok("Too slow")
+/// });
+/// assert!(timeout.unwrap().is_none());
+/// ```
+///
+/// # Implementation Notes
+///
+/// - Uses channels for thread communication
+/// - Catches panics and converts them to errors
+/// - Thread is detached after timeout (may continue running)
 pub fn run_with_timeout<F, T>(dur: Duration, f: F) -> Result<Option<T>>
 where
     F: Send + 'static + FnOnce() -> Result<T>,

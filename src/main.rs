@@ -1,3 +1,28 @@
+//! Beacon - A fast, modular status line for AI development
+//!
+//! This is the main entry point for the Beacon CLI application.
+//! It reads JSON input from stdin, parses it, and generates a formatted
+//! status line based on the configuration and available modules.
+//!
+//! # Architecture
+//!
+//! The application follows a modular design where each status component
+//! (directory, git branch, model info, etc.) is implemented as a separate
+//! module that can be enabled/disabled via configuration.
+//!
+//! # Input Format
+//!
+//! Expects JSON input via stdin with the following structure:
+//! ```json
+//! {
+//!     "cwd": "/current/working/directory",
+//!     "model": {
+//!         "id": "claude-3.5-sonnet",
+//!         "display_name": "Sonnet"
+//!     }
+//! }
+//! ```
+
 use anyhow::Result;
 use clap::Parser;
 use std::collections::HashMap;
@@ -19,7 +44,30 @@ use modules::render_module_with_timeout;
 use parser::{extract_modules_from_format, parse_claude_input, parse_format};
 use types::context::Context;
 
-/// Generate the status line prompt from Context
+/// Generates the status line prompt from the given context
+///
+/// This function processes the format string from the configuration,
+/// extracts module names, renders each module with a timeout, and
+/// assembles the final status line output.
+///
+/// # Arguments
+///
+/// * `context` - The context containing configuration and input data
+/// * `logger` - Debug logger for tracing execution
+///
+/// # Returns
+///
+/// A formatted string representing the status line to be displayed
+///
+/// # Examples
+///
+/// ```no_run
+/// # use beacon::{Context, DebugLogger};
+/// # let context = Context::default();
+/// # let logger = DebugLogger::new(false);
+/// let prompt = generate_prompt(&context, &logger);
+/// println!("{}", prompt);  // Outputs: ~/projects beacon:main
+/// ```
 fn generate_prompt(context: &Context, logger: &DebugLogger) -> String {
     // Get format string from config (default: "$directory $claude_model")
     let format = &context.config.format;
@@ -44,14 +92,41 @@ fn generate_prompt(context: &Context, logger: &DebugLogger) -> String {
     parse_format(format, context, &module_outputs)
 }
 
+/// Command line interface arguments structure
+///
+/// Currently a placeholder for future subcommands and CLI options.
+/// Uses clap's derive macros to automatically generate CLI parsing.
 #[derive(Parser)]
 #[command(name = env!("CARGO_PKG_NAME"))]
 #[command(version = env!("CARGO_PKG_VERSION"))]
 #[command(about = env!("CARGO_PKG_DESCRIPTION"))]
 struct Cli {
-    // 後でサブコマンドを追加予定
+    // Future subcommands will be added here
 }
 
+/// Main entry point for the Beacon application
+///
+/// # Workflow
+///
+/// 1. Parse command line arguments (reserved for future use)
+/// 2. Load configuration from `~/.config/beacon.toml`
+/// 3. Initialize debug logger based on configuration
+/// 4. Read JSON input from stdin
+/// 5. Parse and validate the JSON input
+/// 6. Generate formatted status line based on configuration
+/// 7. Output the status line to stdout
+///
+/// # Errors
+///
+/// Returns `Ok(())` even on failures to ensure graceful degradation.
+/// Error details are written to stderr while a fallback status line
+/// is displayed on stdout.
+///
+/// # Examples
+///
+/// ```bash
+/// echo '{"cwd":"/tmp","model":{"id":"claude","display_name":"Claude"}}' | beacon
+/// ```
 fn main() -> Result<()> {
     let _cli = Cli::parse();
 

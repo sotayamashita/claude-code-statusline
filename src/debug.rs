@@ -1,14 +1,48 @@
+//! Debug logging utilities
+//!
+//! This module provides debug logging functionality for development
+//! and troubleshooting. Debug output can be enabled via configuration
+//! or environment variable.
+
 use std::fs::OpenOptions;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 
+/// Debug logger for development and troubleshooting
+///
+/// Writes debug information to a temporary log file when enabled.
+/// Can be activated through configuration (`debug = true`) or
+/// environment variable (`BEACON_DEBUG=1`).
+///
+/// # Log Location
+///
+/// - Unix/Linux: `/tmp/beacon.log`
+/// - Windows: `%TEMP%\beacon.log`
+/// - macOS: `/var/folders/.../beacon.log`
 pub struct DebugLogger {
     enabled: bool,
     log_file: PathBuf,
 }
 
 impl DebugLogger {
-    /// Create a new DebugLogger instance
+    /// Creates a new DebugLogger instance
+    ///
+    /// # Arguments
+    ///
+    /// * `enabled` - Whether debug logging is enabled in configuration
+    ///
+    /// # Environment Variables
+    ///
+    /// - `BEACON_DEBUG=1` - Forces debug logging regardless of config
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use beacon::debug::DebugLogger;
+    ///
+    /// let logger = DebugLogger::new(true);
+    /// logger.log("Debug message");
+    /// ```
     pub fn new(enabled: bool) -> Self {
         // Check environment variable as well
         let enabled = enabled || std::env::var("BEACON_DEBUG").unwrap_or_default() == "1";

@@ -1,9 +1,54 @@
+//! Configuration loading and management module
+//!
+//! This module handles loading configuration from TOML files and provides
+//! the implementation for the Config type defined in types::config.
+//!
+//! # Configuration File Location
+//!
+//! The configuration file is expected at `~/.config/beacon.toml`.
+//! If the file doesn't exist, default configuration values are used.
+//!
+//! # Example Configuration
+//!
+//! ```toml
+//! format = "$directory $git_branch $claude_model"
+//! command_timeout = 300
+//! debug = true
+//!
+//! [directory]
+//! style = "bold blue"
+//! truncation_length = 5
+//!
+//! [claude_model]
+//! symbol = "<"
+//! style = "bold yellow"
+//! ```
+
 pub use crate::types::config::Config;
 use anyhow::{Context as AnyhowContext, Result};
 use std::fs;
 use std::path::PathBuf;
 
 impl Config {
+    /// Loads configuration from the default location
+    ///
+    /// Attempts to read and parse the configuration file from
+    /// `~/.config/beacon.toml`. If the file doesn't exist or
+    /// cannot be read, returns the default configuration.
+    ///
+    /// # Returns
+    ///
+    /// * `Ok(Config)` - Successfully loaded configuration or defaults
+    /// * `Err` - Failed to read or parse the configuration file
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use beacon::Config;
+    ///
+    /// let config = Config::load().expect("Failed to load config");
+    /// println!("Format: {}", config.format);
+    /// ```
     pub fn load() -> Result<Self> {
         let config_path = get_config_path();
 
@@ -19,6 +64,15 @@ impl Config {
     }
 }
 
+/// Determines the path to the configuration file
+///
+/// Constructs the path to `~/.config/beacon.toml` using the user's
+/// home directory. Falls back to the literal path if home directory
+/// cannot be determined.
+///
+/// # Returns
+///
+/// A `PathBuf` pointing to the expected configuration file location
 fn get_config_path() -> PathBuf {
     dirs::home_dir()
         .map(|home| home.join(".config").join("beacon.toml"))
