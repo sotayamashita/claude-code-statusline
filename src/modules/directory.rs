@@ -16,9 +16,9 @@ impl DirectoryModule {
         Self::new()
     }
 
-    /// Abbreviate home directory to ~
+    /// Abbreviate home directory to ~ (cross-platform)
     fn abbreviate_home(&self, path: &Path) -> String {
-        if let Ok(home) = std::env::var("HOME") {
+        if let Some(home) = dirs::home_dir() {
             if let Ok(relative) = path.strip_prefix(&home) {
                 if relative.as_os_str().is_empty() {
                     return "~".to_string();
@@ -121,7 +121,6 @@ mod tests {
     #[case("/Users/test/Documents/code", "~/Documents/code")]
     fn test_home_directory_abbreviation(#[case] cwd: &str, #[case] expected: &str) {
         let module = DirectoryModule::new();
-
         // Save and set HOME environment variable
         let original_home = std::env::var("HOME").ok();
         unsafe {

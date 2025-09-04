@@ -1,5 +1,5 @@
 pub use crate::types::config::Config;
-use anyhow::Result;
+use anyhow::{Context as AnyhowContext, Result};
 use std::fs;
 use std::path::PathBuf;
 
@@ -8,8 +8,11 @@ impl Config {
         let config_path = get_config_path();
 
         if config_path.exists() {
-            let contents = fs::read_to_string(&config_path)?;
-            Ok(toml::from_str(&contents).unwrap_or_default())
+            let contents = fs::read_to_string(&config_path)
+                .with_context(|| format!("failed to read {}", config_path.display()))?;
+            let cfg: Config = toml::from_str(&contents)
+                .with_context(|| format!("invalid TOML at {}", config_path.display()))?;
+            Ok(cfg)
         } else {
             Ok(Config::default())
         }

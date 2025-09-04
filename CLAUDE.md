@@ -72,7 +72,7 @@ cargo rm <package_name>
 2. Build release binary: `cargo build --release`
 3. Copy to .claude directory: `cp target/release/beacon .claude/beacon`
 4. Set execute permissions: `chmod +x .claude/beacon`
-5. Check debug logs if requested (e.g., `/tmp/beacon-debug.log`)
+5. Check debug logs if requested (e.g., `/tmp/beacon.log`)
 6. Add debug logging when troubleshooting issues
 7. Update .claude/settings.local.json configuration
 
@@ -80,7 +80,7 @@ cargo rm <package_name>
 1. Open new Claude Code session in separate terminal for testing
 2. Check actual status line display in the new session
 3. Report back what is displayed or any issues
-4. Check debug logs (e.g., `/tmp/beacon-debug.log`)
+4. Check debug logs (e.g., `/tmp/beacon.log`)
 5. Confirm when status line is working correctly
 
 **Testing commands:**

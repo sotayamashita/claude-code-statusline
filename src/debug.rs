@@ -1,10 +1,10 @@
 use std::fs::OpenOptions;
 use std::io::Write;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 pub struct DebugLogger {
     enabled: bool,
-    log_file: String,
+    log_file: PathBuf,
 }
 
 impl DebugLogger {
@@ -13,10 +13,10 @@ impl DebugLogger {
         // Check environment variable as well
         let enabled = enabled || std::env::var("BEACON_DEBUG").unwrap_or_default() == "1";
 
-        Self {
-            enabled,
-            log_file: "/tmp/beacon-debug.log".to_string(),
-        }
+        // Use cross-platform temp directory
+        let log_file = std::env::temp_dir().join("beacon.log");
+
+        Self { enabled, log_file }
     }
 
     /// Log a message if debug mode is enabled
