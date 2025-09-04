@@ -192,6 +192,12 @@ impl Module for GitStatusModule {
         push_sym(&cfg.symbols.staged, staged);
         push_sym(&cfg.symbols.untracked, untracked);
 
+        // If repository is completely clean (no status symbols and no ahead/behind),
+        // suppress the entire module output to avoid showing empty parentheses like `()`.
+        if all_status.is_empty() && ahead_behind.is_empty() {
+            return String::new();
+        }
+
         // Tokens for template
         use std::collections::HashMap;
         let mut tokens = HashMap::new();
@@ -246,6 +252,8 @@ mod tests {
 
         let mut index = repo.index().unwrap();
         index.add_path(Path::new("README.md")).unwrap();
+        // Persist index to disk so status reflects a clean state
+        index.write().unwrap();
         let tree_id = index.write_tree().unwrap();
         let tree = repo.find_tree(tree_id).unwrap();
         repo.commit(Some("HEAD"), &sig, &sig, "initial", &tree, &[])
@@ -347,5 +355,17 @@ mod tests {
         ctx.config.git_status.disabled = true;
         let module = GitStatusModule::new();
         assert!(!module.should_display(&ctx, &ctx.config.git_status));
+    }
+
+    #[rstest]
+    fn clean_repo_renders_nothing(temp_repo: (tempfile::TempDir, PathBuf, Repository)) {
+        use strip_ansi_escapes::strip;
+        let (_d, root, _repo) = temp_repo;
+        let ctx = make_context(root.to_str().unwrap());
+        let module = GitStatusModule::new();
+        let rendered = module.render(&ctx, &ctx.config.git_status);
+        let plain = String::from_utf8(strip(rendered)).unwrap();
+        println!("clean repo git_status plain='{}'", plain);
+        assert!(plain.is_empty());
     }
 }
