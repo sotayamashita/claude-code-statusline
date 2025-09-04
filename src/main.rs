@@ -36,6 +36,7 @@ fn generate_prompt(context: &Context) -> String {
                 "directory" => &context.config.directory,
                 "claude_model" => &context.config.claude_model,
                 "git_branch" => &context.config.git_branch,
+                "git_status" => &context.config.git_status,
                 "character" => continue, // Character module not implemented yet
                 _ => continue,
             };

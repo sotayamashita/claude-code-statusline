@@ -1,0 +1,193 @@
+# Beacon - Phase 3 Detailed Tasks (Polish / 品質向上)
+
+> 本ドキュメントは `docs/init/02_roadmap.md` の Phase 3 を、実装タスクへ具体化したものです。各タスクに「なぜ必要か（Why）」「どのような効果があるか（Effect）」を明示し、着手順序と受け入れ条件を定義します。必要に応じてテスト観点（Red→Green→Refactor）も付記します。
+
+## ゴール（Phase 3）
+- 品質向上（正確性・体感速度・ハング耐性・可読性）
+- 簡易キャッシュとタイムアウトによる安定運用
+- モジュール横断のテスト拡充とドキュメント整備
+
+---
+
+## 1) Git Status Module（`$git_status`）
+
+### Why（なぜ必要か）
+- Git リポジトリでの作業が一般的なため、変更数・状態をワンショットで把握できると利便性が大きく向上する。
+- Branch 表示（Phase 2）に加え、作業状況（変更, ステージ, 未追跡など）を最小限で示すと、プロンプトからの認知コストが下がる。
+
+### Effect（効果）
+- ステージング・未ステージ・未追跡の差分を軽量に可視化でき、意図しないコミット漏れや状態の取り違えを減らす。
+- Starship と近い表現を採用することで、既存ユーザーの学習コストを下げ、設定移行もしやすくなる。
+
+### Starship の挙動（調査結果の要約）
+- 既定の `format`: `([\[$all_status$ahead_behind\]]($style) )`
+- `$all_status`: `$conflicted$stashed$deleted$renamed$modified$typechanged$staged$untracked`
+- `$ahead_behind`: `diverged`/`ahead`/`behind`/`up_to_date` を表示
+- 既定シンボル（例）:
+  - `conflicted`: `=`（競合あり）
+  - `stashed`: `$`（スタッシュあり）
+  - `deleted`: `✘`（削除をステージ）
+  - `renamed`: `»`（リネームをステージ）
+  - `modified`: `!`（未ステージの変更）
+  - `typechanged`: ''（型変更、既定は空）
+  - `staged`: `+`（ステージ済み）
+  - `untracked`: `?`（未追跡）
+  - `ahead`: `⇡`、`behind`: `⇣`、`diverged`: `⇕`（それぞれコミット数をサフィックスで表示）
+
+例: 変更1件、ステージ2件、未追跡3件、1コミット分 ahead → `[+2!1?3⇡1]`
+
+### Red（テスト観点の例）
+- [x] リポジトリ外では `should_display == false`。
+- [ ] 変更なし: `$all_status` が空、`$ahead_behind` が `''` なら非表示 or クリーン表示（設定依存）。
+- [x] 未ステージ変更あり: `!{count}` が含まれる。
+- [x] ステージ済み変更あり: `+{count}` が含まれる。
+- [x] 未追跡あり: `?{count}` が含まれる。
+- [ ] ahead/behind/diverged の表示とカウントが整合。
+- [x] `disabled = true` で非表示。
+
+### Green（実装タスク）
+- [x] 設定型追加（`src/types/config.rs`）
+  - [x] `GitStatusConfig { format, style, symbols, disabled }`
+  - [x] `symbols`: `conflicted, stashed, deleted, renamed, modified, typechanged, staged, untracked, ahead, behind, diverged`。
+  - [x] 既定の `format` は Starship に準拠（`([\[$all_status$ahead_behind\]]($style) )`）。
+- [x] モジュール実装（`src/modules/git_status.rs`）
+  - [x] `Module` 実装（`name() -> "git_status"`）
+  - [x] `git2::Repository::discover` → `statuses()` と upstream 比較で ahead/behind/diverged を取得。
+  - [x] `$all_status` と `$ahead_behind` を評価し、各セグメントは `symbol + count` を生成（count==0 は非表示）。
+  - [x] `style` は全体に適用、空なら生文字列。
+- [x] ディスパッチ登録（`src/modules/mod.rs`）と `format` 解決対応。
+
+### Refactor（仕上げ）
+- [ ] 記号や順序は設定で変更可能（Starship に準じたキー名）。
+- [ ] 重い計算を避けるため、Phase 3 の「簡易キャッシュ」を利用（同一 CWD での再計算抑制）。
+
+### 受け入れ条件
+- リポジトリ外では非表示、内では状態を最小限の表記で表示。
+- Starship と同等の情報量（記号+件数、ahead/behind/diverged）を表示可能。
+- 設定を変更することで、記号とスタイルが変えられる。
+
+---
+
+## 2) 簡易キャッシュ（高頻度情報の再計算抑制）
+
+### Why（なぜ必要か）
+- 同一実行内で同じ情報を繰り返し参照するケース（複数モジュールが Git 情報を共有など）で無駄な I/O を避けたい。
+- 今後のモジュール拡張に備え、最小限のキャッシュ抽象を導入して性能を底上げする。
+
+### Effect（効果）
+- 体感速度の改善（特に大型リポジトリでの Git 参照）。
+- 設計面で「高コストな取得はキャッシュ経由」に統一され、保守性が上がる。
+
+### Green（実装タスク）
+- [ ] 依存の確認: `once_cell` を `Cargo.toml`（spec に記載済み）に追加/有効化。
+- [ ] キャッシュ層新設（`src/cache.rs` など）
+  - [ ] `static CACHE: Lazy<Mutex<HashMap<Key, Value>>>` の最小構成。
+  - [ ] Key は `("git_status", cwd)` のようなタプルで十分（Phase 3 範囲）。
+  - [ ] TTL は持たない（Phase 3 は「簡易」前提）。必要なら CWD 変更やプロセス単位の無効化で十分。
+- [ ] 利用箇所: `git_status` など高コストモジュールから参照。ヒットすれば再計算回避。
+
+### Red/Refactor（テスト観点）
+- [ ] カウンタで呼び出し回数を記録し、同一 CWD 同一要求で 2 回目以降は計算されないことを確認。
+- [ ] 実装重複を避けるため、取得→格納のヘルパ関数を用意して責務を統一。
+
+### 受け入れ条件
+- キャッシュ導入により、代表モジュール（`git_status`）の 2 回目取得が高速化。
+- キャッシュミス時も正確性が担保される（不整合が起きない）。
+
+---
+
+## 3) モジュール実行タイムアウト（ハング防止・設定連動）
+
+### Why（なぜ必要か）
+- 外部 I/O（Git 操作など）で想定外のハング/遅延が発生しうる。プロンプトは即時性が重要。
+- 既存の `command_timeout`（ms）設定を活用し、全モジュールの最悪時間を制限したい。
+
+### Effect（効果）
+- ハングによる全体停止を防止し、UX（遅延体感）が安定する。
+- タイムアウト時は空出力 or 省略表記でフェイルソフトに動作（stderr に警告を記録）。
+
+### Green（実装タスク）
+- [ ] 汎用ユーティリティ追加（例: `src/timeout.rs`）
+  - [ ] `run_with_timeout<F, T>(dur: Duration, f: F) -> Result<Option<T>>` のような同期 API（`std::thread::spawn` + `join_timeout` パターン）。
+  - [ ] タイムアウト時は `Ok(None)` を返し、呼び出し側で「無出力/警告」に分岐。
+- [ ] 代表モジュールへ適用（`git_status`, `git_branch`）
+  - [ ] 既存ロジックを `run_with_timeout` でラップ。
+  - [ ] `Config.command_timeout` を参照。
+
+### Red/Refactor（テスト観点）
+- [ ] 疑似的にスリープの長い処理を呼び、設定閾値下でタイムアウトになること。
+- [ ] タイムアウトでもクラッシュせず、最終出力 1 行の制約が維持されること。
+
+### 受け入れ条件
+- 代表モジュールでタイムアウトが機能し、ハングしない。
+- 警告ログが `DebugLogger` で確認できる。
+
+---
+
+## 4) 基本テストの拡充（モジュール横断／フォーマット境界）
+
+### Why（なぜ必要か）
+- Phase 1/2 で増えたパス（ANSI, Git, バリデーション）を横断で検証し、回帰を早期検知したい。
+- フォーマット境界（未知トークン、空出力、複合スタイルなど）の取り扱いを明文化し、仕様ブレを防ぐ。
+
+### Effect（効果）
+- 変更に強い土台（安全に機能追加/改善ができる）。
+- ドキュメントとテストの相互参照でチーム内合意が取りやすくなる。
+
+### Red（追加する代表テスト）
+- [ ] 統合テスト（`tests/`）
+  - [ ] `$directory $git_branch $git_status $claude_model` を使ったスモーク（Git あり/なし）。
+  - [ ] タイムアウト有効時でも 1 行出力が維持されること。
+- [ ] ユニットテスト（`src/parser.rs`, `src/types/config.rs`, 各モジュール）
+  - [ ] 未知 `$token` の扱い（既存警告の維持）。
+  - [ ] ANSI の複合指定での安定性（未知トークン混在時でもクラッシュしない）。
+
+### Green/Refactor（実装タスク）
+- [ ] `rstest` の活用でケース増加を簡潔に表現。
+- [ ] 重複ヘルパは `tests/common/` に集約。
+
+### 受け入れ条件
+- 代表的なユーザ設定の組合せで回帰が出ない。
+- フォーマット境界ケースの期待が明文化され、テストで担保される。
+
+---
+
+## 5) ドキュメント整備（ユーザー・開発者向け）
+
+### Why（なぜ必要か）
+- 新規ユーザーが最短で使い始められる「導入手順」と、開発者が迷わない「実装規約/拡張方針」が必要。
+- Phase 3 で追加される `git_status`/キャッシュ/タイムアウトの仕様を明文化して、問い合わせや設定ミスを減らす。
+
+### Effect（効果）
+- 導入の障壁低下、チームへの展開が容易に。
+- Issue/PR の議論が事実ベースで進めやすくなり、レビュー効率が上がる。
+
+### Green（作成/更新するドキュメント）
+- [ ] ユーザーガイド（`README.md` もしくは `docs/guide/user.md`）
+  - [ ] インストール、最小設定例、`format` の基本、代表モジュールの使い方。
+  - [ ] タイムアウト/キャッシュの概要と注意点（安全なデフォルト）。
+- [ ] 開発者ガイド（`docs/guide/dev.md`）
+  - [ ] モジュールの追加手順（`Module` トレイト、`ModuleConfig`）
+  - [ ] キャッシュ/タイムアウトの適用規約（どこでラップするか、ログ方針）。
+- [ ] ロードマップ同期（`docs/init/02_roadmap.md`）
+  - [ ] 実装/仕様更新点の反映（チェックボックス更新）。
+
+### 受け入れ条件
+- 新規ユーザーがガイド通りに最小構成で実行できる。
+- 開発者がモジュール追加時にガイドだけで実装を進められる。
+
+---
+
+## 進行管理（チェックリスト）
+- [x] Git Status Module（Green 完了／Red・Refactor 未）
+- [ ] 簡易キャッシュ（Green→適用）
+- [ ] タイムアウト（Green→適用）
+- [ ] テスト拡充（統合/ユニット）
+- [ ] ドキュメント整備（ユーザー/開発者）
+
+---
+
+## 参考・補足
+- 仕様: `docs/init/01_spec.md`（Phase 3 で `once_cell` によるキャッシュ導入を示唆）
+- 設定: `~/.config/beacon.toml`（`command_timeout` は既存。キャッシュは Phase 3 では実行内のみ）
+- ロードマップ: `docs/init/02_roadmap.md`（Phase 3: 品質向上・キャッシュ・タイムアウト・ドキュメント）

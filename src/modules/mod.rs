@@ -46,10 +46,12 @@ pub trait Module {
 pub mod claude_model;
 pub mod directory;
 pub mod git_branch;
+pub mod git_status;
 
 pub use claude_model::ClaudeModelModule;
 pub use directory::DirectoryModule;
 use git_branch::GitBranchModule;
+use git_status::GitStatusModule;
 
 /// Central module dispatcher - creates module instances based on name
 /// This implements the Factory pattern for dynamic module creation
@@ -58,6 +60,7 @@ pub fn handle_module(name: &str, context: &Context) -> Option<Box<dyn Module>> {
         "directory" => Some(Box::new(DirectoryModule::from_context(context))),
         "claude_model" => Some(Box::new(ClaudeModelModule::from_context(context))),
         "git_branch" => Some(Box::new(GitBranchModule::from_context(context))),
+        "git_status" => Some(Box::new(GitStatusModule::from_context(context))),
         _ => None,
     }
 }

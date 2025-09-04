@@ -22,6 +22,9 @@ pub struct Config {
 
     #[serde(default)]
     pub git_branch: GitBranchConfig,
+
+    #[serde(default)]
+    pub git_status: GitStatusConfig,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -66,6 +69,7 @@ impl Default for Config {
             directory: DirectoryConfig::default(),
             claude_model: ClaudeModelConfig::default(),
             git_branch: GitBranchConfig::default(),
+            git_status: GitStatusConfig::default(),
         }
     }
 }
@@ -114,6 +118,76 @@ impl Default for GitBranchConfig {
             format: default_git_branch_format(),
             style: default_git_branch_style(),
             symbol: default_git_branch_symbol(),
+            disabled: default_disabled(),
+        }
+    }
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct GitStatusSymbolsConfig {
+    #[serde(default = "default_git_status_symbol_conflicted")]
+    pub conflicted: String,
+    #[serde(default = "default_git_status_symbol_stashed")]
+    pub stashed: String,
+    #[serde(default = "default_git_status_symbol_deleted")]
+    pub deleted: String,
+    #[serde(default = "default_git_status_symbol_renamed")]
+    pub renamed: String,
+    #[serde(default = "default_git_status_symbol_modified")]
+    pub modified: String,
+    #[serde(default = "default_git_status_symbol_typechanged")]
+    pub typechanged: String,
+    #[serde(default = "default_git_status_symbol_staged")]
+    pub staged: String,
+    #[serde(default = "default_git_status_symbol_untracked")]
+    pub untracked: String,
+    #[serde(default = "default_git_status_symbol_ahead")]
+    pub ahead: String,
+    #[serde(default = "default_git_status_symbol_behind")]
+    pub behind: String,
+    #[serde(default = "default_git_status_symbol_diverged")]
+    pub diverged: String,
+}
+
+impl Default for GitStatusSymbolsConfig {
+    fn default() -> Self {
+        GitStatusSymbolsConfig {
+            conflicted: default_git_status_symbol_conflicted(),
+            stashed: default_git_status_symbol_stashed(),
+            deleted: default_git_status_symbol_deleted(),
+            renamed: default_git_status_symbol_renamed(),
+            modified: default_git_status_symbol_modified(),
+            typechanged: default_git_status_symbol_typechanged(),
+            staged: default_git_status_symbol_staged(),
+            untracked: default_git_status_symbol_untracked(),
+            ahead: default_git_status_symbol_ahead(),
+            behind: default_git_status_symbol_behind(),
+            diverged: default_git_status_symbol_diverged(),
+        }
+    }
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct GitStatusConfig {
+    #[serde(default = "default_git_status_format")]
+    pub format: String,
+
+    #[serde(default = "default_git_status_style")]
+    pub style: String,
+
+    #[serde(default)]
+    pub symbols: GitStatusSymbolsConfig,
+
+    #[serde(default = "default_disabled")]
+    pub disabled: bool,
+}
+
+impl Default for GitStatusConfig {
+    fn default() -> Self {
+        GitStatusConfig {
+            format: default_git_status_format(),
+            style: default_git_status_style(),
+            symbols: GitStatusSymbolsConfig::default(),
             disabled: default_disabled(),
         }
     }
@@ -179,6 +253,50 @@ fn default_git_branch_symbol() -> String {
     "🌿".to_string()
 }
 
+// Git Status module defaults (Starship 準拠の最小形)
+fn default_git_status_format() -> String {
+    // ([[$all_status$ahead_behind]]($style) )
+    "([[$all_status$ahead_behind]]($style) )".to_string()
+}
+
+fn default_git_status_style() -> String {
+    "bold red".to_string()
+}
+
+fn default_git_status_symbol_conflicted() -> String {
+    "=".to_string()
+}
+fn default_git_status_symbol_stashed() -> String {
+    "$".to_string()
+}
+fn default_git_status_symbol_deleted() -> String {
+    "✘".to_string()
+}
+fn default_git_status_symbol_renamed() -> String {
+    "»".to_string()
+}
+fn default_git_status_symbol_modified() -> String {
+    "!".to_string()
+}
+fn default_git_status_symbol_typechanged() -> String {
+    "".to_string()
+}
+fn default_git_status_symbol_staged() -> String {
+    "+".to_string()
+}
+fn default_git_status_symbol_untracked() -> String {
+    "?".to_string()
+}
+fn default_git_status_symbol_ahead() -> String {
+    "⇡".to_string()
+}
+fn default_git_status_symbol_behind() -> String {
+    "⇣".to_string()
+}
+fn default_git_status_symbol_diverged() -> String {
+    "⇕".to_string()
+}
+
 // ModuleConfig implementations
 impl ModuleConfig for DirectoryConfig {
     fn as_any(&self) -> &dyn Any {
@@ -209,6 +327,20 @@ impl ModuleConfig for ClaudeModelConfig {
 }
 
 impl ModuleConfig for GitBranchConfig {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn format(&self) -> &str {
+        &self.format
+    }
+
+    fn style(&self) -> &str {
+        &self.style
+    }
+}
+
+impl ModuleConfig for GitStatusConfig {
     fn as_any(&self) -> &dyn Any {
         self
     }
@@ -267,13 +399,14 @@ impl Config {
         check_style("directory", &self.directory.style, &mut warnings);
         check_style("claude_model", &self.claude_model.style, &mut warnings);
         check_style("git_branch", &self.git_branch.style, &mut warnings);
+        check_style("git_status", &self.git_status.style, &mut warnings);
 
         // Unknown $tokens in top-level format
         for part in self.format.split_whitespace() {
             if let Some(tok) = part.strip_prefix('$') {
                 match tok {
-                    "directory" | "claude_model" | "git_branch" | "claude_session"
-                    | "character" => {}
+                    "directory" | "claude_model" | "git_branch" | "git_status"
+                    | "claude_session" | "character" => {}
                     other => warnings.push(crate::messages::warn_unknown_format_token(other)),
                 }
             }

@@ -1,5 +1,8 @@
 # Repository Guidelines
 
+- Code should be in English
+- Conversation should be in Japanese
+
 ## Project Structure & Module Organization
 - Source: `src/` with `main.rs` (CLI entry) and `lib.rs` (shared). Domain modules live in `src/modules/` (e.g., `directory.rs`, `claude_model.rs`) and types in `src/types/` (config/context/claude).
 - Tests: unit tests inline via `#[cfg(test)]` and shared test helpers under `tests/common/` using `rstest`.
