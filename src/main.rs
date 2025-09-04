@@ -6,6 +6,7 @@ use std::io::{self, Read};
 // Import modules
 mod config;
 mod debug;
+mod messages;
 mod modules;
 mod parser;
 mod style;
@@ -67,7 +68,7 @@ fn main() -> Result<()> {
         Err(e) => {
             // Print detailed error to stderr, concise message to stdout
             eprintln!("Config error: {e}");
-            print!("Failed to build status line due to invalid config");
+            print!("{}", messages::MSG_FAILED_INVALID_CONFIG);
             io::Write::flush(&mut io::stdout())?;
             return Ok(());
         }
@@ -99,7 +100,7 @@ fn main() -> Result<()> {
     if buffer.trim().is_empty() {
         logger.log_stderr("Empty input received");
         // No JSON input, display default status line without newline
-        print!("Failed to build status line due to empty input");
+        print!("{}", messages::MSG_FAILED_EMPTY_INPUT);
         io::Write::flush(&mut io::stdout())?;
         return Ok(());
     }
@@ -125,7 +126,7 @@ fn main() -> Result<()> {
             // On error, output a fallback status line (not error message)
             // Error details go to stderr for debugging
             eprintln!("Failed to parse JSON: {e}");
-            print!("Failed to build status line due to invalid json"); // Fallback status line
+            print!("{}", messages::MSG_FAILED_INVALID_JSON); // Fallback status line
             io::Write::flush(&mut io::stdout())?;
         }
     }
