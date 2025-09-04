@@ -27,11 +27,11 @@
   - [x] `Module` 実装（`name() -> "git_branch"`）
   - [x] `should_display`: `git2::Repository::discover` 成功時のみ true（かつ `disabled == false`）
   - [x] `render`: `format` を評価し、ブランチ名/短 SHA に `style` を適用
-  - [ ] フォールバック（オプション）: `git` コマンド実行での分岐
+  - [x] フォールバック（オプション）: `git` コマンド実行での分岐
 - [x] ディスパッチ登録: `modules/mod.rs` に `pub mod git_branch;` と `handle_module` を追加
 
 ### Refactor: 仕上げ
-- [ ] テストの重複を整理、エラーパスの境界ケースを追加
+- [x] テストの重複を整理、エラーパスの境界ケースを追加
 - [x] 使用例を `docs/init/02_roadmap.md` に追記
 
 ### 受け入れ条件
@@ -81,7 +81,7 @@
 - [x] 全体の `parse_format` は Phase 1 のまま（モジュール出力の連結に専念）
 
 ### Refactor: 仕上げ
-- [ ] ANSI コードマッピングをテーブル化、最小セット（bold/italic/underline/8色）に限定
+- [x] ANSI コードマッピングをテーブル化、最小セット（bold/italic/underline/8色）に限定
 
 ### 受け入れ条件
 - [x] 代表的なスタイル指定で ANSI が適用される
@@ -101,7 +101,7 @@
 - [x] `main.rs` のエラーハンドリングを整理（stdout 簡潔、stderr 詳細）
 
 ### Refactor: 仕上げ
-- [ ] メッセージ定数化、i18n を考慮した命名（任意）
+- [x] メッセージ定数化、i18n を考慮した命名（任意）
 
 ### 受け入れ条件
 - [x] 正常時は 1 行出力のみ（改行なし）
@@ -133,7 +133,7 @@
 ## 6) 配線・ドキュメント
 
 ### Red: 先に書くテスト
-- [ ] ドキュメント例の `format` をそのまま適用してもエラーにならない（最低限の smoke test）
+- [x] ドキュメント例の `format` をそのまま適用してもエラーにならない（最低限の smoke test）
 
 ### Green: 実装タスク
 - [x] `docs/init/02_roadmap.md` に `$git_branch`, `$claude_session` の例を追記（実装は Session スキップ）
