@@ -187,10 +187,10 @@
 - Issue/PR の議論が事実ベースで進めやすくなり、レビュー効率が上がる。
 
 ### Green（作成/更新するドキュメント）
-- [ ] ユーザーガイド（`README.md` もしくは `docs/guide/configuration.md`）
+- [ ] ユーザーガイド（`README.md` もしくは `docs/configuration.md`）
   - [ ] インストール、最小設定例、`format` の基本、代表モジュールの使い方。
   - [ ] タイムアウト/キャッシュの概要と注意点（安全なデフォルト）。
-- [ ] 開発者ガイド（`docs/guide/contributing.md`）
+- [ ] 開発者ガイド（`docs/development.md`）
   - [ ] モジュールの追加手順（`Module` トレイト、`ModuleConfig`）
   - [ ] キャッシュ/タイムアウトの適用規約（どこでラップするか、ログ方針）。
 - [ ] ロードマップ同期（`specs/2025-09-04-mvp/02-plan.md`）

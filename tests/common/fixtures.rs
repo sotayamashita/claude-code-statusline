@@ -1,8 +1,8 @@
-use rstest::*;
+use crate::common::builders::{ClaudeInputBuilder, ContextBuilder};
 use beacon::config::Config;
 use beacon::types::claude::ClaudeInput;
 use beacon::types::context::Context;
-use crate::common::builders::{ClaudeInputBuilder, ContextBuilder};
+use rstest::*;
 
 /// Default test configuration fixture
 #[fixture]
