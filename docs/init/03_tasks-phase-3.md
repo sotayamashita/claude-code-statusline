@@ -59,7 +59,7 @@
 
 ### Refactor（仕上げ）
 - [ ] 記号や順序は設定で変更可能（Starship に準じたキー名）。
-- [ ] 重い計算を避けるため、Phase 3 の「簡易キャッシュ」を利用（同一 CWD での再計算抑制）。
+- [x] 重い計算を避けるため、Phase 3 の「簡易キャッシュ」を利用（同一 CWD での再計算抑制）。
 
 ### 受け入れ条件
 - リポジトリ外では非表示、内では状態を最小限の表記で表示。
@@ -78,16 +78,30 @@
 - 体感速度の改善（特に大型リポジトリでの Git 参照）。
 - 設計面で「高コストな取得はキャッシュ経由」に統一され、保守性が上がる。
 
+### Starship の挙動（調査結果の要約）
+- 仕組み: `Context` 構造体内で `OnceLock` によるメモ化を実施。
+  - `dir_contents: OnceLock<Result<DirContents, io::Error>>`（カレントディレクトリ走査結果を一度だけ取得）
+  - `repo: OnceLock<Result<Repo, gix::discover::Error>>`（Git リポジトリ情報を一度だけ取得）
+- アクセス: モジュールは `context.dir_contents()` や `context.get_repo()` 経由で `get_or_init()` を使用し、未初期化なら初回計算、以降は再利用。
+- 範囲: プロセス（1 回のプロンプト生成）内の簡易キャッシュ。TTL なし。CWD が変われば別 `Context` になる前提で再評価。
+- 付記（ログ）: `STARSHIP_CACHE` と `STARSHIP_SESSION_KEY` はセッション別ログファイル保存のためのパス/キーであり、データキャッシュ用途ではない。
+
 ### Green（実装タスク）
-- [ ] 依存の確認: `once_cell` を `Cargo.toml`（spec に記載済み）に追加/有効化。
-- [ ] キャッシュ層新設（`src/cache.rs` など）
-  - [ ] `static CACHE: Lazy<Mutex<HashMap<Key, Value>>>` の最小構成。
-  - [ ] Key は `("git_status", cwd)` のようなタプルで十分（Phase 3 範囲）。
-  - [ ] TTL は持たない（Phase 3 は「簡易」前提）。必要なら CWD 変更やプロセス単位の無効化で十分。
-- [ ] 利用箇所: `git_status` など高コストモジュールから参照。ヒットすれば再計算回避。
+- [x] 依存方針: 標準ライブラリの `std::sync::OnceLock` を優先（必要に応じて `once_cell` で代替可）。
+- [x] `Context`（`src/types/context.rs`）に簡易キャッシュを追加
+  - [x] `dir_contents: OnceLock<Result<DirContents, io::Error>>`
+  - [x] `repo: OnceLock<Result<Mutex<git2::Repository>, git2::Error>>`（可変API対応のため `Mutex` 包装）
+  - [x] `fn dir_contents(&self) -> Result<&DirContents, &io::Error>` と `fn repo(&self) -> Result<MutexGuard<'_, Repository>, &git2::Error>` を追加（内部で `get_or_init`）。
+  - [ ] 便利関数: `read_file_from_pwd(name)` は `dir_contents` を先に参照して存在チェック後に読み込む。
+- [x] 利用箇所の置き換え
+  - [x] `git_status` / `git_branch` で `Context` のメモ化 API を利用（直読み/二重スキャン回避）。
+  - [x] 同一 CWD 内で複数モジュールが同じ情報を要求する場合でも 1 回の I/O で済むことをテストで確認。
+- [x] 無効化/ライフサイクル
+  - [x] プロセス/実行単位でのみ有効（TTL なし）。CWD 変更は新しい `Context` として扱う。
+  - [ ] デバッグ用にヒット/ミスをカウントできる簡易トレースを `debug` 時のみ出力（任意）。
 
 ### Red/Refactor（テスト観点）
-- [ ] カウンタで呼び出し回数を記録し、同一 CWD 同一要求で 2 回目以降は計算されないことを確認。
+- [x] カウンタで呼び出し回数を記録し、同一 CWD 同一要求で 2 回目以降は計算されないことを確認。
 - [ ] 実装重複を避けるため、取得→格納のヘルパ関数を用意して責務を統一。
 
 ### 受け入れ条件
@@ -180,7 +194,7 @@
 
 ## 進行管理（チェックリスト）
 - [x] Git Status Module（Green 完了／Red・Refactor 未）
-- [ ] 簡易キャッシュ（Green→適用）
+- [x] 簡易キャッシュ（Green→適用）
 - [ ] タイムアウト（Green→適用）
 - [ ] テスト拡充（統合/ユニット）
 - [ ] ドキュメント整備（ユーザー/開発者）
@@ -188,6 +202,7 @@
 ---
 
 ## 参考・補足
-- 仕様: `docs/init/01_spec.md`（Phase 3 で `once_cell` によるキャッシュ導入を示唆）
+- 仕様: `specs/2025-09-04-mvp/01_spec.md`（Phase 3 で `once_cell` によるキャッシュ導入を示唆）
 - 設定: `~/.config/beacon.toml`（`command_timeout` は既存。キャッシュは Phase 3 では実行内のみ）
-- ロードマップ: `docs/init/02_roadmap.md`（Phase 3: 品質向上・キャッシュ・タイムアウト・ドキュメント）
+- ロードマップ: `specs/2025-09-04-mvp/02_plan.md`（Phase 3: 品質向上・キャッシュ・タイムアウト・ドキュメント）
+- Starship 参考実装: `Context` に `OnceLock` で `dir_contents`/`repo` を保持し、`get_or_init` により同一実行内の再計算を抑止。`STARSHIP_CACHE` はログ保存用途でありデータキャッシュではない。

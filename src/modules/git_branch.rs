@@ -39,7 +39,7 @@ impl Module for GitBranchModule {
         }
 
         // Git リポジトリ配下のみ表示（git2 失敗時は git コマンドでフォールバック）
-        if git2::Repository::discover(&context.current_dir).is_ok() {
+        if context.repo().is_ok() {
             return true;
         }
         // Fallback: `git -C <cwd> rev-parse --is-inside-work-tree`
@@ -61,8 +61,8 @@ impl Module for GitBranchModule {
     }
 
     fn render(&self, context: &Context, config: &dyn ModuleConfig) -> String {
-        // Try git2 first
-        let value = match git2::Repository::discover(&context.current_dir) {
+        // Try git2 first via memoized Context repo
+        let value = match context.repo() {
             Ok(repo) => {
                 if let Ok(head) = repo.head() {
                     if head.is_branch() {

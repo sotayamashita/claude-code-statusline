@@ -35,11 +35,11 @@ impl Module for GitStatusModule {
                 return false;
             }
         }
-        git2::Repository::discover(&context.current_dir).is_ok()
+        context.repo().is_ok()
     }
 
     fn render(&self, context: &Context, config: &dyn ModuleConfig) -> String {
-        let mut repo = match git2::Repository::discover(&context.current_dir) {
+        let mut repo = match context.repo() {
             Ok(r) => r,
             Err(_) => return String::new(),
         };
