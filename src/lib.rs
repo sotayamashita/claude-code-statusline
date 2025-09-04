@@ -1,5 +1,6 @@
 // Export public modules for testing
 pub mod config;
+pub mod messages;
 pub mod modules;
 pub mod parser;
 pub mod style;

@@ -259,9 +259,7 @@ impl Config {
         let check_style = |name: &str, style: &str, warnings: &mut Vec<String>| {
             for tok in style.split_whitespace() {
                 if !allowed_styles.contains(&tok) {
-                    warnings.push(format!(
-                        "Unknown style token in {name}.style: '{tok}' (ignored)"
-                    ));
+                    warnings.push(crate::messages::warn_unknown_style_token(name, tok));
                 }
             }
         };
@@ -276,7 +274,7 @@ impl Config {
                 match tok {
                     "directory" | "claude_model" | "git_branch" | "claude_session"
                     | "character" => {}
-                    other => warnings.push(format!("Unknown format token: '${other}'")),
+                    other => warnings.push(crate::messages::warn_unknown_format_token(other)),
                 }
             }
         }
