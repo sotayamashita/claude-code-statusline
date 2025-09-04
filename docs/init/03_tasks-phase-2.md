@@ -13,34 +13,36 @@
 ## 1) Git Branch Module（`$git_branch`）
 
 ### Red: 先に書くテスト
-- [ ] `src/modules/git_branch.rs` にユニットテストを追加
-  - [ ] リポジトリ外: `should_display == false`
-  - [ ] リポジトリ内（master/main ブランチ）: `should_display == true` かつ `render() == "master"|"main"`
-  - [ ] 分離 HEAD: `render()` は短い SHA を返す（7〜8 桁程度）
-  - [ ] `disabled = true` で非表示
+- [x] `src/modules/git_branch.rs` にユニットテストを追加
+  - [x] リポジトリ外: `should_display == false`
+  - [x] リポジトリ内（master/main ブランチ）: `should_display == true` かつ `render()` はブランチ名を含む
+  - [x] 分離 HEAD: `render()` は短い SHA を含む（7〜8 桁程度）
+  - [x] `disabled = true` で非表示
   - 実装ヒント（テスト側）: `tempfile::tempdir` + `git2::Repository::init` で一時リポジトリ作成、ブランチ作成/チェックアウト
 
 ### Green: 実装タスク
-- [ ] 依存追加: `git2` を `Cargo.toml` へ（使えない環境向けに後述フォールバック）
-- [ ] 設定型追加: `GitBranchConfig { format, style, symbol, disabled }` を `src/types/config.rs`
-- [ ] 実装: `src/modules/git_branch.rs`
-  - [ ] `Module` 実装（`name() -> "git_branch"`）
-  - [ ] `should_display`: `git2::Repository::discover` 成功時のみ true（かつ `disabled == false`）
-  - [ ] `render`: ブランチ名 or 短 SHA を返す（`symbol`/`style` は Phase 3 の拡張に回しても可）
+- [x] 依存追加: `git2` を `Cargo.toml` へ（使えない環境向けに後述フォールバック）
+- [x] 設定型追加: `GitBranchConfig { format, style, symbol, disabled }` を `src/types/config.rs`
+- [x] 実装: `src/modules/git_branch.rs`
+  - [x] `Module` 実装（`name() -> "git_branch"`）
+  - [x] `should_display`: `git2::Repository::discover` 成功時のみ true（かつ `disabled == false`）
+  - [x] `render`: `format` を評価し、ブランチ名/短 SHA に `style` を適用
   - [ ] フォールバック（オプション）: `git` コマンド実行での分岐
-- [ ] ディスパッチ登録: `modules/mod.rs` に `pub mod git_branch;` と `handle_module` を追加
+- [x] ディスパッチ登録: `modules/mod.rs` に `pub mod git_branch;` と `handle_module` を追加
 
 ### Refactor: 仕上げ
 - [ ] テストの重複を整理、エラーパスの境界ケースを追加
-- [ ] 使用例を `docs/init/02_roadmap.md` に追記
+- [x] 使用例を `docs/init/02_roadmap.md` に追記
 
 ### 受け入れ条件
-- [ ] Git 管理外で無出力、管理下ではブランチ名/短 SHA を表示
-- [ ] `disabled = true` で非表示
+- [x] Git 管理外で無出力、管理下ではブランチ名/短 SHA を表示
+- [x] `disabled = true` で非表示
 
 ---
 
-## 2) Claude Session Module（`$claude_session`）
+## ~~2) Claude Session Module（`$claude_session`）~~
+
+> 本フェーズではスキップ（実装しません）。将来フェーズで対応予定。
 
 ### Red: 先に書くテスト
 - [ ] `src/modules/claude_session.rs` にユニットテストを追加
@@ -66,65 +68,65 @@
 ## 3) ANSI スタイル適用（最小）
 
 ### Red: 先に書くテスト
-- [ ] `src/style.rs` にユニットテスト
-  - [ ] `apply_style("X", "bold yellow")` が ANSI 付きの文字列を返す（bold + yellow）
-  - [ ] 未知トークンは無視し、素の文字列を返す
-- [ ] 既存モジュールのテスト追加/更新
-  - [ ] `DirectoryModule::render` が `format/style` を反映
-  - [ ] `ClaudeModelModule::render` が `format/style` を反映
+- [x] `src/style.rs` にユニットテスト
+  - [x] `apply_style("X", "bold yellow")` が ANSI 付きの文字列を返す（bold + yellow）
+  - [x] 未知トークンは無視し、素の文字列を返す
+- [x] 既存モジュールのテスト追加/更新
+  - [x] `DirectoryModule::render` が `format/style` を反映
+  - [x] `ClaudeModelModule::render` が `format/style` を反映
 
 ### Green: 実装タスク
-- [ ] `src/style.rs` を新規追加して `apply_style(text, style)` を提供
-- [ ] 各モジュールで自モジュールの `format` を評価し、必要に応じて `apply_style` を適用
-- [ ] 全体の `parse_format` は Phase 1 のまま（モジュール出力の連結に専念）
+- [x] `src/style.rs` を新規追加して `apply_style(text, style)`/`render_with_style_template` を提供
+- [x] 各モジュールで自モジュールの `format` を評価し、必要に応じて `apply_style` を適用
+- [x] 全体の `parse_format` は Phase 1 のまま（モジュール出力の連結に専念）
 
 ### Refactor: 仕上げ
 - [ ] ANSI コードマッピングをテーブル化、最小セット（bold/italic/underline/8色）に限定
 
 ### 受け入れ条件
-- [ ] 代表的なスタイル指定で ANSI が適用される
-- [ ] 未知/無効指定でもクラッシュしない
+- [x] 代表的なスタイル指定で ANSI が適用される
+- [x] 未知/無効指定でもクラッシュしない
 
 ---
 
 ## 4) エラーハンドリング改善（文言・出力先）
 
 ### Red: 先に書くテスト（統合テスト推奨）
-- [ ] `tests/phase2/error_handling.rs` を追加
-  - [ ] 不正 JSON を stdin に与えると、stdout は固定の簡潔メッセージ、stderr は詳細（少なくともエラー種別が含まれる）
-  - [ ] config 読込失敗（無効 TOML）時も同様の方針
+- [x] `tests/error_handling.rs` を追加
+  - [x] 不正 JSON を stdin に与えると、stdout は固定の簡潔メッセージ、stderr は詳細（少なくともエラー種別が含まれる）
+  - [x] config 読込失敗（無効 TOML）時も同様の方針
 
 ### Green: 実装タスク
-- [ ] `DebugLogger` のエラーログ出力の一貫性を確認・補強
-- [ ] 必要なら `main.rs` のエラーハンドリング箇所を整理（stdout と stderr の役割分担）
+- [x] `DebugLogger` のエラーログ出力の一貫性を確認・補強（stderr の用途を明確化）
+- [x] `main.rs` のエラーハンドリングを整理（stdout 簡潔、stderr 詳細）
 
 ### Refactor: 仕上げ
 - [ ] メッセージ定数化、i18n を考慮した命名（任意）
 
 ### 受け入れ条件
-- [ ] 正常時は 1 行出力のみ（改行なし）
-- [ ] 異常時は stdout 簡潔、stderr 詳細（デバッグ有効時はさらに詳細）
+- [x] 正常時は 1 行出力のみ（改行なし）
+- [x] 異常時は stdout 簡潔、stderr 詳細（デバッグ有効時はさらに詳細）
 
 ---
 
 ## 5) Config バリデーション
 
 ### Red: 先に書くテスト
-- [ ] `src/types/config.rs`（または `src/config.rs`）のユニットテスト
-  - [ ] `command_timeout` 下限/上限外でエラー（または警告）を返す
-  - [ ] 未知スタイルトークンで警告（エラーにはしない）
-  - [ ] `format` に未知 `$token` が含まれると警告
+- [x] `src/types/config.rs` のユニットテスト
+  - [x] `command_timeout` 下限/上限外でエラー
+  - [x] 未知スタイルトークンで警告（エラーにはしない）
+  - [x] `format` に未知 `$token` が含まれると警告
 
 ### Green: 実装タスク
-- [ ] `Config::validate(&self) -> Result<()>` を追加
-- [ ] `main.rs` で `load()` 後に `validate()` を呼び、警告は stderr（`DebugLogger` 利用）
+- [x] `Config::validate(&self) -> Result<()>` を追加
+- [x] `main.rs` で `load()` 後に `validate()` を呼び、警告は stderr（`DebugLogger` 利用）
 
 ### Refactor: 仕上げ
 - [ ] バリデーションルールの見直しとメッセージ整備
 
 ### 受け入れ条件
-- [ ] 明らかな不正値に対して適切に反応（エラー or 警告）
-- [ ] 既存設定を壊さない（警告中心）
+- [x] 明らかな不正値に対して適切に反応（エラー or 警告）
+- [x] 既存設定を壊さない（警告中心）
 
 ---
 
@@ -134,8 +136,8 @@
 - [ ] ドキュメント例の `format` をそのまま適用してもエラーにならない（最低限の smoke test）
 
 ### Green: 実装タスク
-- [ ] `docs/init/02_roadmap.md` に `$git_branch`, `$claude_session` の例を追記
-- [ ] 本ファイルに最小の設定例を追記
+- [x] `docs/init/02_roadmap.md` に `$git_branch`, `$claude_session` の例を追記（実装は Session スキップ）
+- [x] 本ファイルに最小の設定例を追記
 
 ### 設定例（抜粋）
 ```toml
@@ -167,9 +169,9 @@ style = "bold yellow"
 ---
 
 ## 進行管理（チェックリスト）
-- [ ] Git Branch Module（Red→Green→Refactor 完了）
-- [ ] Claude Session Module（Red→Green→Refactor 完了）
-- [ ] ANSI スタイル最小実装（Red→Green→Refactor 完了）
-- [ ] エラーハンドリング（Red→Green→Refactor 完了）
-- [ ] Config バリデーション（Red→Green→Refactor 完了）
-- [ ] ドキュメント更新（例の反映・整合性確認）
+- [x] Git Branch Module（Red→Green→Refactor 一部完了）
+- [ ] ~~Claude Session Module（Red→Green→Refactor 完了）~~（スキップ）
+- [x] ANSI スタイル最小実装（Red→Green 完了／Refactor 未）
+- [x] エラーハンドリング（Red→Green 完了）
+- [x] Config バリデーション（Red→Green 完了）
+- [x] ドキュメント更新（例の反映・整合性確認）

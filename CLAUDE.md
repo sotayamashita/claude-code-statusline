@@ -115,7 +115,7 @@ src/
 **File Responsibilities:**
 - `main.rs`: Reads stdin, parses JSON, generates status line output
 - `parser.rs`: Validates and deserializes Claude Code JSON input
-- `config.rs`: Loads user configuration from `~/.config/beacon/config.toml`
+- `config.rs`: Loads user configuration from `~/.config/beacon.toml`
 - `types/claude.rs`: Defines input data structures from Claude Code
 - `types/config.rs`: Defines configuration structures with defaults
 - `modules/*.rs`: Individual status line components implementing Module trait
@@ -139,7 +139,7 @@ Beacon receives JSON via stdin from Claude Code containing:
 
 Output is a single ANSI-formatted line to stdout, updated max every 300ms.
 
-Configuration location: `~/.config/beacon/config.toml`
+Configuration location: `~/.config/beacon.toml`
 
 ## Development Guidelines
 

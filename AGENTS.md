@@ -33,5 +33,5 @@ Example run:
 - Ensure CI is green and the pre-commit hook passes. Keep diffs focused and documented in `docs/` if you change behavior.
 
 ## Security & Configuration Tips
-- Config loads from `~/.config/beacon/config.toml` (TOML). Do not commit local configs or secrets.
+- Config loads from `~/.config/beacon.toml` (TOML). Do not commit local configs or secrets.
 - The CLI reads JSON from stdin; avoid logging sensitive content unless `debug` is enabled in config.

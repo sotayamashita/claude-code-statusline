@@ -2,6 +2,7 @@
 pub mod config;
 pub mod modules;
 pub mod parser;
+pub mod style;
 pub mod types;
 
 // Re-export commonly used items

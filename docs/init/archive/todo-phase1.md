@@ -68,7 +68,7 @@
   - 基本的なformat文字列の設定: "$directory $claude_model"
   - debug: falseをデフォルトに
 - [x] TOML設定ファイルの読み込み (10分)
-  - `~/.config/beacon/config.toml`のパスを構築
+  - `~/.config/beacon.toml`のパスを構築
   - ファイルが存在しない場合のデフォルト処理
   - config.rsにload()メソッドを実装
 - [x] 設定のテストを追加 (10分)

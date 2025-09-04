@@ -65,7 +65,7 @@ beacon/
 
 ### 3.1 Configuration File Location
 ```
-~/.config/beacon/config.toml
+~/.config/beacon.toml
 ```
 
 ### 3.2 Configuration Validation

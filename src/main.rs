@@ -8,6 +8,7 @@ mod config;
 mod debug;
 mod modules;
 mod parser;
+mod style;
 mod types;
 
 use config::Config;
@@ -33,6 +34,7 @@ fn generate_prompt(context: &Context) -> String {
             let module_config: &dyn ModuleConfig = match name.as_str() {
                 "directory" => &context.config.directory,
                 "claude_model" => &context.config.claude_model,
+                "git_branch" => &context.config.git_branch,
                 "character" => continue, // Character module not implemented yet
                 _ => continue,
             };
@@ -59,13 +61,34 @@ struct Cli {
 fn main() -> Result<()> {
     let _cli = Cli::parse();
 
-    // Load configuration
-    let config = Config::load()?;
+    // Load configuration with graceful error handling
+    let config = match Config::load() {
+        Ok(cfg) => cfg,
+        Err(e) => {
+            // Print detailed error to stderr, concise message to stdout
+            eprintln!("Config error: {e}");
+            print!("Failed to build status line due to invalid config");
+            io::Write::flush(&mut io::stdout())?;
+            return Ok(());
+        }
+    };
 
     // Initialize debug logger
     let logger = DebugLogger::new(config.debug);
     logger.log_execution_start();
     logger.log_config(config.debug, config.command_timeout);
+
+    // Config validation and non-fatal warnings
+    if let Err(e) = config.validate() {
+        eprintln!("Config validation error: {e}");
+        print!("Failed to build status line due to invalid config");
+        io::Write::flush(&mut io::stdout())?;
+        return Ok(());
+    }
+    for w in config.collect_warnings() {
+        // Use stderr for warnings (visible when debug is enabled for extra detail)
+        logger.log_stderr(&format!("WARN: {w}"));
+    }
 
     // Read JSON from stdin
     let mut buffer = String::new();

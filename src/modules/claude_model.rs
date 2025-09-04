@@ -40,8 +40,21 @@ impl Module for ClaudeModelModule {
         !context.model_display_name().trim().is_empty()
     }
 
-    fn render(&self, context: &Context, _config: &dyn ModuleConfig) -> String {
-        format!("<{}>", context.model_display_name())
+    fn render(&self, context: &Context, config: &dyn ModuleConfig) -> String {
+        let model = context.model_display_name();
+
+        if let Some(cfg) = config
+            .as_any()
+            .downcast_ref::<crate::types::config::ClaudeModelConfig>()
+        {
+            use std::collections::HashMap;
+            let mut tokens = HashMap::new();
+            tokens.insert("model", model.to_string());
+            tokens.insert("symbol", cfg.symbol.clone());
+            return crate::style::render_with_style_template(cfg.format(), &tokens, cfg.style());
+        }
+
+        model.to_string()
     }
 }
 
@@ -75,20 +88,20 @@ mod tests {
     }
 
     #[rstest]
-    #[case("Opus", "<Opus>")]
-    #[case("Sonnet", "<Sonnet>")]
-    #[case("Haiku", "<Haiku>")]
-    #[case("Claude-3.5", "<Claude-3.5>")]
-    fn test_model_rendering(#[case] model_name: &str, #[case] expected: &str) {
+    #[case("Opus")]
+    #[case("Sonnet")]
+    #[case("Haiku")]
+    #[case("Claude-3.5")]
+    fn test_model_rendering(#[case] model_name: &str) {
         let module = ClaudeModelModule::new();
         let context = context_with_model(model_name);
 
         assert_eq!(module.name(), "claude_model");
         assert!(module.should_display(&context, &context.config.claude_model));
-        assert_eq!(
-            module.render(&context, &context.config.claude_model),
-            expected
-        );
+        let rendered = module.render(&context, &context.config.claude_model);
+        assert!(rendered.contains(model_name));
+        // Default config applies ANSI style
+        assert!(rendered.starts_with("\u{1b}[") && rendered.ends_with("\u{1b}[0m"));
     }
 
     #[rstest]

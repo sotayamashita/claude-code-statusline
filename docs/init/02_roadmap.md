@@ -20,7 +20,7 @@
 - [x] フォーマットパーサ（`$directory $claude_model` の置換）
 - [x] 単一行出力（改行なしの `print!`／stdout フラッシュ）
 - [x] 失敗時フォールバック（JSON 解析失敗・空入力時の固定文言）
-- [x] 設定ファイル（`~/.config/beacon/config.toml` の TOML 読込）
+- [x] 設定ファイル（`~/.config/beacon.toml` の TOML 読込）
 - [x] `Context` 構造体（実行時情報＋設定の集約）
 - [x] デバッグロガー（`src/debug.rs`・stderr/ファイル出力の切替）
 - [x] テスト（`config.rs`/`parser.rs`/各モジュールのユニットテスト）
@@ -33,11 +33,25 @@
 ---
 
 ## Phase 2: Core Features（Week 2）
-- [ ] Git branch module（`git2` 想定）
-- [ ] Claude session module（セッション状態の表示）
-- [ ] ANSI スタイル適用（`style` 指定を解釈して装飾出力）
-- [ ] 基本的なエラーハンドリング拡張（ユーザ視点のメッセージ最適化）
-- [ ] Config のバリデーション（値域・想定外キー検出）
+- [x] Git branch module（`git2` 想定）
+- ~~Claude session module（セッション状態の表示）~~（本フェーズはスキップ）
+- [x] ANSI スタイル適用（`style` 指定を解釈して装飾出力）
+- [x] 基本的なエラーハンドリング拡張（ユーザ視点のメッセージ最適化）
+- [x] Config のバリデーション（値域・想定外キー検出）
+
+例（設定抜粋）:
+
+```toml
+format = "$directory $git_branch $claude_model"
+
+[git_branch]
+format = "[🌿 $branch]($style)"
+style = "bold green"
+
+[claude_model]
+format = "[$symbol$model]($style)"
+style = "bold yellow"
+```
 
 ---
 

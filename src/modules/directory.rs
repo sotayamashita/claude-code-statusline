@@ -62,8 +62,22 @@ impl Module for DirectoryModule {
         true // Default to displaying if no config found
     }
 
-    fn render(&self, context: &Context, _config: &dyn ModuleConfig) -> String {
-        self.abbreviate_home(&context.current_dir)
+    fn render(&self, context: &Context, config: &dyn ModuleConfig) -> String {
+        let path_str = self.abbreviate_home(&context.current_dir);
+
+        // Try to use module-specific formatting if available
+        if let Some(cfg) = config
+            .as_any()
+            .downcast_ref::<crate::types::config::DirectoryConfig>()
+        {
+            use std::collections::HashMap;
+            let mut tokens: HashMap<&str, String> = HashMap::new();
+            tokens.insert("path", path_str.clone());
+
+            return crate::style::render_with_style_template(cfg.format(), &tokens, cfg.style());
+        }
+
+        path_str
     }
 }
 
@@ -138,7 +152,9 @@ mod tests {
         }
 
         let context = context_with_cwd(cwd);
-        assert_eq!(module.render(&context, &context.config.directory), expected);
+        let rendered = module.render(&context, &context.config.directory);
+        let plain = String::from_utf8(strip_ansi_escapes::strip(rendered)).unwrap();
+        assert_eq!(plain, expected);
 
         // Restore original HOME
         unsafe {
@@ -157,6 +173,8 @@ mod tests {
     fn test_non_home_paths(#[case] cwd: &str, #[case] expected: &str) {
         let module = DirectoryModule::new();
         let context = context_with_cwd(cwd);
-        assert_eq!(module.render(&context, &context.config.directory), expected);
+        let rendered = module.render(&context, &context.config.directory);
+        let plain = String::from_utf8(strip_ansi_escapes::strip(rendered)).unwrap();
+        assert_eq!(plain, expected);
     }
 }

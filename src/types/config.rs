@@ -1,4 +1,5 @@
 use crate::modules::ModuleConfig;
+use anyhow::{Result, anyhow};
 use serde::{Deserialize, Serialize};
 use std::any::Any;
 
@@ -18,6 +19,9 @@ pub struct Config {
 
     #[serde(default)]
     pub claude_model: ClaudeModelConfig,
+
+    #[serde(default)]
+    pub git_branch: GitBranchConfig,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -61,6 +65,7 @@ impl Default for Config {
             debug: default_debug(),
             directory: DirectoryConfig::default(),
             claude_model: ClaudeModelConfig::default(),
+            git_branch: GitBranchConfig::default(),
         }
     }
 }
@@ -83,6 +88,32 @@ impl Default for ClaudeModelConfig {
             format: default_claude_model_format(),
             style: default_claude_model_style(),
             symbol: default_claude_model_symbol(),
+            disabled: default_disabled(),
+        }
+    }
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct GitBranchConfig {
+    #[serde(default = "default_git_branch_format")]
+    pub format: String,
+
+    #[serde(default = "default_git_branch_style")]
+    pub style: String,
+
+    #[serde(default = "default_git_branch_symbol")]
+    pub symbol: String,
+
+    #[serde(default = "default_disabled")]
+    pub disabled: bool,
+}
+
+impl Default for GitBranchConfig {
+    fn default() -> Self {
+        GitBranchConfig {
+            format: default_git_branch_format(),
+            style: default_git_branch_style(),
+            symbol: default_git_branch_symbol(),
             disabled: default_disabled(),
         }
     }
@@ -135,6 +166,19 @@ fn default_claude_model_symbol() -> String {
     "<".to_string()
 }
 
+// Git Branch module defaults
+fn default_git_branch_format() -> String {
+    "[🌿 $branch]($style)".to_string()
+}
+
+fn default_git_branch_style() -> String {
+    "bold green".to_string()
+}
+
+fn default_git_branch_symbol() -> String {
+    "🌿".to_string()
+}
+
 // ModuleConfig implementations
 impl ModuleConfig for DirectoryConfig {
     fn as_any(&self) -> &dyn Any {
@@ -161,5 +205,119 @@ impl ModuleConfig for ClaudeModelConfig {
 
     fn style(&self) -> &str {
         &self.style
+    }
+}
+
+impl ModuleConfig for GitBranchConfig {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn format(&self) -> &str {
+        &self.format
+    }
+
+    fn style(&self) -> &str {
+        &self.style
+    }
+}
+
+impl Config {
+    /// Validate configuration values. Returns an error for clearly invalid values.
+    pub fn validate(&self) -> Result<()> {
+        // Milliseconds; enforce sane bounds (50ms ..= 600_000ms)
+        if self.command_timeout < 50 || self.command_timeout > 600_000 {
+            return Err(anyhow!(
+                "command_timeout out of range (50..=600000): {}",
+                self.command_timeout
+            ));
+        }
+        Ok(())
+    }
+
+    /// Collect non-fatal warnings about style/format configuration.
+    /// Unknown style tokens or unknown variables in format strings should not
+    /// break the program, but we surface them as warnings.
+    pub fn collect_warnings(&self) -> Vec<String> {
+        let mut warnings = Vec::new();
+
+        // Allowed style tokens
+        let allowed_styles = [
+            "bold",
+            "italic",
+            "underline",
+            "black",
+            "red",
+            "green",
+            "yellow",
+            "blue",
+            "magenta",
+            "cyan",
+            "white",
+        ];
+
+        let check_style = |name: &str, style: &str, warnings: &mut Vec<String>| {
+            for tok in style.split_whitespace() {
+                if !allowed_styles.contains(&tok) {
+                    warnings.push(format!(
+                        "Unknown style token in {name}.style: '{tok}' (ignored)"
+                    ));
+                }
+            }
+        };
+
+        check_style("directory", &self.directory.style, &mut warnings);
+        check_style("claude_model", &self.claude_model.style, &mut warnings);
+        check_style("git_branch", &self.git_branch.style, &mut warnings);
+
+        // Unknown $tokens in top-level format
+        for part in self.format.split_whitespace() {
+            if let Some(tok) = part.strip_prefix('$') {
+                match tok {
+                    "directory" | "claude_model" | "git_branch" | "claude_session"
+                    | "character" => {}
+                    other => warnings.push(format!("Unknown format token: '${other}'")),
+                }
+            }
+        }
+
+        warnings
+    }
+}
+
+#[cfg(test)]
+mod validation_tests {
+    use super::*;
+
+    #[test]
+    fn command_timeout_bounds() {
+        let mut cfg = Config::default();
+        cfg.command_timeout = 10;
+        assert!(cfg.validate().is_err());
+        cfg.command_timeout = 50;
+        assert!(cfg.validate().is_ok());
+        cfg.command_timeout = 600_000;
+        assert!(cfg.validate().is_ok());
+        cfg.command_timeout = 600_001;
+        assert!(cfg.validate().is_err());
+    }
+
+    #[test]
+    fn warns_on_unknown_style_tokens() {
+        let mut cfg = Config::default();
+        cfg.directory.style = "sparkly rainbow".to_string();
+        let ws = cfg.collect_warnings();
+        assert!(ws.iter().any(|w| w.contains("Unknown style token")));
+    }
+
+    #[test]
+    fn warns_on_unknown_format_token() {
+        let mut cfg = Config::default();
+        cfg.format = "$directory $unknown $git_branch".to_string();
+        let ws = cfg.collect_warnings();
+        assert!(
+            ws.iter()
+                .any(|w| w.contains("Unknown format token: '$unknown'"))
+        );
     }
 }

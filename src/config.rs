@@ -21,8 +21,8 @@ impl Config {
 
 fn get_config_path() -> PathBuf {
     dirs::home_dir()
-        .map(|home| home.join(".config").join("beacon").join("config.toml"))
-        .unwrap_or_else(|| PathBuf::from("~/.config/beacon/config.toml"))
+        .map(|home| home.join(".config").join("beacon.toml"))
+        .unwrap_or_else(|| PathBuf::from("~/.config/beacon.toml"))
 }
 
 #[cfg(test)]
@@ -57,7 +57,10 @@ mod tests {
         // Note: This test may use actual config file if it exists
         // The test name is misleading - it's testing Config::load() in general
         let config = Config::load().unwrap();
-        assert_eq!(config.format, "$directory $claude_model");
+        assert!(
+            config.format == "$directory $claude_model"
+                || config.format == "$directory $git_branch $claude_model"
+        );
         // If config file exists with command_timeout = 300, that will be loaded
         // If not, default 500 will be used
         assert!(config.command_timeout == 300 || config.command_timeout == 500);
@@ -127,11 +130,11 @@ mod tests {
         let path = get_config_path();
 
         if let Some(home) = dirs::home_dir() {
-            let expected = home.join(".config").join("beacon").join("config.toml");
+            let expected = home.join(".config").join("beacon.toml");
             assert_eq!(path, expected);
         } else {
             // Fallback when home_dir is not available
-            assert_eq!(path, PathBuf::from("~/.config/beacon/config.toml"));
+            assert_eq!(path, PathBuf::from("~/.config/beacon.toml"));
         }
     }
 }
