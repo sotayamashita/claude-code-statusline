@@ -55,6 +55,9 @@ pub mod timeout;
 /// Core type definitions and data structures
 pub mod types;
 
+/// Public rendering engine facade (Phase 1 of refactoring)
+pub mod engine;
+
 // Re-export commonly used items for convenience
 pub use config::Config;
 pub use debug::DebugLogger;
