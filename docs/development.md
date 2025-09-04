@@ -82,4 +82,3 @@ cargo fmt
 - ブランチ戦略・コミット規約: Conventional Commits（例: `feat(modules): add git_status`）
 - 事前チェック: `make install-hooks` で pre-commit に `fmt`/`clippy`/`test` を導入可能
 - CI: GitHub Actions（バッジは README 冒頭）
-

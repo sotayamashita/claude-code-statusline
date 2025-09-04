@@ -4,8 +4,8 @@
 
 ## サマリ
 - [x] Phase 1: MVP（基本骨子の実装・テスト・動作確認まで完了）
-- [ ] Phase 2: Core Features（Git/Session/ANSI/Validation 等）
-- [ ] Phase 3: Polish（品質向上・キャッシュ・タイムアウト・ドキュメント）
+- [x] Phase 2: Core Features（Git/Session/ANSI/Validation 等）
+- [x] Phase 3: Polish（品質向上・キャッシュ・タイムアウト・ドキュメント）
 - [ ] Phase 4: Advanced（並列化・カスタムエラー・ベンチマークなど）
 - [x] リファクタリング（Phase 1に必要な範囲は実施済み、一部は採用見送り）
 - [x] 不要機能の整理（Character module を削除済み）
@@ -77,21 +77,45 @@ style = "bold yellow"
 - [x] モジュールシステム改善（中央ディスパッチャ導入）
 - [x] `Module` トレイト拡張（`context`/`config` を引数に）
 - [x] フォーマット文字列パーサ導入（`parse_format`/`extract_modules_from_format`）
-- [ ] エラーハンドリング高度化（部分成功の許容・UI 最適化） → 採用見送り（現状方針で十分）
-- [ ] Config のモジュール設定分離（汎用 `ModuleConfig` 除去） → 採用見送り（現状の型で妥当）
+- ~~[ ] エラーハンドリング高度化（部分成功の許容・UI 最適化）~~ → 採用見送り（現状方針で十分）
+- ~~[ ] Config のモジュール設定分離（汎用 `ModuleConfig` 除去）~~ → 採用見送り（現状の型で妥当）
 - [x] テストヘルパー整備（重複削減・`rstest` 活用）
 
-出典: `docs/init/archive/todo-refactoring-phase1.md`（`status: Done/Decline` を反映）
+（リファクタリングの判断は本計画に統合済み）
 
 ---
 
 ## 仕様・設計ドキュメント連携
-- 参考: `docs/init/01_spec.md`（Claude Code の Status Line 仕様）
-- 参考: `docs/init/archive/statusline.md`（公式仕様の要点・例）
-- 計画: `docs/init/archive/plan.md`（Phase 2 以降の粒度は本ロードマップへ統合／同期）
-- 実績: `docs/init/archive/todo-phase1.md`（Phase 1 実装詳細と完了報告）
-- 変更: `docs/init/archive/removed-features.md`（不要機能の整理履歴）
+- 参考: `specs/2025-08-18-mvp/01-spec.md`（Claude Code の Status Line 仕様）
 
 ---
 
-最終更新: 自動生成（docs/init 配下と src を基に反映）
+## 付録: 追加計画メモ（旧計画の取り込み）
+
+以下は旧計画の有用な指針を現在の計画に統合した補足です。
+
+- タイムアウト準備/実装（Phase 2 準備 → Phase 3 実装）
+  ```rust
+  use std::time::{Duration, Instant};
+
+  fn render_with_timeout<F: FnOnce() -> Option<String>>(f: F, timeout: Duration) -> Option<String> {
+      let start = Instant::now();
+      let out = f();
+      if start.elapsed() > timeout { return None; }
+      out
+  }
+  ```
+
+- キャッシュ準備（cache_key の導入）
+  ```rust
+  pub trait Module {
+      fn cache_key(&self, _context: &Context) -> Option<String> { None }
+  }
+  ```
+
+- 並列実行の前提（Phase 4）
+  ```rust
+  pub trait Module: Send + Sync {
+      // parallel-ready
+  }
+  ```

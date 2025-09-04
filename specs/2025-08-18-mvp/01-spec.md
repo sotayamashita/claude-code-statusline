@@ -50,7 +50,7 @@ beacon/
 │   │   ├── mod.rs        // Module trait & registry
 │   │   ├── git_branch.rs // Git branch module
 │   │   ├── directory.rs  // Directory module
-│   │   └── ...          // Other modules
+│   │   └── ...           // Other modules
 │   ├── context.rs        // Execution context
 │   ├── formatter.rs      // Output formatting
 │   └── utils/
@@ -748,3 +748,24 @@ fn main() -> Result<()> {
 - Performance optimization (Phase 4)
 
 **Focus on getting something working first!**
+
+## Appendix F: Removed Features
+
+This appendix consolidates removed functionality from the development history for clarity and future reference.
+
+### Character Module (Removed on 2025-08-19)
+
+Original purpose: show a prompt character (like `❯` or `$`) similar to Starship.
+
+Rationale for removal:
+- Claude Code’s status line is output-only and doesn’t accept input; a prompt character adds no functional value.
+- It introduces visual noise without benefit.
+- Claude Code already displays its own input prompt separately.
+
+Configuration impact:
+- The module implementation was removed.
+- Historically, a `CharacterConfig` structure existed; if found in legacy configs, it should be safely ignored by the application.
+
+Files that were affected historically:
+- Removed implementation file: `src/modules/character.rs`.
+- Registry updates in `src/modules/mod.rs` and cleaning in `src/main.rs`.

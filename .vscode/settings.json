@@ -1,6 +1,3 @@
 {
-    "cSpell.words": [
-        "rstest",
-        "serde"
-    ]
+  "cSpell.words": ["clippy", "rstest", "serde"]
 }
