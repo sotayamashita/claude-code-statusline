@@ -103,6 +103,14 @@ impl Context {
     }
 }
 
+impl Clone for Context {
+    fn clone(&self) -> Self {
+        // Reconstruct a fresh Context from cloned input and config.
+        // Memoized fields are intentionally not copied (per-execution cache only).
+        Self::new(self.input.clone(), self.config.clone())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -98,7 +98,7 @@
   - [x] 同一 CWD 内で複数モジュールが同じ情報を要求する場合でも 1 回の I/O で済むことをテストで確認。
 - [x] 無効化/ライフサイクル
   - [x] プロセス/実行単位でのみ有効（TTL なし）。CWD 変更は新しい `Context` として扱う。
-  - [ ] デバッグ用にヒット/ミスをカウントできる簡易トレースを `debug` 時のみ出力（任意）。
+  - ~~デバッグ用にヒット/ミスをカウントできる簡易トレースを `debug` 時のみ出力（任意）~~
 
 ### Red/Refactor（テスト観点）
 - [x] カウンタで呼び出し回数を記録し、同一 CWD 同一要求で 2 回目以降は計算されないことを確認。
@@ -121,20 +121,30 @@
 - タイムアウト時は空出力 or 省略表記でフェイルソフトに動作（stderr に警告を記録）。
 
 ### Green（実装タスク）
-- [ ] 汎用ユーティリティ追加（例: `src/timeout.rs`）
-  - [ ] `run_with_timeout<F, T>(dur: Duration, f: F) -> Result<Option<T>>` のような同期 API（`std::thread::spawn` + `join_timeout` パターン）。
-  - [ ] タイムアウト時は `Ok(None)` を返し、呼び出し側で「無出力/警告」に分岐。
-- [ ] 代表モジュールへ適用（`git_status`, `git_branch`）
-  - [ ] 既存ロジックを `run_with_timeout` でラップ。
-  - [ ] `Config.command_timeout` を参照。
+- [x] 汎用ユーティリティ追加（例: `src/timeout.rs`）
+  - [x] `run_with_timeout<F, T>(dur: Duration, f: F) -> Result<Option<T>>` のような同期 API（`std::thread::spawn` + `join_timeout` パターン）。
+  - [x] タイムアウト時は `Ok(None)` を返し、呼び出し側で「無出力/警告」に分岐。
+- [x] 代表モジュールへ適用（`git_status`, `git_branch`）
+  - [x] 既存ロジックを `run_with_timeout` でラップ。
+  - [x] `Config.command_timeout` を参照。
 
 ### Red/Refactor（テスト観点）
-- [ ] 疑似的にスリープの長い処理を呼び、設定閾値下でタイムアウトになること。
+- [x] 疑似的にスリープの長い処理を呼び、設定閾値下でタイムアウトになること。
 - [ ] タイムアウトでもクラッシュせず、最終出力 1 行の制約が維持されること。
 
 ### 受け入れ条件
 - 代表モジュールでタイムアウトが機能し、ハングしない。
 - 警告ログが `DebugLogger` で確認できる。
+
+---
+
+### 参考（Starship の対応）
+- グローバル設定に `command_timeout`（既定 500ms）と `scan_timeout`（既定 30ms）があり、外部コマンドやファイルスキャンの待ち時間を制限。
+- 外部コマンドはユーティリティ層（例: `exec_timeout(cmd, time_limit)`）で一元的にタイムアウト制御。Git 操作は `Repo::exec_git` 経由で `command_timeout` を継承。
+- カスタムモジュールは `command_timeout` を標準適用しつつ、モジュール側で `ignore_timeout` による無効化も可能。
+- 中央の `Context` が設定値を保持し、各モジュールが参照して実行時にタイムアウトを渡す設計。
+
+本プロジェクトでは Starship と同様にグローバル `command_timeout` を採用しつつ、「モジュール境界（should_display/render）」で包括的にラップしてハングの波及を防止。将来、外部コマンド実行を導入する場合は Starship の方式にならい、実行ユーティリティ層で `command_timeout` を適用する。また、必要に応じて `scan_timeout` 相当（ディレクトリ・VCS スキャン向け）の導入や、モジュール個別のタイムアウト上書き/無効化（例: `ignore_timeout`）を検討する。
 
 ---
 
@@ -177,13 +187,13 @@
 - Issue/PR の議論が事実ベースで進めやすくなり、レビュー効率が上がる。
 
 ### Green（作成/更新するドキュメント）
-- [ ] ユーザーガイド（`README.md` もしくは `docs/guide/user.md`）
+- [ ] ユーザーガイド（`README.md` もしくは `docs/guide/configuration.md`）
   - [ ] インストール、最小設定例、`format` の基本、代表モジュールの使い方。
   - [ ] タイムアウト/キャッシュの概要と注意点（安全なデフォルト）。
-- [ ] 開発者ガイド（`docs/guide/dev.md`）
+- [ ] 開発者ガイド（`docs/guide/contributing.md`）
   - [ ] モジュールの追加手順（`Module` トレイト、`ModuleConfig`）
   - [ ] キャッシュ/タイムアウトの適用規約（どこでラップするか、ログ方針）。
-- [ ] ロードマップ同期（`docs/init/02_roadmap.md`）
+- [ ] ロードマップ同期（`specs/2025-09-04-mvp/02-plan.md`）
   - [ ] 実装/仕様更新点の反映（チェックボックス更新）。
 
 ### 受け入れ条件
@@ -195,7 +205,7 @@
 ## 進行管理（チェックリスト）
 - [x] Git Status Module（Green 完了／Red・Refactor 未）
 - [x] 簡易キャッシュ（Green→適用）
-- [ ] タイムアウト（Green→適用）
+- [x] タイムアウト（Green→適用）
 - [ ] テスト拡充（統合/ユニット）
 - [ ] ドキュメント整備（ユーザー/開発者）
 

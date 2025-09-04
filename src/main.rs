@@ -10,16 +10,17 @@ mod messages;
 mod modules;
 mod parser;
 mod style;
+mod timeout;
 mod types;
 
 use config::Config;
 use debug::DebugLogger;
-use modules::{ModuleConfig, handle_module};
+use modules::render_module_with_timeout;
 use parser::{extract_modules_from_format, parse_claude_input, parse_format};
 use types::context::Context;
 
 /// Generate the status line prompt from Context
-fn generate_prompt(context: &Context) -> String {
+fn generate_prompt(context: &Context, logger: &DebugLogger) -> String {
     // Get format string from config (default: "$directory $claude_model")
     let format = &context.config.format;
 
@@ -30,21 +31,12 @@ fn generate_prompt(context: &Context) -> String {
     let mut module_outputs = HashMap::new();
 
     for name in &module_names {
-        if let Some(module) = handle_module(name, context) {
-            // Select module-specific config from context
-            let module_config: &dyn ModuleConfig = match name.as_str() {
-                "directory" => &context.config.directory,
-                "claude_model" => &context.config.claude_model,
-                "git_branch" => &context.config.git_branch,
-                "git_status" => &context.config.git_status,
-                "character" => continue, // Character module not implemented yet
-                _ => continue,
-            };
-
-            if module.should_display(context, module_config) {
-                let output = module.render(context, module_config);
-                module_outputs.insert(name.clone(), output);
-            }
+        // Character module not implemented yet
+        if name == "character" {
+            continue;
+        }
+        if let Some(out) = render_module_with_timeout(name, context, logger) {
+            module_outputs.insert(name.clone(), out);
         }
     }
 
@@ -115,7 +107,7 @@ fn main() -> Result<()> {
             let context = Context::new(input, config);
 
             // Generate and output status line
-            let prompt = generate_prompt(&context);
+            let prompt = generate_prompt(&context, &logger);
             logger.log_prompt(&prompt);
 
             print!("{prompt}"); // No newline for status line
