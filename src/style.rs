@@ -122,6 +122,17 @@ mod tests {
     }
 
     #[test]
+    fn mixed_known_and_unknown_tokens_are_stable() {
+        // Unknown tokens should be ignored, known tokens applied
+        let s = apply_style("Y", "bold sparkly yellow foo");
+        // Should include ANSI for bold (1) and yellow (33)
+        assert!(s.starts_with("\u{1b}["));
+        assert!(s.contains("1;33") || s.contains("33;1"));
+        assert!(s.ends_with("\u{1b}[0m"));
+        assert!(s.contains('Y'));
+    }
+
+    #[test]
     fn renders_bracket_style_template() {
         use std::collections::HashMap;
         let mut tokens = HashMap::new();

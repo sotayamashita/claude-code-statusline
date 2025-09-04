@@ -159,12 +159,12 @@
 - ドキュメントとテストの相互参照でチーム内合意が取りやすくなる。
 
 ### Red（追加する代表テスト）
-- [ ] 統合テスト（`tests/`）
-  - [ ] `$directory $git_branch $git_status $claude_model` を使ったスモーク（Git あり/なし）。
-  - [ ] タイムアウト有効時でも 1 行出力が維持されること。
-- [ ] ユニットテスト（`src/parser.rs`, `src/types/config.rs`, 各モジュール）
-  - [ ] 未知 `$token` の扱い（既存警告の維持）。
-  - [ ] ANSI の複合指定での安定性（未知トークン混在時でもクラッシュしない）。
+- [x] 統合テスト（`tests/`）
+  - [x] `$directory $git_branch $git_status $claude_model` を使ったスモーク（Git あり/なし）。
+  - [x] タイムアウト有効時でも 1 行出力が維持されること。
+- [x] ユニットテスト（`src/parser.rs`, `src/types/config.rs`, 各モジュール）
+  - [x] 未知 `$token` の扱い（既存警告の維持）。
+  - [x] ANSI の複合指定での安定性（未知トークン混在時でもクラッシュしない）。
 
 ### Green/Refactor（実装タスク）
 - [ ] `rstest` の活用でケース増加を簡潔に表現。
@@ -206,7 +206,7 @@
 - [x] Git Status Module（Green 完了／Red・Refactor 未）
 - [x] 簡易キャッシュ（Green→適用）
 - [x] タイムアウト（Green→適用）
-- [ ] テスト拡充（統合/ユニット）
+- [x] テスト拡充（統合/ユニット）
 - [ ] ドキュメント整備（ユーザー/開発者）
 
 ---
