@@ -43,18 +43,39 @@ impl Module for ClaudeModelModule {
     fn render(&self, context: &Context, config: &dyn ModuleConfig) -> String {
         let model = context.model_display_name();
 
+        // Compact pattern like "Opus 4.1" or "Sonnet 4" -> "Opus4.1" / "Sonnet4"
+        // Rule: remove a single space immediately before a digit.
+        let compacted_model = {
+            let s = model;
+            let mut out = String::with_capacity(s.len());
+            let chars: Vec<char> = s.chars().collect();
+            let len = chars.len();
+            let mut i = 0;
+            while i < len {
+                let c = chars[i];
+                if c == ' ' && i + 1 < len && chars[i + 1].is_ascii_digit() {
+                    // skip this space
+                    i += 1;
+                    continue;
+                }
+                out.push(c);
+                i += 1;
+            }
+            out
+        };
+
         if let Some(cfg) = config
             .as_any()
             .downcast_ref::<crate::types::config::ClaudeModelConfig>()
         {
             use std::collections::HashMap;
             let mut tokens = HashMap::new();
-            tokens.insert("model", model.to_string());
+            tokens.insert("model", compacted_model);
             tokens.insert("symbol", cfg.symbol.clone());
             return crate::style::render_with_style_template(cfg.format(), &tokens, cfg.style());
         }
 
-        model.to_string()
+        compacted_model
     }
 }
 
@@ -133,5 +154,16 @@ mod tests {
         let context = context_with_model("Opus");
         let module = ClaudeModelModule::from_context(&context);
         assert_eq!(module.name(), "claude_model");
+    }
+
+    #[rstest]
+    fn compacts_space_before_digits() {
+        let module = ClaudeModelModule::new();
+        let context = context_with_model("Sonnet 4");
+        let rendered = module.render(&context, &context.config.claude_model);
+        // strip ANSI for assertion
+        let plain = String::from_utf8(strip_ansi_escapes::strip(rendered)).unwrap();
+        assert!(plain.contains("Sonnet4"));
+        assert!(!plain.contains("Sonnet 4"));
     }
 }
