@@ -25,12 +25,13 @@
 
 use anyhow::Result;
 use clap::Parser;
-use std::collections::HashMap;
+// std collections used implicitly by modules and parser
 use std::io::{self, Read};
 
 // Import modules
 mod config;
 mod debug;
+mod engine;
 mod messages;
 mod modules;
 mod parser;
@@ -40,57 +41,9 @@ mod types;
 
 use config::Config;
 use debug::DebugLogger;
-use modules::render_module_with_timeout;
-use parser::{extract_modules_from_format, parse_claude_input, parse_format};
+use engine::Engine;
+use parser::parse_claude_input;
 use types::context::Context;
-
-/// Generates the status line prompt from the given context
-///
-/// This function processes the format string from the configuration,
-/// extracts module names, renders each module with a timeout, and
-/// assembles the final status line output.
-///
-/// # Arguments
-///
-/// * `context` - The context containing configuration and input data
-/// * `logger` - Debug logger for tracing execution
-///
-/// # Returns
-///
-/// A formatted string representing the status line to be displayed
-///
-/// # Examples
-///
-/// ```no_run
-/// # use beacon::{Context, DebugLogger};
-/// # let context = Context::default();
-/// # let logger = DebugLogger::new(false);
-/// let prompt = generate_prompt(&context, &logger);
-/// println!("{}", prompt);  // Outputs: ~/projects beacon:main
-/// ```
-fn generate_prompt(context: &Context, logger: &DebugLogger) -> String {
-    // Get format string from config (default: "$directory $claude_model")
-    let format = &context.config.format;
-
-    // Extract module names from format string
-    let module_names = extract_modules_from_format(format);
-
-    // Collect module outputs
-    let mut module_outputs = HashMap::new();
-
-    for name in &module_names {
-        // Character module not implemented yet
-        if name == "character" {
-            continue;
-        }
-        if let Some(out) = render_module_with_timeout(name, context, logger) {
-            module_outputs.insert(name.clone(), out);
-        }
-    }
-
-    // Use format parser to generate final output
-    parse_format(format, context, &module_outputs)
-}
 
 /// Command line interface arguments structure
 ///
@@ -179,10 +132,13 @@ fn main() -> Result<()> {
             logger.log_success(&input.model.display_name, &input.cwd);
 
             // Create context from input and config
-            let context = Context::new(input, config);
+            let context = Context::new(input, config.clone());
 
             // Generate and output status line
-            let prompt = generate_prompt(&context, &logger);
+            let engine = Engine::new(config.clone());
+            let prompt = engine
+                .render(&context.input)
+                .unwrap_or_else(|_| String::new());
             logger.log_prompt(&prompt);
 
             print!("{prompt}"); // No newline for status line
