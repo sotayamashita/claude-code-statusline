@@ -88,6 +88,7 @@ mod tests {
     use crate::types::claude::{ClaudeInput, ModelInfo, WorkspaceInfo};
     use crate::types::context::Context;
     use rstest::*;
+    use std::sync::{Mutex, OnceLock};
 
     /// Fixture for creating test contexts
     #[fixture]
@@ -145,6 +146,9 @@ mod tests {
     #[case("/Users/test/Documents/code", "~/Documents/code")]
     fn test_home_directory_abbreviation(#[case] cwd: &str, #[case] expected: &str) {
         let module = DirectoryModule::new();
+        // Serialize HOME mutation to avoid test flakiness in parallel runs
+        static HOME_ENV_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+        let _guard = HOME_ENV_LOCK.get_or_init(|| Mutex::new(())).lock().unwrap();
         // Save and set HOME environment variable
         let original_home = std::env::var("HOME").ok();
         unsafe {

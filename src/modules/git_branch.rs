@@ -238,6 +238,8 @@ mod tests {
 
         let rendered = module.render(&ctx, &ctx.config.git_branch);
         let plain = String::from_utf8(strip_ansi_escapes::strip(rendered)).unwrap();
+        // Should include symbol and branch name without ANSI codes
+        assert!(plain.contains("🌿"));
         assert!(plain.contains("main") || plain.contains("master"));
         drop(repo);
     }
