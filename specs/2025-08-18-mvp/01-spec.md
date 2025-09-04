@@ -328,7 +328,6 @@ beacon modules --enabled     # Show enabled modules
 # Debugging
 beacon --version            # Show version
 beacon --debug              # Enable debug output
-beacon --benchmark          # Show timing information
 ```
 
 ### 6.2 Environment Variables
