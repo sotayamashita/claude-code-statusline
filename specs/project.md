@@ -1,4 +1,4 @@
-<!-- LLM Instructions: When you change this section, update @README.md's Project Overview section -->
+<!-- LLM Instructions: When you change this section, update "Overview" section of @README.md -->
 
 ## Project Overview
 
