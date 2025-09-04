@@ -7,27 +7,32 @@
 /// Unknown tokens are ignored. If no known tokens are present, the input text
 /// is returned unchanged.
 pub fn apply_style(text: &str, style: &str) -> String {
-    let mut codes: Vec<&str> = Vec::new();
+    // Table-driven mapping for minimal, portable ANSI codes
+    const STYLE_CODES: &[(&str, &str)] = &[("bold", "1"), ("italic", "3"), ("underline", "4")];
+    const COLOR_CODES: &[(&str, &str)] = &[
+        ("black", "30"),
+        ("red", "31"),
+        ("green", "32"),
+        ("yellow", "33"),
+        ("blue", "34"),
+        ("magenta", "35"),
+        ("cyan", "36"),
+        ("white", "37"),
+    ];
+
+    let mut codes: Vec<&'static str> = Vec::new();
 
     for token in style.split_whitespace() {
-        match token.to_lowercase().as_str() {
-            // text styles
-            "bold" => codes.push("1"),
-            "italic" => codes.push("3"),
-            "underline" => codes.push("4"),
-
-            // foreground colors
-            "black" => codes.push("30"),
-            "red" => codes.push("31"),
-            "green" => codes.push("32"),
-            "yellow" => codes.push("33"),
-            "blue" => codes.push("34"),
-            "magenta" => codes.push("35"),
-            "cyan" => codes.push("36"),
-            "white" => codes.push("37"),
-
-            _ => {}
+        let t = token.to_lowercase();
+        if let Some((_, code)) = STYLE_CODES.iter().find(|(k, _)| *k == t) {
+            codes.push(*code);
+            continue;
         }
+        if let Some((_, code)) = COLOR_CODES.iter().find(|(k, _)| *k == t) {
+            codes.push(*code);
+            continue;
+        }
+        // Unknown tokens are ignored
     }
 
     if codes.is_empty() {

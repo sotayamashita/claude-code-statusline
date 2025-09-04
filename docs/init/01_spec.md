@@ -290,7 +290,7 @@ Claude Code sends comprehensive session information via stdin in JSON format:
 
 ```
 ANSI-formatted string (single line)
-Example: "~/projects/beacon 🌱 main <Opus> ❯ "
+Example: "~/projects/beacon 🌱 main <Opus>"
 ```
 
 ### 5.3 ANSI Color Support
