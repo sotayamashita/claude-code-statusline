@@ -30,7 +30,7 @@ parallel = ["dep:rayon"]
 rstest = "0.26.1"
 strip-ansi-escapes = "0.2.1"
 tempfile = "3.21.0"
-criterion = { version = "0.5.1", default-features = false, features = ["cargo_bench_support"] }
+criterion = { version = "0.7.0", default-features = false, features = ["cargo_bench_support"] }
 
 [[bench]]
 name = "engine_bench"
