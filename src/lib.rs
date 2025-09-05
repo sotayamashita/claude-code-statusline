@@ -1,7 +1,15 @@
 //! Beacon library shim
 //!
-//! フェーズ1の段階移行: core の実装を `beacon-core` クレートへ移動し、
-//! ここでは公開面を再エクスポートします。既存の `beacon::...` パスは維持されます。
+//! Temporary compatibility layer that re-exports the public API from
+//! the `beacon-core` crate so existing imports using `beacon::...` keep
+//! working. New code can import directly from `beacon_core`, but this
+//! shim allows a gradual migration without breaking external users.
+//!
+//! Examples
+//!
+//! - Engine API: `beacon::engine::Engine`
+//! - Types: `beacon::types::context::Context`, `beacon::Config`
+//! - Parser: `beacon::parse_claude_input`
 
 // Engine is provided by beacon-core; re-export as a module path
 pub use beacon_core::engine;

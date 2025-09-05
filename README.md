@@ -17,47 +17,37 @@ Beacon exists to provide a fast, embeddable status line specifically tailored fo
 # Clone the repository
 git clone https://github.com/sotayamashita/beacon.git && cd beacon
 
-# Build and install
-cargo build --release
+# Build workspace
+cargo build --workspace --release
 
-# Install the binary
-cargo install --path .
-```
+# Option A) Copy the built binary to your PATH
+cp target/release/beacon ~/.local/bin/
 
-## Project Structure
-
-```
-beacon/
-├── crates/
-│   ├── beacon-core/   # Core library (engine, modules, types)
-│   └── beacon-cli/    # CLI (stdin→stdout) + subcommands
-├── tests/             # Integration tests
-├── docs/              # Design documentation
-└── Cargo.toml         # Workspace manifest
+# Option B) Install from the CLI crate
+cargo install --path crates/beacon-cli
 ```
 
 ## Development
 
 ```bash
-# Build all crates
-cargo build
+# Build all crates (debug)
+cargo build --workspace
 
 # Run CLI
-cargo run -q -p beacon-cli -- --help
+cargo run -p beacon-cli -q -- --help
 
 # Example run with JSON input
 echo '{"session_id":"s","cwd":"/tmp","model":{"id":"claude-opus","display_name":"Opus"}}' | \
-  cargo run -q -p beacon-cli --
+  cargo run -p beacon-cli -q --
 
-# Tests, fmt, clippy
-cargo test
-cargo fmt
-cargo clippy -- -D warnings
+# Benchmarks (criterion) and threshold check (< 50ms mean by default)
+make bench
+make bench-check
 ```
 
 ## Configuration
 
-Claude Code のステータスラインに表示するための設定
+Claude Code status line integration (example):
 
 ```json
 {
@@ -69,7 +59,40 @@ Claude Code のステータスラインに表示するための設定
 }
 ```
 
-Becon の見た目を設定する
+Beacon settings live at `~/.config/beacon.toml` (TOML). Example:
+
+```toml
+# Which modules to render and in what order (tokens start with $)
+format = "$directory $git_branch $git_status $claude_model"
+
+# Per-module configuration
+[git_branch]
+format = "[$branch]($style)"
+style = "bold green"
+
+[git_status]
+format = "([[$all_status$ahead_behind]]($style))"
+style = "bold red"
+
+[claude_model]
+format = "[$model]($style)"
+style = "bold yellow"
+
+# Global settings
+command_timeout = 300  # ms (50..=600000)
+debug = false          # enable extra logging to stderr
+```
+
+CLI helpers:
+
+```bash
+beacon config --path        # Show config path (~/.config/beacon.toml)
+beacon config --default     # Print default TOML
+beacon config --validate    # Validate current config (OK/INVALID)
+
+beacon modules --list       # List all registered modules
+beacon modules --enabled    # List modules enabled by current format/config
+```
 
 ## Acknowledgments
 

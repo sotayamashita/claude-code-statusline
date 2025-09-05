@@ -25,7 +25,7 @@
 //! ```
 
 pub use crate::types::config::Config;
-use anyhow::{Context as AnyhowContext, Result};
+use crate::error::CoreError;
 use std::fs;
 use std::path::PathBuf;
 
@@ -49,14 +49,14 @@ impl Config {
     /// let config = Config::load().expect("Failed to load config");
     /// println!("Format: {}", config.format);
     /// ```
-    pub fn load() -> Result<Self> {
+    pub fn load() -> Result<Self, CoreError> {
         let config_path = get_config_path();
 
         if config_path.exists() {
             let contents = fs::read_to_string(&config_path)
-                .with_context(|| format!("failed to read {}", config_path.display()))?;
+                .map_err(|e| CoreError::ConfigRead { path: config_path.display().to_string(), source: e })?;
             let cfg: Config = toml::from_str(&contents)
-                .with_context(|| format!("invalid TOML at {}", config_path.display()))?;
+                .map_err(|e| CoreError::ConfigParse { path: config_path.display().to_string(), source: e })?;
             Ok(cfg)
         } else {
             Ok(Config::default())

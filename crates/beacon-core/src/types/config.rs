@@ -11,7 +11,7 @@
 //! if not specified.
 
 use crate::modules::ModuleConfig;
-use anyhow::{Result, anyhow};
+use crate::error::CoreError;
 use serde::{Deserialize, Serialize};
 use std::any::Any;
 
@@ -397,13 +397,13 @@ impl ModuleConfig for GitStatusConfig {
 
 impl Config {
     /// Validate configuration values. Returns an error for clearly invalid values.
-    pub fn validate(&self) -> Result<()> {
+    pub fn validate(&self) -> Result<(), CoreError> {
         // Milliseconds; enforce sane bounds (50ms ..= 600_000ms)
         if self.command_timeout < 50 || self.command_timeout > 600_000 {
-            return Err(anyhow!(
+            return Err(CoreError::InvalidConfig(format!(
                 "command_timeout out of range (50..=600000): {}",
                 self.command_timeout
-            ));
+            )));
         }
         Ok(())
     }

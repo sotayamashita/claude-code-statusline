@@ -21,6 +21,7 @@
 use crate::debug::DebugLogger;
 use crate::timeout::run_with_timeout;
 use crate::types::context::Context;
+use crate::error::CoreError;
 use std::any::Any;
 use std::time::Duration;
 
@@ -152,10 +153,10 @@ pub fn render_module_with_timeout(
         let ctx1 = context.clone();
         let name1 = name.to_string();
         move || {
-            let module =
-                handle_module(&name1, &ctx1).ok_or_else(|| anyhow::anyhow!("unknown module"))?;
-            let cfg =
-                module_config_for(&name1, &ctx1).ok_or_else(|| anyhow::anyhow!("no config"))?;
+            let module = handle_module(&name1, &ctx1)
+                .ok_or_else(|| CoreError::UnknownModule(name1.clone()))?;
+            let cfg = module_config_for(&name1, &ctx1)
+                .ok_or_else(|| CoreError::MissingConfig(name1.clone()))?;
             Ok(module.should_display(&ctx1, cfg))
         }
     }) {
@@ -178,10 +179,10 @@ pub fn render_module_with_timeout(
         let ctx2 = context.clone();
         let name2 = name.to_string();
         move || {
-            let module =
-                handle_module(&name2, &ctx2).ok_or_else(|| anyhow::anyhow!("unknown module"))?;
-            let cfg =
-                module_config_for(&name2, &ctx2).ok_or_else(|| anyhow::anyhow!("no config"))?;
+            let module = handle_module(&name2, &ctx2)
+                .ok_or_else(|| CoreError::UnknownModule(name2.clone()))?;
+            let cfg = module_config_for(&name2, &ctx2)
+                .ok_or_else(|| CoreError::MissingConfig(name2.clone()))?;
             Ok(module.render(&ctx2, cfg))
         }
     }) {

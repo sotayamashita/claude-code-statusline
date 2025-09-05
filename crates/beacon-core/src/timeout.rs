@@ -3,7 +3,7 @@
 //! This module provides functions for running operations with time limits,
 //! ensuring that slow operations don't block the status line generation.
 
-use anyhow::Result;
+use crate::error::CoreError;
 use std::sync::mpsc;
 use std::thread;
 use std::time::Duration;
@@ -48,20 +48,20 @@ use std::time::Duration;
 /// - Uses channels for thread communication
 /// - Catches panics and converts them to errors
 /// - Thread is detached after timeout (may continue running)
-pub fn run_with_timeout<F, T>(dur: Duration, f: F) -> Result<Option<T>>
+pub fn run_with_timeout<F, T>(dur: Duration, f: F) -> Result<Option<T>, CoreError>
 where
-    F: Send + 'static + FnOnce() -> Result<T>,
+    F: Send + 'static + FnOnce() -> Result<T, CoreError>,
     T: Send + 'static,
 {
     let (tx, rx) = mpsc::channel();
 
     thread::spawn(move || {
         let res = std::panic::catch_unwind(std::panic::AssertUnwindSafe(f));
-        // Map panic into anyhow error; send result through channel if possible
+        // Map panic into typed error; send result through channel if possible
         let _ = match res {
             Ok(Ok(val)) => tx.send(Ok(val)),
             Ok(Err(err)) => tx.send(Err(err)),
-            Err(_) => tx.send(Err(anyhow::anyhow!("task panicked"))),
+            Err(_) => tx.send(Err(CoreError::TaskPanic)),
         };
     });
 
@@ -69,7 +69,7 @@ where
         Ok(Ok(v)) => Ok(Some(v)),
         Ok(Err(e)) => Err(e),
         Err(mpsc::RecvTimeoutError::Timeout) => Ok(None),
-        Err(mpsc::RecvTimeoutError::Disconnected) => Err(anyhow::anyhow!("worker disconnected")),
+        Err(mpsc::RecvTimeoutError::Disconnected) => Err(CoreError::WorkerDisconnected),
     }
 }
 
@@ -81,7 +81,7 @@ mod tests {
     fn completes_before_timeout() {
         let out = run_with_timeout(Duration::from_millis(200), || {
             std::thread::sleep(Duration::from_millis(50));
-            Ok::<_, anyhow::Error>(42)
+            Ok::<_, CoreError>(42)
         })
         .unwrap();
         assert_eq!(out, Some(42));
@@ -91,7 +91,7 @@ mod tests {
     fn returns_none_on_timeout() {
         let out = run_with_timeout(Duration::from_millis(30), || {
             std::thread::sleep(Duration::from_millis(100));
-            Ok::<_, anyhow::Error>(99)
+            Ok::<_, CoreError>(99)
         })
         .unwrap();
         assert_eq!(out, None);
@@ -100,7 +100,7 @@ mod tests {
     #[test]
     fn propagates_error() {
         let err = run_with_timeout(Duration::from_millis(100), || {
-            Err::<i32, _>(anyhow::anyhow!("boom"))
+            Err::<i32, _>(CoreError::InvalidConfig("boom".to_string()))
         })
         .unwrap_err();
         assert!(format!("{err}").contains("boom"));

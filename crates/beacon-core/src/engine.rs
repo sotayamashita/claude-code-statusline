@@ -11,7 +11,7 @@ use crate::modules::render_module_with_timeout;
 use crate::parser::{extract_modules_from_format, parse_format};
 use crate::types::claude::ClaudeInput;
 use crate::types::context::Context;
-use anyhow::Result;
+use crate::error::CoreError;
 use std::collections::HashMap;
 
 /// Rendering engine that produces a status line from input and config.
@@ -58,7 +58,7 @@ impl Engine {
     }
 
     /// Render a status line string from the provided Claude input.
-    pub fn render(&self, input: &ClaudeInput) -> Result<String> {
+    pub fn render(&self, input: &ClaudeInput) -> Result<String, CoreError> {
         let logger = DebugLogger::new(self.config.debug);
         let context = Context::new(input.clone(), self.config.clone());
 

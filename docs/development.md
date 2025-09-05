@@ -68,6 +68,23 @@ cargo clippy -- -D warnings
 cargo fmt
 ```
 
+### ベンチマークと閾値チェック（パフォーマンス運用）
+
+- ベンチ実行（criterion）
+
+```
+make bench    # crates/beacon-core のベンチを実行
+```
+
+- 閾値チェック（既定: 平均 < 50ms）
+
+```
+make bench-check
+# 実行後、target/criterion/engine_render_default/new/estimates.json の mean を読み取り判定
+```
+
+しきい値は `scripts/bench_check.py --threshold-ms <ms>` で変更可能です。
+
 ### 開発ワークフロー
 
 - ブランチ戦略・コミット規約: Conventional Commits（例: `feat(modules): add git_status`）

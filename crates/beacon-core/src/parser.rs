@@ -16,7 +16,7 @@
 
 use crate::types::claude::ClaudeInput;
 use crate::types::context::Context;
-use anyhow::Result;
+use crate::error::CoreError;
 use std::collections::HashMap;
 
 /// Parses JSON string into ClaudeInput structure
@@ -42,7 +42,7 @@ use std::collections::HashMap;
 /// let input = parse_claude_input(json).unwrap();
 /// assert_eq!(input.cwd, "/tmp");
 /// ```
-pub fn parse_claude_input(json_str: &str) -> Result<ClaudeInput> {
+pub fn parse_claude_input(json_str: &str) -> Result<ClaudeInput, CoreError> {
     Ok(serde_json::from_str(json_str)?)
 }
 

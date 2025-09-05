@@ -22,7 +22,6 @@
   - CLI は `beacon_core::{Config, debug, messages, parse_claude_input, Engine}` を使用。
 - [x] ビルド/テスト通過（確認）
   - 既存の `engine_api` を含むテストスイートが通過。互換バイナリにより既存の `beacon` バイナリ名を維持。
-
 - [x] Registry/ModuleFactory の導入（完了）
   - `modules/registry.rs` を追加し、`handle_module`/設定参照を内部で委譲。
   - 既存の `modules::handle_module` API は互換維持。
@@ -47,14 +46,18 @@
 - [x] パフォーマンス最適化（初期対応）
   - `parallel` 有効時にモジュール並列レンダリング（Rayon）。
   - `criterion` による `engine_bench` を追加。
-
-## 未完了（次ステップ）
-- [ ] エラー型の全面移行（継続）
-  - コア内のエラーを段階的に `thiserror` へ統一し、`anyhow` は境界層に限定。
-- [ ] CLI E2E 強化（フォローアップ）
-  - 新サブコマンドの E2E 追加と回帰テストの拡充。
-- [ ] パフォーマンス検証（フォローアップ）
-  - 実測プロファイルでのボトルネック調査とベンチ閾値の運用。
+- [x] エラー型の全面移行（段階完了）
+  - コア内の `anyhow` 依存を撤去し、`CoreError`（`thiserror`）へ統一。
+  - `parser/config/engine/timeout/modules` が `CoreError` を返すように変更。
+  - `CoreError` に `InvalidJson/ConfigRead/ConfigParse/MissingConfig/TaskPanic/...` を追加。
+  - CLI は引き続き境界層で `anyhow::Result` を使用（表示とハンドリングは既存どおり）。
+- [x] CLI E2E 強化（完了）
+  - `tests/cli_subcommands.rs` を追加し、以下を検証:
+    - `beacon config --path|--default|--validate`
+    - `beacon modules --list|--enabled`
+- [x] パフォーマンス検証（初期運用）
+  - `make bench`（criterion）と `make bench-check` を追加。
+  - `scripts/bench_check.py` により平均実行時間が 50ms 未満であることを自動判定。
 
 ---
 最終更新: 2025-09-05
