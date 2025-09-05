@@ -15,7 +15,7 @@
   - `crates/beacon-core/src/lib.rs` を作成し、`pub mod` 構成と `pub use {Engine, Config, parse_claude_input, Context}` を提供。
 - [x] ルートクレートのシム化（新規作成/調整）
   - `src/lib.rs` から `beacon_core` を再エクスポートし、`beacon::...` パス互換を維持。
-  - 互換用バイナリ `src/bin/beacon.rs` を追加（内部で `beacon_cli::run()` を呼び出し）。
+  - （中間フェーズ）互換用バイナリ `src/bin/beacon.rs` を一時導入（内部で `beacon_cli::run()` を呼び出し）。
 - [x] CLI 土台の分離（既存流用・git mv＋新規作成）
   - `src/main.rs` → `crates/beacon-cli/src/main.rs` に移動。
   - `crates/beacon-cli/src/lib.rs` を新設し、`pub fn run() -> anyhow::Result<()>` に CLI フローを集約。
@@ -38,7 +38,7 @@
 - [x] CLI サブコマンド（完了）
   - `config --path|--default|--validate`, `modules --list|--enabled` を実装。
 - [x] ルート純ワークスペース化（完了）
-  - 互換バイナリ（`src/bin/beacon.rs`）を撤去し、バイナリ名を `beacon`（`beacon-cli`）に統一。
+  - 最終状態: 互換バイナリ（`src/bin/beacon.rs`）を撤去し、バイナリ名を `beacon`（`beacon-cli`）に統一。
 - [x] 追加テスト（完了）
   - `beacon-core` に `Engine/Registry/ConfigProvider` のユニットテストを追加。既存の CLI E2E は維持。
 - [x] ドキュメント/整備（完了）
