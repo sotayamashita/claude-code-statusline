@@ -107,10 +107,36 @@ dependencies = [
  "anyhow",
  "assert_cmd",
  "atty",
+ "beacon-cli",
+ "beacon-core",
  "clap",
  "dirs",
  "git2",
  "predicates",
+ "rstest",
+ "serde",
+ "serde_json",
+ "strip-ansi-escapes",
+ "tempfile",
+ "toml",
+]
+
+[[package]]
+name = "beacon-cli"
+version = "0.0.1"
+dependencies = [
+ "anyhow",
+ "beacon-core",
+ "clap",
+]
+
+[[package]]
+name = "beacon-core"
+version = "0.0.1"
+dependencies = [
+ "anyhow",
+ "dirs",
+ "git2",
  "rstest",
  "serde",
  "serde_json",
