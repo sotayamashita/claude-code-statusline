@@ -108,6 +108,34 @@ style = "bold red"
 style = "bold yellow"
 ```
 
+## Presets
+
+### Pure Prompt (single-line, no linebreak)
+
+A minimal, single-line preset inspired by Starship’s Pure Prompt.
+
+```toml
+format = "$directory $git_branch $git_status $claude_model"
+
+[directory]
+style = "bold blue"
+truncation_length = 3
+truncate_to_repo = true
+
+[git_branch]
+style = "bold green"
+# symbol = ""   # if your font supports it; default is "🌿"
+
+[git_status]
+style = "bold red"
+
+[claude_model]
+style = "bold yellow"
+symbol = "<"
+```
+
+See docs/presets/pure_prompt.md for details and notes.
+
 ## Acknowledgments
 
 This project was inspired by [Starship](https://starship.rs/), the excellent cross-shell prompt. I've adapted its modular architecture for Claude Code's statusline.

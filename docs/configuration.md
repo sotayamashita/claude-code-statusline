@@ -35,6 +35,29 @@ Tokens: `$path`
 振る舞い:
 - `HOME` 配下は `~` へ短縮表示。
 - `format` の `[$text]($style)` 構文で ANSI スタイルを付与可能（`$style` はこのモジュールの `style` を指します）。
+ - `truncate_to_repo = true` のとき、ディレクトリが Git リポジトリ配下であれば、`$path` を「`<repo-name>/<relative>`」形式（リポジトリ名 + リポジトリ内相対パス）で表示します。
+   - 検出順序: `feature = "git"` 有効時は `git2` の `workdir()` を優先。見つからない場合や `git` 無効時は、カレントから親に向かって `.git` ディレクトリを探索して推定します。
+   - `truncation_length` は表示セグメント数の上限です。常に先頭のリポジトリ名を保持し、残りは末尾のディレクトリから詰めて表示します（例: `truncation_length = 2` → `repo/last`）。
+   - リポジトリ外ではこのオプションは無視され、ホーム短縮のみの通常表示になります。
+
+例:
+
+```
+# 例1: repo 直下
+truncate_to_repo = true
+truncation_length = 3
+# パス: /path/to/repo -> 表示: repo
+
+# 例2: repo/src/module（セグメント3）
+truncate_to_repo = true
+truncation_length = 3
+# パス: /path/to/repo/src/module -> 表示: repo/src/module
+
+# 例3: 深い階層（末尾優先で短縮）
+truncate_to_repo = true
+truncation_length = 2
+# パス: /path/to/repo/a/b/c/d -> 表示: repo/d
+```
 
 ### Module: `claude_model`
 
