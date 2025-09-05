@@ -2,6 +2,7 @@
   "recommendations": [
     "anthropic.claude-code",
     "bungcip.better-toml",
-    "openai.chatgpt"
+    "openai.chatgpt",
+    "tamasfe.even-better-toml"
   ]
 }
