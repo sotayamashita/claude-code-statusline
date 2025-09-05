@@ -24,4 +24,18 @@ if ! cargo test --locked --workspace -- --nocapture; then
   exit 1
 fi
 
+echo "🏗️  Building (release, workspace, locked)..."
+if ! cargo build --locked --workspace --release --verbose; then
+  echo "❌ Build failed!"
+  echo "💡 Run 'cargo build --locked --workspace --release --verbose' to see details"
+  exit 1
+fi
+
+echo "📚 Building docs (locked, no-deps)..."
+if ! cargo doc --locked --no-deps; then
+  echo "❌ Docs build failed!"
+  echo "💡 Run 'cargo doc --locked --no-deps' to see details"
+  exit 1
+fi
+
 echo "✅ All pre-commit checks passed!"
