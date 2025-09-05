@@ -1,0 +1,37 @@
+[package]
+name = "beacon-core"
+version = "0.0.1"
+edition = "2024"
+description = "Core library for Beacon: public API, types, and modules"
+
+[lib]
+name = "beacon_core"
+path = "src/lib.rs"
+
+[dependencies]
+dirs = "6.0.0"
+serde = { version = "1.0.219", features = ["derive"] }
+serde_json = "1.0.142"
+toml = "0.9.5"
+# Optional deps for feature gates
+git2 = { version = "0.20.2", optional = true }
+rayon = { version = "1.10.0", optional = true }
+tracing = "0.1.40"
+thiserror = "1.0.64"
+
+[features]
+default = []
+# Enable git-dependent modules (git_branch, git_status)
+git = ["dep:git2"]
+# Enable parallel rendering with rayon (not used yet)
+parallel = ["dep:rayon"]
+
+[dev-dependencies]
+rstest = "0.26.1"
+strip-ansi-escapes = "0.2.1"
+tempfile = "3.21.0"
+criterion = { version = "0.5.1", default-features = false, features = ["cargo_bench_support"] }
+
+[[bench]]
+name = "engine_bench"
+harness = false

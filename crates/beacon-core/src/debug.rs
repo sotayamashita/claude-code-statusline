@@ -38,7 +38,7 @@ impl DebugLogger {
     /// # Examples
     ///
     /// ```
-    /// use beacon::debug::DebugLogger;
+    /// use beacon_core::debug::DebugLogger;
     ///
     /// let logger = DebugLogger::new(true);
     /// logger.log("Debug message");
@@ -56,6 +56,8 @@ impl DebugLogger {
     /// Log a message if debug mode is enabled
     pub fn log(&self, message: &str) {
         if !self.enabled {
+            // Still forward to tracing at debug level for centralized logging
+            tracing::debug!(target: "beacon", "{message}");
             return;
         }
 
@@ -75,6 +77,8 @@ impl DebugLogger {
 
     /// Log to stderr if debug mode is enabled
     pub fn log_stderr(&self, message: &str) {
+        // Emit via tracing; subscriber decides output
+        tracing::debug!(target: "beacon", "{message}");
         if self.enabled {
             eprintln!("[DEBUG] {message}");
         }
@@ -115,6 +119,7 @@ impl DebugLogger {
 
     /// Log error
     pub fn log_error(&self, error: &str) {
+        tracing::error!(target: "beacon", "{error}");
         self.log(&format!("ERROR: {error}"));
     }
 

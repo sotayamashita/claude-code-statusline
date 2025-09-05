@@ -11,6 +11,103 @@
 
 Beacon exists to provide a fast, embeddable status line specifically tailored for Claude Code. I deeply respect and admire Starship for setting the bar on modular, configurable prompts across shells. However, Starship is intentionally delivered as a standalone CLI and does not expose a stable, supported Rust library API or a general plugin API for embedding its internals into other binaries. Because I need programmatic composition with JSON input and tight integration within AI-driven editor workflows, I built Beacon as a small Rust library/binary that borrows Starship’s proven ideas (modules, formatting, styling) while remaining easy to integrate as part of a larger toolchain.
 
+## Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/sotayamashita/beacon.git && cd beacon
+
+# Build workspace
+cargo build --workspace --release
+
+# Option A) Copy the built binary to your PATH
+cp target/release/beacon ~/.local/bin/
+
+# Option B) Install from the CLI crate
+cargo install --path crates/beacon-cli
+```
+
+## Development
+
+```bash
+# Build all crates (debug)
+cargo build --workspace
+
+# Run CLI
+cargo run -p beacon-cli -q -- --help
+
+# Example run with JSON input
+echo '{"session_id":"s","cwd":"/tmp","model":{"id":"claude-opus","display_name":"Opus"}}' | \
+  cargo run -p beacon-cli -q --
+
+# Benchmarks (criterion) and threshold check (< 50ms mean by default)
+make bench
+make bench-check
+
+# Run benches/tests with feature flags (optional)
+# Default benches run beacon-core without optional features.
+# Enable Git modules when you need them in benches/tests:
+cargo bench -p beacon-core --features git --no-run
+cargo test  -p beacon-core --features git
+```
+
+## Feature Flags
+
+- `git`: Enables Git-powered modules (`git_branch`, `git_status`). The CLI depends on
+  `beacon-core` with `features = ["git"]`, so the `beacon` binary includes Git support by default.
+  Library consumers and standalone benches/tests must enable it explicitly with
+  `--features git` when needed.
+- `parallel`: Enables Rayon-based parallel rendering (planned/optional).
+
+## Configuration
+
+Claude Code status line integration (example):
+
+```json
+{
+  "statusLine": {
+    "type": "command",
+    "command": "beacon",
+    "padding": 0
+  }
+}
+```
+
+Beacon settings live at `~/.config/beacon.toml` (TOML). Example:
+
+```toml
+# Which modules to render and in what order (tokens start with $)
+format = "$directory $git_branch $git_status $claude_model"
+
+# Per-module configuration
+[git_branch]
+format = "[$branch]($style)"
+style = "bold green"
+
+[git_status]
+format = "([[$all_status$ahead_behind]]($style))"
+style = "bold red"
+
+[claude_model]
+format = "[$model]($style)"
+style = "bold yellow"
+
+# Global settings
+command_timeout = 300  # ms (50..=600000)
+debug = false          # enable extra logging to stderr
+```
+
+CLI helpers:
+
+```bash
+beacon config --path        # Show config path (~/.config/beacon.toml)
+beacon config --default     # Print default TOML
+beacon config --validate    # Validate current config (OK/INVALID)
+
+beacon modules --list       # List all registered modules
+beacon modules --enabled    # List modules enabled by current format/config
+```
+
 ## Acknowledgments
 
 This project was inspired by [Starship](https://starship.rs/), the excellent cross-shell prompt. I've adapted its modular architecture for Claude Code's statusline.

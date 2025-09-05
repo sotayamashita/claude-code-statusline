@@ -14,9 +14,9 @@
 //!
 //! Example: `"$directory $git_branch $claude_model"`
 
+use crate::error::CoreError;
 use crate::types::claude::ClaudeInput;
 use crate::types::context::Context;
-use anyhow::Result;
 use std::collections::HashMap;
 
 /// Parses JSON string into ClaudeInput structure
@@ -36,13 +36,13 @@ use std::collections::HashMap;
 /// # Examples
 ///
 /// ```
-/// use beacon::parse_claude_input;
+/// use beacon_core::parse_claude_input;
 ///
 /// let json = r#"{"session_id":"test","cwd":"/tmp","model":{"id":"claude","display_name":"Claude"}}"#;
 /// let input = parse_claude_input(json).unwrap();
 /// assert_eq!(input.cwd, "/tmp");
 /// ```
-pub fn parse_claude_input(json_str: &str) -> Result<ClaudeInput> {
+pub fn parse_claude_input(json_str: &str) -> Result<ClaudeInput, CoreError> {
     Ok(serde_json::from_str(json_str)?)
 }
 
@@ -65,8 +65,8 @@ pub fn parse_claude_input(json_str: &str) -> Result<ClaudeInput> {
 ///
 /// ```no_run
 /// # use std::collections::HashMap;
-/// # use beacon::parser::parse_format;
-/// # use beacon::{Context, Config, parse_claude_input};
+/// # use beacon_core::parser::parse_format;
+/// # use beacon_core::{Context, Config, parse_claude_input};
 /// # let json = r#"{"session_id":"test","cwd":"/tmp","model":{"id":"claude","display_name":"Claude"}}"#;
 /// # let input = parse_claude_input(json).unwrap();
 /// # let context = Context::new(input, Config::default());
@@ -115,7 +115,7 @@ pub fn parse_format(
 /// # Examples
 ///
 /// ```
-/// use beacon::parser::extract_modules_from_format;
+/// use beacon_core::parser::extract_modules_from_format;
 ///
 /// let modules = extract_modules_from_format("$directory $claude_model");
 /// assert_eq!(modules, vec!["directory", "claude_model"]);

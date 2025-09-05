@@ -17,3 +17,7 @@ test-input.json
 
 # Ignore debug logs
 /tmp/
+
+# Ignore review work
+.review-work
+.review-work.get.json

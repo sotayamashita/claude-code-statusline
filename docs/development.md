@@ -4,19 +4,17 @@ Beacon の内部構造と、モジュール追加・テスト・開発ワーク�
 
 ### プロジェクト構成
 
-- コア: `src/`
-  - `main.rs`（CLI エントリ）/ `lib.rs`（共有）
+- コア: `crates/beacon-core/src/`
+  - `engine.rs`（レンダリングエンジン）/ `lib.rs`（公開面）
   - `config.rs` / `types/config.rs`（TOML 設定の型と読み込み/検証）
-  - `types/claude.rs`（入力 JSON の構造体）
-  - `types/context.rs`（実行時コンテキスト。OnceLock による簡易キャッシュを保持）
-  - `modules/*`（各モジュール。`Module` トレイトを実装）
-  - `parser.rs`（`$module` を展開するフォーマッタ）
-  - `style.rs`（簡易 ANSI レンダラ）
-  - `timeout.rs`（処理のタイムアウトユーティリティ）
+  - `types/claude.rs` / `types/context.rs`（入力/コンテキスト）
+  - `modules/*`（各モジュール・`registry.rs`）
+  - `parser.rs` / `style.rs` / `timeout.rs`
+- CLI: `crates/beacon-cli/`（stdin→stdout とサブコマンド）
 
 ### モジュール実装（追加手順）
 
-1) `src/modules/<name>.rs` を作成し、`Module` を実装
+1) `crates/beacon-core/src/modules/<name>.rs` を作成し、`Module` を実装
 
 ```rust
 use super::{Module, ModuleConfig};
@@ -32,21 +30,14 @@ impl Module for MyModule {
 }
 ```
 
-2) ディスパッチャ登録: `src/modules/mod.rs`
+2) レジストリ登録: `crates/beacon-core/src/modules/registry.rs`
 
 ```rust
-mod my_module; // ファイルを追加
-use my_module::MyModule;
-
-pub fn handle_module(name: &str, context: &Context) -> Option<Box<dyn Module>> {
-    match name {
-        "my_module" => Some(Box::new(MyModule::from_context(context))),
-        _ => /* 既存 */ super::handle_module(name, context),
-    }
-}
+// 例: `struct MyModuleFactory;` を追加して `ModuleFactory` を実装
+// `Registry::with_defaults()` に `reg.register_factory(MyModuleFactory);` を追加
 ```
 
-3) 設定型の追加（必要に応じて）: `src/types/config.rs`
+3) 設定型の追加（必要に応じて）: `crates/beacon-core/src/types/config.rs`
 
 - `struct MyModuleConfig { format, style, disabled, ... }`
 - `impl Default for MyModuleConfig { ... }`
@@ -76,6 +67,36 @@ cargo test
 cargo clippy -- -D warnings
 cargo fmt
 ```
+
+### ベンチマークと閾値チェック（パフォーマンス運用）
+
+- ベンチ実行（criterion）
+
+```
+make bench    # crates/beacon-core のベンチを実行
+```
+
+- 閾値チェック（既定: 平均 < 50ms）
+
+```
+make bench-check
+# 実行後、target/criterion/engine_render_default/new/estimates.json の mean を読み取り判定
+```
+
+しきい値は `scripts/bench_check.py --threshold-ms <ms>` で変更可能です。
+
+#### Feature flags（git）
+
+- 既定の `make bench` は optional features（例: `git`）を無効のまま `beacon-core` をベンチビルドします。
+- Git 連携を含むベンチ/テストを実行したい場合は feature を明示的に有効化してください。
+
+```
+cargo bench -p beacon-core --features git --no-run
+cargo test  -p beacon-core --features git
+```
+
+CLI バイナリ（`crates/beacon-cli`）は `beacon-core` を `features = ["git"]` で依存しているため、
+通常の `cargo run -p beacon-cli` やインストール済み `beacon` 実行では Git 機能が有効です。
 
 ### 開発ワークフロー
 

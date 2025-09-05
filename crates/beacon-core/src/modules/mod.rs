@@ -19,6 +19,7 @@
 //! - `git_status`: Git repository status
 
 use crate::debug::DebugLogger;
+use crate::error::CoreError;
 use crate::timeout::run_with_timeout;
 use crate::types::context::Context;
 use std::any::Any;
@@ -83,13 +84,15 @@ pub trait Module: Send + Sync {
 // Re-export module implementations
 pub mod claude_model;
 pub mod directory;
+#[cfg(feature = "git")]
 pub mod git_branch;
+#[cfg(feature = "git")]
 pub mod git_status;
+pub mod registry;
 
 pub use claude_model::ClaudeModelModule;
 pub use directory::DirectoryModule;
-use git_branch::GitBranchModule;
-use git_status::GitStatusModule;
+pub use registry::{ModuleFactory, Registry};
 
 /// Central module dispatcher - creates module instances based on name
 ///
@@ -106,23 +109,14 @@ use git_status::GitStatusModule;
 /// * `Some(Box<dyn Module>)` - Module instance if name is recognized
 /// * `None` - If the module name is unknown
 pub fn handle_module(name: &str, context: &Context) -> Option<Box<dyn Module>> {
-    match name {
-        "directory" => Some(Box::new(DirectoryModule::from_context(context))),
-        "claude_model" => Some(Box::new(ClaudeModelModule::from_context(context))),
-        "git_branch" => Some(Box::new(GitBranchModule::from_context(context))),
-        "git_status" => Some(Box::new(GitStatusModule::from_context(context))),
-        _ => None,
-    }
+    // Gradual migration: delegate to Registry with built-in factories
+    let registry = Registry::with_defaults();
+    registry.create(name, context)
 }
 
 fn module_config_for<'a>(name: &str, context: &'a Context) -> Option<&'a dyn ModuleConfig> {
-    match name {
-        "directory" => Some(&context.config.directory),
-        "claude_model" => Some(&context.config.claude_model),
-        "git_branch" => Some(&context.config.git_branch),
-        "git_status" => Some(&context.config.git_status),
-        _ => None,
-    }
+    let registry = Registry::with_defaults();
+    registry.config(name, context)
 }
 
 /// Renders a module with timeout protection
@@ -159,10 +153,10 @@ pub fn render_module_with_timeout(
         let ctx1 = context.clone();
         let name1 = name.to_string();
         move || {
-            let module =
-                handle_module(&name1, &ctx1).ok_or_else(|| anyhow::anyhow!("unknown module"))?;
-            let cfg =
-                module_config_for(&name1, &ctx1).ok_or_else(|| anyhow::anyhow!("no config"))?;
+            let module = handle_module(&name1, &ctx1)
+                .ok_or_else(|| CoreError::UnknownModule(name1.clone()))?;
+            let cfg = module_config_for(&name1, &ctx1)
+                .ok_or_else(|| CoreError::MissingConfig(name1.clone()))?;
             Ok(module.should_display(&ctx1, cfg))
         }
     }) {
@@ -185,10 +179,10 @@ pub fn render_module_with_timeout(
         let ctx2 = context.clone();
         let name2 = name.to_string();
         move || {
-            let module =
-                handle_module(&name2, &ctx2).ok_or_else(|| anyhow::anyhow!("unknown module"))?;
-            let cfg =
-                module_config_for(&name2, &ctx2).ok_or_else(|| anyhow::anyhow!("no config"))?;
+            let module = handle_module(&name2, &ctx2)
+                .ok_or_else(|| CoreError::UnknownModule(name2.clone()))?;
+            let cfg = module_config_for(&name2, &ctx2)
+                .ok_or_else(|| CoreError::MissingConfig(name2.clone()))?;
             Ok(module.render(&ctx2, cfg))
         }
     }) {
@@ -212,9 +206,11 @@ mod timeout_tests {
     use crate::config::Config;
     use crate::types::claude::{ClaudeInput, ModelInfo, WorkspaceInfo};
 
+    #[allow(dead_code)]
     struct SleepyModule;
 
     impl SleepyModule {
+        #[allow(dead_code)]
         fn from_context(_context: &Context) -> Self {
             Self
         }
@@ -234,6 +230,7 @@ mod timeout_tests {
     }
 
     // Extend dispatcher only in tests
+    #[allow(dead_code)]
     pub fn handle_module(name: &str, context: &Context) -> Option<Box<dyn Module>> {
         match name {
             "sleepy" => Some(Box::new(SleepyModule::from_context(context))),
@@ -258,8 +255,10 @@ mod timeout_tests {
             version: Some("1.0.0".into()),
             output_style: None,
         };
-        let mut cfg = Config::default();
-        cfg.command_timeout = timeout_ms;
+        let cfg = Config {
+            command_timeout: timeout_ms,
+            ..Default::default()
+        };
         Context::new(input, cfg)
     }
 

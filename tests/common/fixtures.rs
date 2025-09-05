@@ -32,6 +32,7 @@ pub fn test_paths() -> TestPaths {
     }
 }
 
+#[allow(dead_code)]
 pub struct TestPaths {
     pub home: String,
     pub project: String,
@@ -39,10 +40,12 @@ pub struct TestPaths {
 }
 
 /// TestRenderer for module testing - Starship-inspired pattern
+#[allow(dead_code)]
 pub struct TestRenderer {
     context: Context,
 }
 
+#[allow(dead_code)]
 impl TestRenderer {
     pub fn new() -> Self {
         Self {

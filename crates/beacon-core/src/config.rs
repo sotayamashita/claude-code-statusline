@@ -24,8 +24,8 @@
 //! style = "bold yellow"
 //! ```
 
+use crate::error::CoreError;
 pub use crate::types::config::Config;
-use anyhow::{Context as AnyhowContext, Result};
 use std::fs;
 use std::path::PathBuf;
 
@@ -44,19 +44,23 @@ impl Config {
     /// # Examples
     ///
     /// ```no_run
-    /// use beacon::Config;
+    /// use beacon_core::Config;
     ///
     /// let config = Config::load().expect("Failed to load config");
     /// println!("Format: {}", config.format);
     /// ```
-    pub fn load() -> Result<Self> {
+    pub fn load() -> Result<Self, CoreError> {
         let config_path = get_config_path();
 
         if config_path.exists() {
-            let contents = fs::read_to_string(&config_path)
-                .with_context(|| format!("failed to read {}", config_path.display()))?;
-            let cfg: Config = toml::from_str(&contents)
-                .with_context(|| format!("invalid TOML at {}", config_path.display()))?;
+            let contents = fs::read_to_string(&config_path).map_err(|e| CoreError::ConfigRead {
+                path: config_path.display().to_string(),
+                source: e,
+            })?;
+            let cfg: Config = toml::from_str(&contents).map_err(|e| CoreError::ConfigParse {
+                path: config_path.display().to_string(),
+                source: e,
+            })?;
             Ok(cfg)
         } else {
             Ok(Config::default())
@@ -79,9 +83,34 @@ fn get_config_path() -> PathBuf {
         .unwrap_or_else(|| PathBuf::from("~/.config/beacon.toml"))
 }
 
+/// Lightweight provider to access module-specific configuration tables
+/// including extra/unknown sections preserved during TOML deserialization.
+pub struct ConfigProvider<'a> {
+    config: &'a Config,
+}
+
+impl<'a> ConfigProvider<'a> {
+    pub fn new(config: &'a Config) -> Self {
+        Self { config }
+    }
+
+    /// Returns a raw TOML table for the given module name if present
+    pub fn module_table(&self, module: &str) -> Option<&toml::value::Table> {
+        // Known modules are represented as typed structs and not exposed here.
+        // This function focuses on extra/unknown sections to enable pluggable modules.
+        self.config.extra_module_table(module)
+    }
+
+    /// List available extra module section names
+    pub fn list_extra_modules(&self) -> Vec<String> {
+        self.config.extra_modules.keys().cloned().collect()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::types::config::Config as Cfg;
 
     #[test]
     fn test_default_config() {
@@ -90,20 +119,20 @@ mod tests {
         // Test top-level defaults
         assert_eq!(config.format, "$directory $claude_model");
         assert_eq!(config.command_timeout, 500);
-        assert_eq!(config.debug, false);
+        assert!(!config.debug);
 
         // Test directory module defaults
         assert_eq!(config.directory.format, "[$path]($style)");
         assert_eq!(config.directory.style, "bold cyan");
         assert_eq!(config.directory.truncation_length, 3);
-        assert_eq!(config.directory.truncate_to_repo, true);
-        assert_eq!(config.directory.disabled, false);
+        assert!(config.directory.truncate_to_repo);
+        assert!(!config.directory.disabled);
 
         // Test claude_model module defaults
         assert_eq!(config.claude_model.format, "[$symbol$model]($style)");
         assert_eq!(config.claude_model.style, "bold yellow");
         assert_eq!(config.claude_model.symbol, "<");
-        assert_eq!(config.claude_model.disabled, false);
+        assert!(!config.claude_model.disabled);
     }
 
     #[test]
@@ -144,7 +173,7 @@ mod tests {
 
         assert_eq!(config.format, "$directory $claude_model");
         assert_eq!(config.command_timeout, 300);
-        assert_eq!(config.debug, true);
+        assert!(config.debug);
         assert_eq!(config.directory.format, "in [$path]($style)");
         assert_eq!(config.directory.style, "bold blue");
         assert_eq!(config.directory.truncation_length, 5);
@@ -164,7 +193,7 @@ mod tests {
         let config: Config = toml::from_str(toml_str).unwrap();
 
         // Specified values
-        assert_eq!(config.debug, true);
+        assert!(config.debug);
         assert_eq!(config.directory.style, "italic green");
 
         // Default values for unspecified fields
@@ -193,5 +222,27 @@ mod tests {
             // Fallback when home_dir is not available
             assert_eq!(path, PathBuf::from("~/.config/beacon.toml"));
         }
+    }
+
+    #[test]
+    fn extra_modules_are_preserved_and_accessible() {
+        let toml_str = r#"
+            [directory]
+            style = "bold blue"
+
+            [my_custom]
+            key = "value"
+            answer = 42
+        "#;
+        let cfg: Cfg = toml::from_str(toml_str).unwrap();
+        let provider = super::ConfigProvider::new(&cfg);
+        let t = provider.module_table("my_custom").expect("table exists");
+        assert_eq!(t.get("key").unwrap().as_str().unwrap(), "value");
+        assert_eq!(t.get("answer").unwrap().as_integer().unwrap(), 42);
+        assert!(
+            provider
+                .list_extra_modules()
+                .contains(&"my_custom".to_string())
+        );
     }
 }

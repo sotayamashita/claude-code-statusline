@@ -339,7 +339,6 @@ mod tests {
         assert!(module.should_display(&ctx, &ctx.config.git_status));
         let rendered = module.render(&ctx, &ctx.config.git_status);
         let plain = String::from_utf8(strip(rendered)).unwrap();
-
         // expect substrings: +1 (staged), !1 (modified), ?1 (untracked), ⇡1 (ahead)
         assert!(plain.contains("+1"));
         assert!(plain.contains("!1"));
@@ -365,7 +364,7 @@ mod tests {
         let module = GitStatusModule::new();
         let rendered = module.render(&ctx, &ctx.config.git_status);
         let plain = String::from_utf8(strip(rendered)).unwrap();
-        println!("clean repo git_status plain='{}'", plain);
+        println!("clean repo git_status plain='{plain}'");
         assert!(plain.is_empty());
     }
 }

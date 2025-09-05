@@ -10,8 +10,8 @@
 //! uses TOML format. All fields are optional and will use defaults
 //! if not specified.
 
+use crate::error::CoreError;
 use crate::modules::ModuleConfig;
-use anyhow::{Result, anyhow};
 use serde::{Deserialize, Serialize};
 use std::any::Any;
 
@@ -53,6 +53,12 @@ pub struct Config {
 
     #[serde(default)]
     pub git_status: GitStatusConfig,
+
+    /// Unrecognized/extra top-level tables (e.g., third-party modules)
+    /// Captures unknown sections like `[my_custom_module]` without losing them.
+    #[serde(flatten)]
+    #[serde(default)]
+    pub extra_modules: toml::value::Table,
 }
 
 /// Configuration for the directory module
@@ -104,6 +110,7 @@ impl Default for Config {
             claude_model: ClaudeModelConfig::default(),
             git_branch: GitBranchConfig::default(),
             git_status: GitStatusConfig::default(),
+            extra_modules: toml::value::Table::new(),
         }
     }
 }
@@ -390,13 +397,13 @@ impl ModuleConfig for GitStatusConfig {
 
 impl Config {
     /// Validate configuration values. Returns an error for clearly invalid values.
-    pub fn validate(&self) -> Result<()> {
+    pub fn validate(&self) -> Result<(), CoreError> {
         // Milliseconds; enforce sane bounds (50ms ..= 600_000ms)
         if self.command_timeout < 50 || self.command_timeout > 600_000 {
-            return Err(anyhow!(
+            return Err(CoreError::InvalidConfig(format!(
                 "command_timeout out of range (50..=600000): {}",
                 self.command_timeout
-            ));
+            )));
         }
         Ok(())
     }
@@ -448,6 +455,14 @@ impl Config {
 
         warnings
     }
+
+    /// Get a raw TOML table for an extra/unknown module section if present
+    pub fn extra_module_table(&self, name: &str) -> Option<&toml::value::Table> {
+        match self.extra_modules.get(name) {
+            Some(toml::Value::Table(t)) => Some(t),
+            _ => None,
+        }
+    }
 }
 
 #[cfg(test)]
@@ -456,8 +471,10 @@ mod validation_tests {
 
     #[test]
     fn command_timeout_bounds() {
-        let mut cfg = Config::default();
-        cfg.command_timeout = 10;
+        let mut cfg = Config {
+            command_timeout: 10,
+            ..Default::default()
+        };
         assert!(cfg.validate().is_err());
         cfg.command_timeout = 50;
         assert!(cfg.validate().is_ok());
@@ -477,8 +494,10 @@ mod validation_tests {
 
     #[test]
     fn warns_on_unknown_format_token() {
-        let mut cfg = Config::default();
-        cfg.format = "$directory $unknown $git_branch".to_string();
+        let cfg = Config {
+            format: "$directory $unknown $git_branch".to_string(),
+            ..Default::default()
+        };
         let ws = cfg.collect_warnings();
         assert!(
             ws.iter()

@@ -2,7 +2,7 @@ use predicates::prelude::*;
 use rstest::*;
 use std::fs;
 mod common;
-use common::{beacon_cmd, input_json_with_cwd, write_basic_config};
+use common::cli::{beacon_cmd, input_json_with_cwd, write_basic_config};
 
 #[rstest]
 #[case(false)]

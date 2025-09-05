@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use assert_cmd::Command;
 use std::fs;
 use std::path::Path;
@@ -27,7 +28,7 @@ style = "bold yellow"
 "#,
     );
     if let Some(ms) = command_timeout {
-        toml = format!("command_timeout = {}\n{}", ms, toml);
+        toml = format!("command_timeout = {ms}\n{toml}");
     }
     fs::write(cfg_dir.join("beacon.toml"), toml).unwrap();
 }
@@ -38,12 +39,11 @@ pub fn input_json_with_cwd(cwd: &str) -> String {
   "hook_event_name": "Status",
   "session_id": "s-123",
   "transcript_path": null,
-  "cwd": "{}",
+  "cwd": "{cwd}",
   "model": {{"id": "claude-opus", "display_name": "Opus"}},
-  "workspace": {{"current_dir": "{}", "project_dir": "{}"}},
+  "workspace": {{"current_dir": "{cwd}", "project_dir": "{cwd}"}},
   "version": "1.0.0",
   "output_style": null
-}}"#,
-        cwd, cwd, cwd
+}}"#
     )
 }

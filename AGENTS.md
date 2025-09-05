@@ -23,30 +23,53 @@ Refer to `specs/project.md` for a high-level overview.
 ### Directory Layout
 ```
 beacon/
-├── src/
-│   ├── main.rs           # CLI entry point, stdin handler
-│   ├── lib.rs            # Shared library code
-│   ├── parser.rs         # JSON input validation
-│   ├── config.rs         # Configuration loading
-│   ├── types/            # Type definitions
-│   │   ├── claude.rs     # Claude Code input types
-│   │   └── config.rs     # Configuration types
-│   └── modules/          # Status line components
-│       ├── mod.rs        # Module dispatcher
-│       ├── directory.rs  # Directory status
-│       └── claude_model.rs # Model display
-├── tests/
-│   └── common/           # Shared test helpers
-├── docs/                 # Design documentation
-├── hooks/                # Git hooks
-└── Cargo.toml           # Dependencies
+├── crates/
+│   ├── beacon-core/                # Core library (public API, types, modules)
+│   │   ├── src/
+│   │   │   ├── lib.rs              # pub use {Engine, Config, parse_claude_input, Context}
+│   │   │   ├── engine.rs           # Rendering engine
+│   │   │   ├── parser.rs           # JSON input / format helpers
+│   │   │   ├── config.rs           # Config loading (TOML)
+│   │   │   ├── error.rs            # CoreError (thiserror)
+│   │   │   ├── messages.rs         # Centralized messages/warnings
+│   │   │   ├── style.rs            # ANSI style renderer
+│   │   │   ├── timeout.rs          # Timeout utilities
+│   │   │   ├── types/              # Type definitions
+│   │   │   │   ├── claude.rs       # Claude Code input types
+│   │   │   │   ├── config.rs       # Configuration types (with defaults)
+│   │   │   │   └── context.rs      # Runtime context/memoization
+│   │   │   └── modules/            # Status line components
+│   │   │       ├── mod.rs          # Trait, dispatcher + timeout wrapper
+│   │   │       ├── registry.rs     # ModuleFactory/Registry
+│   │   │       ├── directory.rs    # Directory status
+│   │   │       ├── claude_model.rs # Model display
+│   │   │       ├── git_branch.rs   # Git branch (feature = "git")
+│   │   │       └── git_status.rs   # Git status (feature = "git")
+│   │   └── benches/engine_bench.rs # Criterion bench (engine)
+│   └── beacon-cli/                 # CLI (stdin→stdout、サブコマンド)
+│       ├── src/main.rs             # `beacon` binary
+│       └── src/lib.rs              # `run()` entry
+├── tests/                          # Integration tests (E2E)
+│   ├── common/
+│   ├── engine_api.rs
+│   ├── integration_smoke.rs
+│   ├── integration_timeout.rs
+│   ├── error_handling.rs
+│   └── cli_subcommands.rs
+├── docs/                           # Design & development docs
+├── hooks/                          # Git hooks
+├── scripts/bench_check.py          # Bench threshold gate
+└── Cargo.toml                      # Workspace root
 ```
 
 ### Module System
 - Each status component implements the `Module` trait
-- Modules are registered in `src/modules/mod.rs`
-- Dynamic loading based on configuration
-- Clear separation: types (`src/types/`) vs logic (`src/modules/`)
+- Dynamic creation via `Registry` + `ModuleFactory` (`crates/beacon-core/src/modules/registry.rs`)
+- Feature gates:
+  - `git` enables `git_branch` / `git_status` (optional `git2` dep)
+  - `parallel` enables Rayon-based parallel rendering
+- Config-driven loading based on `$tokens` found in `Config.format`
+- Clear separation: types (`.../types/`) vs logic (`.../modules/`)
 
 ## Quick Start
 
@@ -60,7 +83,7 @@ beacon/
 # Clone and build
 git clone <repository>
 cd beacon
-cargo build --release
+cargo build --workspace --release
 
 # Install git hooks
 make install-hooks
@@ -73,26 +96,28 @@ cp target/release/beacon ~/.local/bin/
 
 ### Build & Run
 ```bash
-cargo build                    # Debug build
-cargo build --release          # Optimized build
-cargo run -q                   # Run quietly (suppress cargo output)
-cargo run -- --help            # Show CLI help
+cargo build --workspace                 # Build all crates (debug)
+cargo build --workspace --release       # Optimized build
+cargo run -p beacon-cli -q              # Run CLI quietly
+cargo run -p beacon-cli -- --help       # Show CLI help
 ```
 
 ### Testing & Quality
 ```bash
-cargo test                     # Run all tests
-cargo test -- --nocapture      # Show test output
-cargo fmt                      # Format code
-cargo fmt -- --check           # Check formatting without changes
-cargo clippy -- -D warnings    # Lint with warnings as errors
-cargo doc --open               # Generate and open documentation
+cargo test --workspace                     # Run all tests
+cargo test --workspace -- --nocapture      # Show test output
+cargo fmt --all                            # Format code
+cargo fmt --all -- --check                 # Check formatting without changes
+cargo clippy --workspace -- -D warnings    # Lint with warnings as errors
+cargo doc --open                           # Generate and open documentation
+make bench                                 # Run criterion bench (core)
+make bench-check                           # Enforce mean < 50ms (default)
 ```
 
 ### Example Usage
 ```bash
 # Basic run with JSON input
-echo '{"cwd":"/tmp","model":{"id":"claude-opus","display_name":"Opus"}}' | cargo run -q
+echo '{"cwd":"/tmp","session_id":"abc","model":{"id":"claude-opus","display_name":"Opus"}}' | cargo run -p beacon-cli -q
 
 # With full context
 echo '{
@@ -106,7 +131,19 @@ echo '{
     "current_dir": "/project/src",
     "project_dir": "/project"
   }
-}' | cargo run -q
+}' | cargo run -p beacon-cli -q
+```
+
+### CLI Subcommands
+```bash
+# Config helpers
+beacon config --path        # Show config path (~/.config/beacon.toml)
+beacon config --default     # Print default TOML
+beacon config --validate    # Validate current config (OK/INVALID)
+
+# Module insights
+beacon modules --list       # List all registered modules
+beacon modules --enabled    # List modules enabled by current format/config
 ```
 
 ## Coding Style & Naming Conventions
@@ -137,9 +174,9 @@ echo '{
 - **Pre-commit Hooks**: Automatic format, lint, and test on commit
 
 ### Test Coverage Focus
-- Parser logic (`src/parser.rs`) - JSON input validation
-- Configuration (`src/config.rs`, `src/types/config.rs`) - TOML parsing and defaults
-- Module implementations (`src/modules/*.rs`) - Status component logic
+- Parser logic (`crates/beacon-core/src/parser.rs`) - JSON input validation
+- Configuration (`crates/beacon-core/src/config.rs`, `.../types/config.rs`) - TOML parsing/validation
+- Module implementations (`crates/beacon-core/src/modules/*.rs`) - Status component logic
 - Error paths and edge cases
 
 ### Writing Tests
@@ -162,8 +199,8 @@ mod tests {
 ## Architecture & Design Patterns
 
 ### Error Handling
-- Phase 1: `anyhow::Result` for rapid development
-- Phase 2+: Migrate to `thiserror` for structured errors
+- Core: Structured `CoreError` via `thiserror`（`crates/beacon-core/src/error.rs`）
+- CLI: Boundary uses `anyhow::Result<()>`; logs via `tracing` to stderr
 - Never panic in production - graceful degradation
 - Informative error messages with context
 
@@ -178,6 +215,8 @@ mod tests {
 - Hierarchical with defaults
 - Runtime reloadable
 - Validation on load
+ - Unknown sections preserved via `#[serde(flatten)]` as `extra_modules`
+ - `ConfigProvider` exposes extra module tables for pluggable modules
 
 ## Commit & Pull Request Guidelines
 
@@ -257,7 +296,7 @@ cargo rm <package>            # Remove dependency
 ### Code Documentation
 ```rust
 /// Public API documentation
-/// 
+///
 /// # Examples
 /// ```
 /// let result = function(input);
@@ -283,7 +322,7 @@ pub fn function(input: &str) -> Result<String> {
 
 ### Optimization Priorities
 1. Correctness first
-2. Readability second  
+2. Readability second
 3. Performance third
 
 ### Performance Tips
@@ -304,7 +343,6 @@ pub fn function(input: &str) -> Result<String> {
 ### Debug Mode
 Enable debug output in config:
 ```toml
-[general]
 debug = true
 ```
 
@@ -335,8 +373,8 @@ debug = true
 - Input: JSON via stdin
 - Output: ANSI-formatted text to stdout
 - Config: TOML at `~/.config/beacon.toml`
-- Logs: Controlled by debug flag
+- Logs: `tracing` to stderr, controlled by debug flag
 
 ---
-*Last updated: 2025-09-04*
+*Last updated: 2025-09-05*
 *Beacon - Fast, modular status line for AI development*
