@@ -183,7 +183,6 @@ format = "[[$all_status$ahead_behind] ]($style)"
 [claude_model]
 style = "bold fg:magenta"
 format = "[$symbol$model]($style)"
-symbol = "<"
 ```
 
 ## Future Work
@@ -191,4 +190,3 @@ symbol = "<"
 - Support additional modifiers: `dimmed`, `inverted`, `strikethrough`, `hidden`, `blink`.
 - `prev_fg` / `prev_bg` inheritance between adjacent segments.
 - Named palettes resolved from config tables.
-
