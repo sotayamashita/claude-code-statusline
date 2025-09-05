@@ -57,9 +57,10 @@ impl Module for ClaudeModelModule {
         if let Some(cfg) = config
             .as_any()
             .downcast_ref::<crate::types::config::ClaudeModelConfig>()
-            && cfg.disabled
         {
-            return false;
+            if cfg.disabled {
+                return false;
+            }
         }
         !context.model_display_name().trim().is_empty()
     }

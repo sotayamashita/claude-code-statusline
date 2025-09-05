@@ -39,23 +39,21 @@ impl DirectoryModule {
 
     /// Resolve user's home directory, preferring HOME env var when present
     fn resolve_home_dir(&self) -> Option<std::path::PathBuf> {
-        if let Ok(home) = std::env::var("HOME")
-            && !home.is_empty()
-        {
-            return Some(std::path::PathBuf::from(home));
+        match std::env::var("HOME") {
+            Ok(home) if !home.is_empty() => Some(std::path::PathBuf::from(home)),
+            _ => dirs::home_dir(),
         }
-        dirs::home_dir()
     }
 
     /// Abbreviate home directory to ~ (cross-platform)
     fn abbreviate_home(&self, path: &Path) -> String {
-        if let Some(home) = self.resolve_home_dir()
-            && let Ok(relative) = path.strip_prefix(&home)
-        {
-            if relative.as_os_str().is_empty() {
-                return "~".to_string();
+        if let Some(home) = self.resolve_home_dir() {
+            if let Ok(relative) = path.strip_prefix(&home) {
+                if relative.as_os_str().is_empty() {
+                    return "~".to_string();
+                }
+                return format!("~/{}", relative.display());
             }
-            return format!("~/{}", relative.display());
         }
         path.display().to_string()
     }

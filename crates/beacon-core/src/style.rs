@@ -112,20 +112,20 @@ pub fn render_with_style_template(
         if let Some(rbrack) = rest.find(']') {
             let inner = &rest[..rbrack];
             rest = &rest[rbrack + 1..];
-            if rest.starts_with('(')
-                && let Some(rparen) = rest.find(')')
-            {
-                let style_spec = &rest[1..rparen];
-                rest = &rest[rparen + 1..];
+            if rest.starts_with('(') {
+                if let Some(rparen) = rest.find(')') {
+                    let style_spec = &rest[1..rparen];
+                    rest = &rest[rparen + 1..];
 
-                // Resolve style
-                let style_to_use = if style_spec == "$style" {
-                    default_style
-                } else {
-                    style_spec
-                };
-                out.push_str(&apply_style(inner, style_to_use));
-                continue;
+                    // Resolve style
+                    let style_to_use = if style_spec == "$style" {
+                        default_style
+                    } else {
+                        style_spec
+                    };
+                    out.push_str(&apply_style(inner, style_to_use));
+                    continue;
+                }
             }
             // If we get here, brackets weren't in the expected form; restore literally
             out.push('[');

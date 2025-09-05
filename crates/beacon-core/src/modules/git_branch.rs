@@ -57,9 +57,10 @@ impl Module for GitBranchModule {
         if let Some(cfg) = config
             .as_any()
             .downcast_ref::<crate::types::config::GitBranchConfig>()
-            && cfg.disabled
         {
-            return false;
+            if cfg.disabled {
+                return false;
+            }
         }
 
         // Git リポジトリ配下のみ表示（git2 失敗時は git コマンドでフォールバック）
@@ -75,10 +76,11 @@ impl Module for GitBranchModule {
                 "--is-inside-work-tree",
             ])
             .output()
-            && out.status.success()
         {
-            let s = String::from_utf8_lossy(&out.stdout);
-            return s.trim() == "true";
+            if out.status.success() {
+                let s = String::from_utf8_lossy(&out.stdout);
+                return s.trim() == "true";
+            }
         }
         false
     }
