@@ -43,7 +43,21 @@ echo '{"session_id":"s","cwd":"/tmp","model":{"id":"claude-opus","display_name":
 # Benchmarks (criterion) and threshold check (< 50ms mean by default)
 make bench
 make bench-check
+
+# Run benches/tests with feature flags (optional)
+# Default benches run beacon-core without optional features.
+# Enable Git modules when you need them in benches/tests:
+cargo bench -p beacon-core --features git --no-run
+cargo test  -p beacon-core --features git
 ```
+
+## Feature Flags
+
+- `git`: Enables Git-powered modules (`git_branch`, `git_status`). The CLI depends on
+  `beacon-core` with `features = ["git"]`, so the `beacon` binary includes Git support by default.
+  Library consumers and standalone benches/tests must enable it explicitly with
+  `--features git` when needed.
+- `parallel`: Enables Rayon-based parallel rendering (planned/optional).
 
 ## Configuration
 

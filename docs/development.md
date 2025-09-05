@@ -85,6 +85,19 @@ make bench-check
 
 しきい値は `scripts/bench_check.py --threshold-ms <ms>` で変更可能です。
 
+#### Feature flags（git）
+
+- 既定の `make bench` は optional features（例: `git`）を無効のまま `beacon-core` をベンチビルドします。
+- Git 連携を含むベンチ/テストを実行したい場合は feature を明示的に有効化してください。
+
+```
+cargo bench -p beacon-core --features git --no-run
+cargo test  -p beacon-core --features git
+```
+
+CLI バイナリ（`crates/beacon-cli`）は `beacon-core` を `features = ["git"]` で依存しているため、
+通常の `cargo run -p beacon-cli` やインストール済み `beacon` 実行では Git 機能が有効です。
+
 ### 開発ワークフロー
 
 - ブランチ戦略・コミット規約: Conventional Commits（例: `feat(modules): add git_status`）
