@@ -78,7 +78,7 @@ impl DebugLogger {
     /// Log to stderr if debug mode is enabled
     pub fn log_stderr(&self, message: &str) {
         // Emit via tracing; subscriber decides output
-        tracing::debug!(target = "beacon", "{message}");
+        tracing::debug!(target: "beacon", "{message}");
         if self.enabled {
             eprintln!("[DEBUG] {message}");
         }
@@ -119,7 +119,7 @@ impl DebugLogger {
 
     /// Log error
     pub fn log_error(&self, error: &str) {
-        tracing::error!(target = "beacon", "{error}");
+        tracing::error!(target: "beacon", "{error}");
         self.log(&format!("ERROR: {error}"));
     }
 
