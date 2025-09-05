@@ -63,7 +63,7 @@ impl Module for GitBranchModule {
             }
         }
 
-        // Git リポジトリ配下のみ表示（git2 失敗時は git コマンドでフォールバック）
+        // Display only when inside a Git repository (fallback to `git` command on failure)
         if context.repo().is_ok() {
             return true;
         }
@@ -165,7 +165,7 @@ mod tests {
     use crate::types::context::Context;
     use rstest::*;
 
-    // git2 と tempfile を利用して一時リポジトリを構築
+    // Utilize git2 and tempfile to construct a temporary repository
     use git2::{Repository, Signature};
     use std::fs::{File, create_dir_all};
     use std::io::Write as _; // for file writing
@@ -193,15 +193,15 @@ mod tests {
         Context::new(input, Config::default())
     }
 
-    // Helper: 空コミットを作り main ブランチをセット
+    // Helper: Create an empty commit and set the main branch
     fn init_repo_with_branch(path: &Path, _branch: &str) -> Repository {
         let repo = Repository::init(path).expect("init repo");
 
-        // 初回コミット
+        // Create an initial commit
         let sig = Signature::now("Tester", "tester@example.com").unwrap();
         let mut index = repo.index().unwrap();
 
-        // 何かしらファイルを作って add
+        // Create and add a file to the index
         let file_path = path.join("README.md");
         let mut file = File::create(&file_path).unwrap();
         writeln!(file, "test").unwrap();
@@ -216,15 +216,14 @@ mod tests {
             .unwrap();
         let commit = repo.find_commit(commit_id).unwrap();
 
-        // ここではデフォルトブランチ（master/main）に任せる
-        // 明示的に借用を解放
+        // Drop explicit borrows
         drop(commit);
         drop(tree);
 
         repo
     }
 
-    // Helper: Detached HEAD を作る
+    // Helper: Create a detached HEAD
     fn detach_head(repo: &Repository) {
         let head = repo.head().unwrap();
         let target = head.target().unwrap();
@@ -246,7 +245,7 @@ mod tests {
 
         let ctx = make_context(outside.to_str().unwrap());
 
-        // 未実装モジュールを前提に、型・メソッドの存在をテストで宣言
+        // Test that the module is hidden when outside a Git repository
         let module = crate::modules::git_branch::GitBranchModule::new();
         let show = module.should_display(&ctx, &ctx.config.git_branch);
         assert!(!show);
@@ -291,7 +290,7 @@ mod tests {
         let _repo = init_repo_with_branch(&root, "main");
         let mut ctx = make_context(root.to_str().unwrap());
 
-        // disabled = true を設定
+        // Set `disabled` to `true`
         ctx.config.git_branch.disabled = true;
 
         let module = crate::modules::git_branch::GitBranchModule::new();
