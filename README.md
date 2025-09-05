@@ -59,9 +59,7 @@ cargo test  -p beacon-core --features git
   `--features git` when needed.
 - `parallel`: Enables Rayon-based parallel rendering (planned/optional).
 
-## Configuration
-
-### Claude Code:
+## Claude Code Configuration
 
 ```json
 {
@@ -73,24 +71,24 @@ cargo test  -p beacon-core --features git
 }
 ```
 
-_[Lean more about Claude Code status line integration](https://docs.anthropic.com/en/docs/claude-code/statusline)_
+_**[Lean more about Claude Code status line integration](https://docs.anthropic.com/en/docs/claude-code/statusline)**_
 
-### Beacon Settings:
+## Beacon Configuration:
 
-#### Config File Location
+### Config File Location
 
 ```bash
 ~/.config/beacon.toml
 ```
 
-#### Supported Modules
+### Supported Modules
 
 - `directory`
 - `git_branch`
 - `git_status`
 - `claude_model`
 
-#### Default Style
+### Default Style
 
 ```toml
 Format = "$directory $git_branch $git_status $claude_model"
@@ -108,11 +106,11 @@ style = "bold red"
 style = "bold yellow"
 ```
 
-## Presets
+### Presets Style
 
-### Pure Prompt (single-line, no linebreak)
+#### Pure Prompt (single-line, no linebreak)
 
-A minimal, single-line preset inspired by Starship’s Pure Prompt.
+A minimal, single-line preset inspired by [Starship’s Pure Prompt](https://starship.rs/presets/pure_prompt).
 
 ```toml
 format = "$directory $git_branch $git_status $claude_model"
@@ -124,17 +122,16 @@ truncate_to_repo = true
 
 [git_branch]
 style = "bold green"
-# symbol = ""   # if your font supports it; default is "🌿"
+symbol = ""
 
 [git_status]
 style = "bold red"
 
 [claude_model]
 style = "bold yellow"
-symbol = "<"
 ```
 
-See docs/presets/pure_prompt.md for details and notes.
+_**[See docs/presets/pure_prompt.md for details and notes.](docs/presets/pure_prompt.md)**_
 
 ## Acknowledgments
 
