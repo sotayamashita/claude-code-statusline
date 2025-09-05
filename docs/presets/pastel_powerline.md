@@ -24,14 +24,12 @@ style = ""
 format = "[$path ]($style)"  # モジュール単体でのプレビュー用（本番は上記 format を使用）
 
 [git_branch]
-symbol = "🌿"
 style = ""
 
 [git_status]
 style = ""
 
 [claude_model]
-symbol = "<"
 style = ""
 ```
 

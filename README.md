@@ -133,6 +133,41 @@ style = "bold yellow"
 
 _**[See docs/presets/pure_prompt.md for details and notes.](docs/presets/pure_prompt.md)**_
 
+#### Pastel Powerline (fg+bg with bridged separators)
+
+A pastel-colored Powerline-style preset that uses both foreground and background colors per segment, bridging separators () by setting the separator’s foreground to the previous segment’s background and its background to the next segment’s background.
+
+```toml
+format = """
+[$path ](fg:black bg:#a8d8ef)
+[](fg:#a8d8ef bg:#bde5b8)
+[ $symbol $branch ](fg:black bg:#bde5b8)
+[](fg:#bde5b8 bg:#f8e3a1)
+[ $all_status$ahead_behind ](fg:black bg:#f8e3a1)
+[](fg:#f8e3a1 bg:#e4bee6)
+[ $symbol$model ](fg:black bg:#e4bee6)"""
+
+[directory]
+style = ""
+
+[git_branch]
+symbol = "🌿"
+style = ""
+
+[git_status]
+style = ""
+
+[claude_model]
+symbol = "<"
+style = ""
+```
+
+Notes:
+- Colors are examples; adjust any Hex or 8-bit indices to your taste.
+- Requires fonts that support Powerline symbols.
+
+_**[See docs/presets/pastel_powerline.md for details and background.](docs/presets/pastel_powerline.md)**_
+
 ## Acknowledgments
 
 This project was inspired by [Starship](https://starship.rs/), the excellent cross-shell prompt. I've adapted its modular architecture for Claude Code's statusline.

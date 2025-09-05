@@ -111,6 +111,7 @@ impl<'a> ConfigProvider<'a> {
 mod tests {
     use super::*;
     use crate::types::config::Config as Cfg;
+    use std::env;
 
     #[test]
     fn test_default_config() {
@@ -137,19 +138,15 @@ mod tests {
 
     #[test]
     fn test_load_missing_config_returns_default() {
-        // Note: This test may use actual config file if it exists
-        // The test name is misleading - it's testing Config::load() in general
+        // Isolate HOME so that no real ~/.config/beacon.toml is read
+        let tmp = tempfile::tempdir().unwrap();
+        // Rust 2024: mutating process env is unsafe due to potential data races
+        unsafe {
+            env::set_var("HOME", tmp.path());
+        }
         let config = Config::load().unwrap();
-        // Accept common real-world formats that may be present in a user's local config
-        let ok_formats = [
-            "$directory $claude_model",
-            "$directory $git_branch $claude_model",
-            "$directory $git_branch $git_status $claude_model",
-        ];
-        assert!(ok_formats.contains(&config.format.as_str()));
-        // If config file exists with command_timeout = 300, that will be loaded
-        // If not, default 500 will be used
-        assert!(config.command_timeout == 300 || config.command_timeout == 500);
+        assert_eq!(config.format, "$directory $claude_model");
+        assert_eq!(config.command_timeout, 500);
     }
 
     #[test]
