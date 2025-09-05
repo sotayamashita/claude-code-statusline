@@ -42,39 +42,139 @@
 /// - If no valid tokens are found, returns the original text
 /// - Multiple styles can be combined (e.g., "bold red underline")
 pub fn apply_style(text: &str, style: &str) -> String {
-    // Table-driven mapping for minimal, portable ANSI codes
-    const STYLE_CODES: &[(&str, &str)] = &[("bold", "1"), ("italic", "3"), ("underline", "4")];
-    const COLOR_CODES: &[(&str, &str)] = &[
-        ("black", "30"),
-        ("red", "31"),
-        ("green", "32"),
-        ("yellow", "33"),
-        ("blue", "34"),
-        ("magenta", "35"),
-        ("cyan", "36"),
-        ("white", "37"),
-    ];
+    #[derive(Clone, Copy)]
+    enum ColorSpec {
+        NamedNormal(u8), // 30..=37 (FG) / 40..=47 (BG) base offset will be applied
+        NamedBright(u8), // 90..=97 / 100..=107 (store 0..=7)
+        Index(u8),       // 0..=255
+        Rgb(u8, u8, u8), // truecolor
+        NoneSet,         // explicit none
+    }
 
-    let mut codes: Vec<&'static str> = Vec::new();
+    fn parse_named(name: &str) -> Option<u8> {
+        match name {
+            "black" => Some(0),
+            "red" => Some(1),
+            "green" => Some(2),
+            "yellow" => Some(3),
+            "blue" => Some(4),
+            "magenta" => Some(5),
+            "cyan" => Some(6),
+            "white" => Some(7),
+            _ => None,
+        }
+    }
+
+    fn parse_color_spec(spec: &str) -> Option<ColorSpec> {
+        let s = spec.to_lowercase();
+        if s == "none" {
+            return Some(ColorSpec::NoneSet);
+        }
+        if let Some(hex) = s.strip_prefix('#') {
+            if hex.len() == 6 {
+                let r = u8::from_str_radix(&hex[0..2], 16).ok()?;
+                let g = u8::from_str_radix(&hex[2..4], 16).ok()?;
+                let b = u8::from_str_radix(&hex[4..6], 16).ok()?;
+                return Some(ColorSpec::Rgb(r, g, b));
+            }
+        }
+        if s.chars().all(|c| c.is_ascii_digit()) {
+            if let Ok(n) = s.parse::<u16>() {
+                if n <= 255 {
+                    return Some(ColorSpec::Index(n as u8));
+                }
+            }
+        }
+        if let Some(n) = s.strip_prefix("bright-") {
+            if let Some(idx) = parse_named(n) {
+                return Some(ColorSpec::NamedBright(idx));
+            }
+        }
+        if let Some(idx) = parse_named(&s) {
+            return Some(ColorSpec::NamedNormal(idx));
+        }
+        None
+    }
+
+    // Modifiers
+    let mut bold = false;
+    let mut italic = false;
+    let mut underline = false;
+
+    // Color channels: last one wins
+    let mut fg: Option<ColorSpec> = None;
+    let mut bg: Option<ColorSpec> = None;
 
     for token in style.split_whitespace() {
         let t = token.to_lowercase();
-        if let Some((_, code)) = STYLE_CODES.iter().find(|(k, _)| *k == t) {
-            codes.push(*code);
+        match t.as_str() {
+            "bold" => {
+                bold = true;
+                continue;
+            }
+            "italic" => {
+                italic = true;
+                continue;
+            }
+            "underline" => {
+                underline = true;
+                continue;
+            }
+            _ => {}
+        }
+
+        if let Some(rest) = t.strip_prefix("fg:") {
+            fg = parse_color_spec(rest);
             continue;
         }
-        if let Some((_, code)) = COLOR_CODES.iter().find(|(k, _)| *k == t) {
-            codes.push(*code);
+        if let Some(rest) = t.strip_prefix("bg:") {
+            bg = parse_color_spec(rest);
             continue;
         }
-        // Unknown tokens are ignored
+
+        // Bare color spec is treated as foreground
+        if let Some(cs) = parse_color_spec(&t) {
+            fg = Some(cs);
+        } else {
+            // Unknown token: ignore
+        }
+    }
+
+    let mut codes: Vec<String> = Vec::with_capacity(5);
+    if bold {
+        codes.push("1".to_string());
+    }
+    if italic {
+        codes.push("3".to_string());
+    }
+    if underline {
+        codes.push("4".to_string());
+    }
+
+    if let Some(c) = fg {
+        match c {
+            ColorSpec::NamedNormal(idx) => codes.push((30 + idx).to_string()),
+            ColorSpec::NamedBright(idx) => codes.push((90 + idx).to_string()),
+            ColorSpec::Index(n) => codes.push(format!("38;5;{n}")),
+            ColorSpec::Rgb(r, g, b) => codes.push(format!("38;2;{r};{g};{b}")),
+            ColorSpec::NoneSet => {}
+        }
+    }
+    if let Some(c) = bg {
+        match c {
+            ColorSpec::NamedNormal(idx) => codes.push((40 + idx).to_string()),
+            ColorSpec::NamedBright(idx) => codes.push((100 + idx).to_string()),
+            ColorSpec::Index(n) => codes.push(format!("48;5;{n}")),
+            ColorSpec::Rgb(r, g, b) => codes.push(format!("48;2;{r};{g};{b}")),
+            ColorSpec::NoneSet => {}
+        }
     }
 
     if codes.is_empty() {
         return text.to_string();
     }
-
-    format!("\x1b[{}m{}\x1b[0m", codes.join(";"), text)
+    let sgr = codes.join(";");
+    format!("\x1b[{sgr}m{text}\x1b[0m")
 }
 
 /// Render a simple module-local format string that can contain variable tokens
@@ -180,5 +280,63 @@ mod tests {
         assert!(out.contains("~/proj"));
         assert!(out.starts_with("\u{1b}["));
         assert!(out.ends_with("\u{1b}[0m"));
+    }
+
+    // New spec tests for fg:/bg: and extended colors
+
+    #[test]
+    fn style_named_fg_bg() {
+        let s = apply_style("X", "bold fg:green bg:black");
+        assert!(s.starts_with("\u{1b}["));
+        // Contains bold(1), fg green(32), bg black(40) in any order
+        assert!(s.contains("1"));
+        assert!(s.contains("32"));
+        assert!(s.contains("40"));
+        assert!(s.ends_with("\u{1b}[0m"));
+    }
+
+    #[test]
+    fn style_bright_named() {
+        let s = apply_style("X", "bright-yellow bg:bright-blue");
+        // bright yellow = 93, bright blue background = 104
+        assert!(s.contains("93"));
+        assert!(s.contains("104"));
+    }
+
+    #[test]
+    fn style_8bit_indexes() {
+        let s = apply_style("X", "fg:196 bg:238");
+        assert!(s.contains("38;5;196"));
+        assert!(s.contains("48;5;238"));
+    }
+
+    #[test]
+    fn style_hex_truecolor() {
+        let s = apply_style("X", "fg:#bf5700 bg:#003366");
+        assert!(s.contains("38;2;191;87;0"));
+        assert!(s.contains("48;2;0;51;102"));
+    }
+
+    #[test]
+    fn style_bare_color_equivalence() {
+        let s1 = apply_style("X", "yellow");
+        let s2 = apply_style("X", "fg:yellow");
+        assert_eq!(s1, s2);
+    }
+
+    #[test]
+    fn style_unknown_tokens_stability() {
+        let s = apply_style("X", "bold sparkle fg:green foo");
+        assert!(s.contains("1"));
+        assert!(s.contains("32") || s.contains("38;2;") || s.contains("38;5;"));
+        // Should not introduce 38; for fg if using named mapping 32; but mainly ensure still wrapped
+        assert!(s.starts_with("\u{1b}[") && s.ends_with("\u{1b}[0m"));
+    }
+
+    #[test]
+    fn style_none_handling() {
+        let s = apply_style("X", "fg:none italic");
+        assert!(s.contains("3"));
+        assert!(!s.contains("38;"));
     }
 }
