@@ -145,25 +145,24 @@ impl Module for GitStatusModule {
         let mut ahead_behind = String::new();
         if let Ok(head) = repo.head()
             && head.is_branch()
+            && let Some(local_oid) = head.target()
         {
-            if let Some(local_oid) = head.target() {
-                let shorthand = head.shorthand().unwrap_or("");
-                if let Ok(local_branch) = repo.find_branch(shorthand, git2::BranchType::Local)
-                    && let Ok(up_branch) = local_branch.upstream()
-                    && let Some(up_oid) = up_branch.get().target()
-                    && let Ok((ahead, behind)) = repo.graph_ahead_behind(local_oid, up_oid)
-                {
-                    if ahead > 0 && behind > 0 {
-                        if !cfg.symbols.diverged.is_empty() {
-                            ahead_behind = cfg.symbols.diverged.clone();
-                        }
-                    } else if ahead > 0 {
-                        if !cfg.symbols.ahead.is_empty() {
-                            ahead_behind = format!("{}{}", cfg.symbols.ahead, ahead);
-                        }
-                    } else if behind > 0 && !cfg.symbols.behind.is_empty() {
-                        ahead_behind = format!("{}{}", cfg.symbols.behind, behind);
+            let shorthand = head.shorthand().unwrap_or("");
+            if let Ok(local_branch) = repo.find_branch(shorthand, git2::BranchType::Local)
+                && let Ok(up_branch) = local_branch.upstream()
+                && let Some(up_oid) = up_branch.get().target()
+                && let Ok((ahead, behind)) = repo.graph_ahead_behind(local_oid, up_oid)
+            {
+                if ahead > 0 && behind > 0 {
+                    if !cfg.symbols.diverged.is_empty() {
+                        ahead_behind = cfg.symbols.diverged.clone();
                     }
+                } else if ahead > 0 {
+                    if !cfg.symbols.ahead.is_empty() {
+                        ahead_behind = format!("{}{}", cfg.symbols.ahead, ahead);
+                    }
+                } else if behind > 0 && !cfg.symbols.behind.is_empty() {
+                    ahead_behind = format!("{}{}", cfg.symbols.behind, behind);
                 }
             }
         }
