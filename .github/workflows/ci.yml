@@ -37,16 +37,16 @@ jobs:
         run: cargo fmt --all -- --check
 
       - name: clippy (deny warnings)
-        run: cargo clippy --workspace --all-targets -- -D warnings
+        run: cargo clippy --locked --workspace --all-targets -- -D warnings
 
       - name: Build (release)
-        run: cargo build --workspace --release --verbose
+        run: cargo build --locked --workspace --release --verbose
 
       - name: Test (workspace)
-        run: cargo test --workspace -- --nocapture
+        run: cargo test --locked --workspace -- --nocapture
 
       - name: Build docs
-        run: cargo doc --no-deps
+        run: cargo doc --locked --no-deps
 
   bench:
     name: Bench threshold gate
