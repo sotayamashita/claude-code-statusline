@@ -82,21 +82,92 @@ impl Module for DirectoryModule {
     }
 
     fn render(&self, context: &Context, config: &dyn ModuleConfig) -> String {
-        let path_str = self.abbreviate_home(&context.current_dir);
-
         // Try to use module-specific formatting if available
         if let Some(cfg) = config
             .as_any()
             .downcast_ref::<crate::types::config::DirectoryConfig>()
         {
+            // If truncate_to_repo is enabled and we're inside a repo, construct
+            // a repository-relative path: `<repo-name>/<sub/dirs>`, truncated to
+            // at most `truncation_length` segments, always keeping the repo name.
+            let mut repo_root: Option<std::path::PathBuf> = None;
+
+            if cfg.truncate_to_repo {
+                #[cfg(feature = "git")]
+                {
+                    if let Ok(repo) = context.repo() {
+                        if let Some(wd) = repo.workdir() {
+                            if context.current_dir.starts_with(wd) {
+                                repo_root = Some(wd.to_path_buf());
+                            }
+                        }
+                    }
+                }
+                // Fallback discovery without git feature: look for a `.git` directory
+                if repo_root.is_none() {
+                    let mut p = context.current_dir.as_path();
+                    loop {
+                        let dot_git = p.join(".git");
+                        if dot_git.is_dir() {
+                            repo_root = Some(p.to_path_buf());
+                            break;
+                        }
+                        match p.parent() {
+                            Some(parent) => p = parent,
+                            None => break,
+                        }
+                    }
+                }
+            }
+
+            let path_str = if let Some(root) = repo_root {
+                // repo name
+                let repo_name = root
+                    .file_name()
+                    .map(|s| s.to_string_lossy().to_string())
+                    .unwrap_or_else(|| root.display().to_string());
+
+                // relative components from repo root to current dir
+                let mut segments: Vec<String> = vec![repo_name];
+                if let Ok(rel) = context.current_dir.strip_prefix(&root) {
+                    use std::path::Component;
+                    for c in rel.components() {
+                        if let Component::Normal(os) = c {
+                            let s = os.to_string_lossy().to_string();
+                            if !s.is_empty() {
+                                segments.push(s);
+                            }
+                        }
+                    }
+                }
+
+                // Truncate to at most `truncation_length` segments, preserving repo name
+                let tl = std::cmp::max(1, cfg.truncation_length);
+                if segments.len() > tl {
+                    let keep_tail = tl.saturating_sub(1);
+                    let mut out = Vec::with_capacity(tl);
+                    out.push(segments[0].clone()); // repo name
+                    if keep_tail > 0 {
+                        let start = segments.len() - keep_tail;
+                        out.extend_from_slice(&segments[start..]);
+                    }
+                    out.join("/")
+                } else {
+                    segments.join("/")
+                }
+            } else {
+                // Fallback to home abbreviation (legacy behavior)
+                self.abbreviate_home(&context.current_dir)
+            };
+
             use std::collections::HashMap;
             let mut tokens: HashMap<&str, String> = HashMap::new();
             tokens.insert("path", path_str.clone());
-
             return crate::style::render_with_style_template(cfg.format(), &tokens, cfg.style());
         }
 
-        path_str
+        // No config found: return plain abbreviated path
+        self.abbreviate_home(&context.current_dir)
     }
 }
 
@@ -107,6 +178,7 @@ mod tests {
     use crate::types::claude::{ClaudeInput, ModelInfo, WorkspaceInfo};
     use crate::types::context::Context;
     use rstest::*;
+    use std::fs::create_dir_all;
     use std::sync::{Mutex, OnceLock};
 
     /// Fixture for creating test contexts
@@ -199,5 +271,143 @@ mod tests {
         let rendered = module.render(&context, &context.config.directory);
         let plain = String::from_utf8(strip_ansi_escapes::strip(rendered)).unwrap();
         assert_eq!(plain, expected);
+    }
+
+    #[cfg(feature = "git")]
+    fn init_git_repo(root: &std::path::Path) -> git2::Repository {
+        use git2::Repository;
+        let repo = Repository::init(root).unwrap();
+        // initial commit for a valid repo
+        let sig = git2::Signature::now("Tester", "tester@example.com").unwrap();
+        std::fs::write(root.join("README.md"), b"init\n").unwrap();
+        let mut idx = repo.index().unwrap();
+        idx.add_path(std::path::Path::new("README.md")).unwrap();
+        let tree_id = idx.write_tree().unwrap();
+        let tree = repo.find_tree(tree_id).unwrap();
+        let head = repo
+            .commit(Some("HEAD"), &sig, &sig, "initial", &tree, &[])
+            .unwrap();
+        drop(tree);
+        let c0 = repo.find_commit(head).unwrap();
+        let _ = repo.branch("main", &c0, true).ok();
+        drop(c0);
+        let _ = repo.set_head("refs/heads/main");
+        repo
+    }
+
+    #[cfg(feature = "git")]
+    #[rstest]
+    fn repo_root_displays_repo_name_only() {
+        let tmp = tempfile::tempdir().unwrap();
+        let root = tmp.path();
+        create_dir_all(root).unwrap();
+        let _repo = init_git_repo(root);
+
+        let input = crate::types::claude::ClaudeInput {
+            hook_event_name: None,
+            session_id: "test".into(),
+            transcript_path: None,
+            cwd: root.to_string_lossy().to_string(),
+            model: crate::types::claude::ModelInfo {
+                id: "id".into(),
+                display_name: "Opus".into(),
+            },
+            workspace: Some(crate::types::claude::WorkspaceInfo {
+                current_dir: root.to_string_lossy().to_string(),
+                project_dir: Some(root.to_string_lossy().to_string()),
+            }),
+            version: Some("1.0.0".into()),
+            output_style: None,
+        };
+        let mut cfg = crate::config::Config::default();
+        cfg.directory.truncate_to_repo = true;
+        cfg.directory.truncation_length = 3;
+        let ctx = crate::types::context::Context::new(input, cfg);
+
+        let module = DirectoryModule::new();
+        let rendered = module.render(&ctx, &ctx.config.directory);
+        let plain = String::from_utf8(strip_ansi_escapes::strip(rendered)).unwrap();
+        let repo_name = root.file_name().unwrap().to_string_lossy().to_string();
+        assert_eq!(plain, repo_name);
+    }
+
+    #[cfg(feature = "git")]
+    #[rstest]
+    fn repo_subdir_includes_repo_and_tail_segments() {
+        let tmp = tempfile::tempdir().unwrap();
+        let root = tmp.path();
+        let _repo = init_git_repo(root);
+        let sub = root.join("src").join("module");
+        create_dir_all(&sub).unwrap();
+
+        let input = crate::types::claude::ClaudeInput {
+            hook_event_name: None,
+            session_id: "test".into(),
+            transcript_path: None,
+            cwd: sub.to_string_lossy().to_string(),
+            model: crate::types::claude::ModelInfo {
+                id: "id".into(),
+                display_name: "Opus".into(),
+            },
+            workspace: Some(crate::types::claude::WorkspaceInfo {
+                current_dir: sub.to_string_lossy().to_string(),
+                project_dir: Some(root.to_string_lossy().to_string()),
+            }),
+            version: Some("1.0.0".into()),
+            output_style: None,
+        };
+        let mut cfg = crate::config::Config::default();
+        cfg.directory.truncate_to_repo = true;
+        cfg.directory.truncation_length = 3; // repo + 2
+        let ctx = crate::types::context::Context::new(input, cfg);
+
+        let module = DirectoryModule::new();
+        let rendered = module.render(&ctx, &ctx.config.directory);
+        let plain = String::from_utf8(strip_ansi_escapes::strip(rendered)).unwrap();
+        let repo_name = root.file_name().unwrap().to_string_lossy().to_string();
+        assert_eq!(
+            plain,
+            format!("{repo}/{a}/{b}", repo = repo_name, a = "src", b = "module")
+        );
+    }
+
+    #[cfg(feature = "git")]
+    #[rstest]
+    fn truncation_length_preserves_repo_and_tails() {
+        let tmp = tempfile::tempdir().unwrap();
+        let root = tmp.path();
+        let _repo = init_git_repo(root);
+        let deep = root.join("a").join("b").join("c").join("d");
+        create_dir_all(&deep).unwrap();
+
+        let input = crate::types::claude::ClaudeInput {
+            hook_event_name: None,
+            session_id: "test".into(),
+            transcript_path: None,
+            cwd: deep.to_string_lossy().to_string(),
+            model: crate::types::claude::ModelInfo {
+                id: "id".into(),
+                display_name: "Opus".into(),
+            },
+            workspace: Some(crate::types::claude::WorkspaceInfo {
+                current_dir: deep.to_string_lossy().to_string(),
+                project_dir: Some(root.to_string_lossy().to_string()),
+            }),
+            version: Some("1.0.0".into()),
+            output_style: None,
+        };
+        let mut cfg = crate::config::Config::default();
+        cfg.directory.truncate_to_repo = true;
+        cfg.directory.truncation_length = 2; // repo + last 1
+        let ctx = crate::types::context::Context::new(input, cfg);
+
+        let module = DirectoryModule::new();
+        let rendered = module.render(&ctx, &ctx.config.directory);
+        let plain = String::from_utf8(strip_ansi_escapes::strip(rendered)).unwrap();
+        let repo_name = root.file_name().unwrap().to_string_lossy().to_string();
+        assert_eq!(
+            plain,
+            format!("{repo}/{tail}", repo = repo_name, tail = "d")
+        );
     }
 }
