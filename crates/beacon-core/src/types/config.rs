@@ -283,7 +283,7 @@ fn default_claude_model_symbol() -> String {
 
 // Git Branch module defaults
 fn default_git_branch_format() -> String {
-    "[🌿 $branch]($style)".to_string()
+    "[$symbol $branch]($style)".to_string()
 }
 
 fn default_git_branch_style() -> String {
@@ -502,6 +502,18 @@ mod validation_tests {
         assert!(
             ws.iter()
                 .any(|w| w.contains("Unknown format token: '$unknown'"))
+        );
+    }
+
+    #[test]
+    fn git_branch_default_format_uses_symbol_token() {
+        // The default git_branch format should include $symbol so that
+        // configuring [git_branch].symbol in beacon.toml takes effect
+        // without requiring users to also override the format.
+        let fmt = super::default_git_branch_format();
+        assert!(
+            fmt.contains("$symbol"),
+            "default format must reference $symbol; got: {fmt}"
         );
     }
 }
