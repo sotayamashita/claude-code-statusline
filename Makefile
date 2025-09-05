@@ -1,5 +1,6 @@
 # Variables
 HOOKS_DIR := hooks
+CLAUDE_CODE_DIR := .claude
 GIT_HOOKS_DIR := .git/hooks
 
 .PHONY: install-hooks
@@ -9,6 +10,14 @@ install-hooks:
 	@cp $(HOOKS_DIR)/pre-commit.sh $(GIT_HOOKS_DIR)/pre-commit
 	@chmod +x $(GIT_HOOKS_DIR)/pre-commit
 	@echo "✅ pre-commit installed"
+
+.PHONY: debug
+debug:
+    @echo "Building debug version..."
+    @cargo build --workspace --release
+    @mv target/release/beacon $(CLAUDE_CODE_DIR)/beacon
+    @chmod +x $(CLAUDE_CODE_DIR)/beacon
+    @echo "✅ Debug version built and installed"
 
 .PHONY: bench
 bench:
