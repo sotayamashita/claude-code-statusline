@@ -61,7 +61,7 @@ cargo test  -p beacon-core --features git
 
 ## Configuration
 
-Claude Code status line integration (example):
+### Claude Code:
 
 ```json
 {
@@ -73,39 +73,39 @@ Claude Code status line integration (example):
 }
 ```
 
-Beacon settings live at `~/.config/beacon.toml` (TOML). Example:
+_[Lean more about Claude Code status line integration](https://docs.anthropic.com/en/docs/claude-code/statusline)_
+
+### Beacon Settings:
+
+#### Config File Location
+
+```bash
+~/.config/beacon.toml
+```
+
+#### Supported Modules
+
+- `directory`
+- `git_branch`
+- `git_status`
+- `claude_model`
+
+#### Default Style
 
 ```toml
-# Which modules to render and in what order (tokens start with $)
-format = "$directory $git_branch $git_status $claude_model"
+Format = "$directory $git_branch $git_status $claude_model"
 
-# Per-module configuration
+[directory]
+style = "bold cyan"
+
 [git_branch]
-format = "[$branch]($style)"
 style = "bold green"
 
 [git_status]
-format = "([[$all_status$ahead_behind]]($style))"
 style = "bold red"
 
 [claude_model]
-format = "[$model]($style)"
 style = "bold yellow"
-
-# Global settings
-command_timeout = 300  # ms (50..=600000)
-debug = false          # enable extra logging to stderr
-```
-
-CLI helpers:
-
-```bash
-beacon config --path        # Show config path (~/.config/beacon.toml)
-beacon config --default     # Print default TOML
-beacon config --validate    # Validate current config (OK/INVALID)
-
-beacon modules --list       # List all registered modules
-beacon modules --enabled    # List modules enabled by current format/config
 ```
 
 ## Acknowledgments
