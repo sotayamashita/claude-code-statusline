@@ -24,8 +24,8 @@
 //! style = "bold yellow"
 //! ```
 
-pub use crate::types::config::Config;
 use crate::error::CoreError;
+pub use crate::types::config::Config;
 use std::fs;
 use std::path::PathBuf;
 
@@ -53,10 +53,14 @@ impl Config {
         let config_path = get_config_path();
 
         if config_path.exists() {
-            let contents = fs::read_to_string(&config_path)
-                .map_err(|e| CoreError::ConfigRead { path: config_path.display().to_string(), source: e })?;
-            let cfg: Config = toml::from_str(&contents)
-                .map_err(|e| CoreError::ConfigParse { path: config_path.display().to_string(), source: e })?;
+            let contents = fs::read_to_string(&config_path).map_err(|e| CoreError::ConfigRead {
+                path: config_path.display().to_string(),
+                source: e,
+            })?;
+            let cfg: Config = toml::from_str(&contents).map_err(|e| CoreError::ConfigParse {
+                path: config_path.display().to_string(),
+                source: e,
+            })?;
             Ok(cfg)
         } else {
             Ok(Config::default())

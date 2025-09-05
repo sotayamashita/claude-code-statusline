@@ -10,8 +10,8 @@
 //! uses TOML format. All fields are optional and will use defaults
 //! if not specified.
 
-use crate::modules::ModuleConfig;
 use crate::error::CoreError;
+use crate::modules::ModuleConfig;
 use serde::{Deserialize, Serialize};
 use std::any::Any;
 

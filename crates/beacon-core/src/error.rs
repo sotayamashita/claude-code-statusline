@@ -21,9 +21,15 @@ pub enum CoreError {
     #[error("io error: {0}")]
     Io(#[from] std::io::Error),
     #[error("failed to read config at {path}: {source}")]
-    ConfigRead { path: String, source: std::io::Error },
+    ConfigRead {
+        path: String,
+        source: std::io::Error,
+    },
     #[error("invalid TOML at {path}: {source}")]
-    ConfigParse { path: String, source: toml::de::Error },
+    ConfigParse {
+        path: String,
+        source: toml::de::Error,
+    },
 
     // Timeout helpers
     #[error("task panicked")]

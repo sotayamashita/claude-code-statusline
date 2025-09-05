@@ -14,9 +14,9 @@
 //!
 //! Example: `"$directory $git_branch $claude_model"`
 
+use crate::error::CoreError;
 use crate::types::claude::ClaudeInput;
 use crate::types::context::Context;
-use crate::error::CoreError;
 use std::collections::HashMap;
 
 /// Parses JSON string into ClaudeInput structure

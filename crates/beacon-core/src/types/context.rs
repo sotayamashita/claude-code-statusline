@@ -10,9 +10,11 @@ use std::collections::HashSet;
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
+use std::sync::OnceLock;
 #[cfg(test)]
 use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::{Mutex, MutexGuard, OnceLock};
+#[cfg(feature = "git")]
+use std::sync::{Mutex, MutexGuard};
 
 #[cfg(test)]
 static REPO_DISCOVER_COUNT: AtomicUsize = AtomicUsize::new(0);
@@ -46,6 +48,7 @@ pub struct Context {
     pub project_root: Option<PathBuf>,
 
     /// Memoized git repository handle for current directory
+    #[cfg(feature = "git")]
     repo: OnceLock<Result<Mutex<git2::Repository>, git2::Error>>,
 
     /// Memoized directory contents for current working directory
@@ -70,6 +73,7 @@ impl Context {
             config,
             current_dir,
             project_root,
+            #[cfg(feature = "git")]
             repo: OnceLock::new(),
             dir_contents: OnceLock::new(),
         }
@@ -88,6 +92,7 @@ impl Context {
 
     /// Get memoized git repository for current directory (if available).
     /// Uses OnceLock to avoid repeated `git2::Repository::discover` calls.
+    #[cfg(feature = "git")]
     pub fn repo(&self) -> Result<MutexGuard<'_, git2::Repository>, &git2::Error> {
         let res = self.repo.get_or_init(|| {
             #[cfg(test)]
@@ -132,12 +137,15 @@ impl Clone for Context {
 mod tests {
     use super::*;
     use crate::types::claude::{ClaudeInput, ModelInfo, WorkspaceInfo};
-    use git2::Repository as GitRepository;
     use rstest::rstest;
     use std::fs::File;
     use std::io::Write as _;
+    #[cfg(feature = "git")]
     use std::path::Path;
     use tempfile::tempdir;
+
+    #[cfg(feature = "git")]
+    use git2::Repository as GitRepository;
 
     /// Helper to create test ClaudeInput
     fn create_claude_input(cwd: &str, model: &str, workspace: Option<(&str, &str)>) -> ClaudeInput {
@@ -200,6 +208,7 @@ mod tests {
         assert_eq!(context.project_root, None);
     }
 
+    #[cfg(feature = "git")]
     #[rstest]
     fn test_repo_memoization_once() {
         let tmp = tempdir().unwrap();

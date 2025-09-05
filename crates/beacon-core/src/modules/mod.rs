@@ -19,9 +19,9 @@
 //! - `git_status`: Git repository status
 
 use crate::debug::DebugLogger;
+use crate::error::CoreError;
 use crate::timeout::run_with_timeout;
 use crate::types::context::Context;
-use crate::error::CoreError;
 use std::any::Any;
 use std::time::Duration;
 
@@ -206,9 +206,11 @@ mod timeout_tests {
     use crate::config::Config;
     use crate::types::claude::{ClaudeInput, ModelInfo, WorkspaceInfo};
 
+    #[allow(dead_code)]
     struct SleepyModule;
 
     impl SleepyModule {
+        #[allow(dead_code)]
         fn from_context(_context: &Context) -> Self {
             Self
         }
@@ -228,6 +230,7 @@ mod timeout_tests {
     }
 
     // Extend dispatcher only in tests
+    #[allow(dead_code)]
     pub fn handle_module(name: &str, context: &Context) -> Option<Box<dyn Module>> {
         match name {
             "sleepy" => Some(Box::new(SleepyModule::from_context(context))),
