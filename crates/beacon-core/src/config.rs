@@ -44,7 +44,7 @@ impl Config {
     /// # Examples
     ///
     /// ```no_run
-    /// use beacon::Config;
+    /// use beacon_core::Config;
     ///
     /// let config = Config::load().expect("Failed to load config");
     /// println!("Format: {}", config.format);
@@ -119,20 +119,20 @@ mod tests {
         // Test top-level defaults
         assert_eq!(config.format, "$directory $claude_model");
         assert_eq!(config.command_timeout, 500);
-        assert_eq!(config.debug, false);
+        assert!(!config.debug);
 
         // Test directory module defaults
         assert_eq!(config.directory.format, "[$path]($style)");
         assert_eq!(config.directory.style, "bold cyan");
         assert_eq!(config.directory.truncation_length, 3);
-        assert_eq!(config.directory.truncate_to_repo, true);
-        assert_eq!(config.directory.disabled, false);
+        assert!(config.directory.truncate_to_repo);
+        assert!(!config.directory.disabled);
 
         // Test claude_model module defaults
         assert_eq!(config.claude_model.format, "[$symbol$model]($style)");
         assert_eq!(config.claude_model.style, "bold yellow");
         assert_eq!(config.claude_model.symbol, "<");
-        assert_eq!(config.claude_model.disabled, false);
+        assert!(!config.claude_model.disabled);
     }
 
     #[test]
@@ -173,7 +173,7 @@ mod tests {
 
         assert_eq!(config.format, "$directory $claude_model");
         assert_eq!(config.command_timeout, 300);
-        assert_eq!(config.debug, true);
+        assert!(config.debug);
         assert_eq!(config.directory.format, "in [$path]($style)");
         assert_eq!(config.directory.style, "bold blue");
         assert_eq!(config.directory.truncation_length, 5);
@@ -193,7 +193,7 @@ mod tests {
         let config: Config = toml::from_str(toml_str).unwrap();
 
         // Specified values
-        assert_eq!(config.debug, true);
+        assert!(config.debug);
         assert_eq!(config.directory.style, "italic green");
 
         // Default values for unspecified fields

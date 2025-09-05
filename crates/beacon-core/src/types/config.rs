@@ -471,8 +471,10 @@ mod validation_tests {
 
     #[test]
     fn command_timeout_bounds() {
-        let mut cfg = Config::default();
-        cfg.command_timeout = 10;
+        let mut cfg = Config {
+            command_timeout: 10,
+            ..Default::default()
+        };
         assert!(cfg.validate().is_err());
         cfg.command_timeout = 50;
         assert!(cfg.validate().is_ok());
@@ -492,8 +494,10 @@ mod validation_tests {
 
     #[test]
     fn warns_on_unknown_format_token() {
-        let mut cfg = Config::default();
-        cfg.format = "$directory $unknown $git_branch".to_string();
+        let cfg = Config {
+            format: "$directory $unknown $git_branch".to_string(),
+            ..Default::default()
+        };
         let ws = cfg.collect_warnings();
         assert!(
             ws.iter()

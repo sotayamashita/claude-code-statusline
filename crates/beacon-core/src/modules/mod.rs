@@ -255,8 +255,10 @@ mod timeout_tests {
             version: Some("1.0.0".into()),
             output_style: None,
         };
-        let mut cfg = Config::default();
-        cfg.command_timeout = timeout_ms;
+        let cfg = Config {
+            command_timeout: timeout_ms,
+            ..Default::default()
+        };
         Context::new(input, cfg)
     }
 

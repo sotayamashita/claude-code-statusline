@@ -38,7 +38,7 @@ impl DebugLogger {
     /// # Examples
     ///
     /// ```
-    /// use beacon::debug::DebugLogger;
+    /// use beacon_core::debug::DebugLogger;
     ///
     /// let logger = DebugLogger::new(true);
     /// logger.log("Debug message");

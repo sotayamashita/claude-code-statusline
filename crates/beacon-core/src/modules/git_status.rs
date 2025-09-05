@@ -69,10 +69,9 @@ impl Module for GitStatusModule {
         if let Some(cfg) = config
             .as_any()
             .downcast_ref::<crate::types::config::GitStatusConfig>()
+            && cfg.disabled
         {
-            if cfg.disabled {
-                return false;
-            }
+            return false;
         }
         context.repo().is_ok()
     }
@@ -144,31 +143,26 @@ impl Module for GitStatusModule {
 
         // Ahead/behind/diverged
         let mut ahead_behind = String::new();
-        if let Ok(head) = repo.head() {
-            if head.is_branch() {
-                if let Some(local_oid) = head.target() {
-                    let shorthand = head.shorthand().unwrap_or("");
-                    if let Ok(local_branch) = repo.find_branch(shorthand, git2::BranchType::Local) {
-                        if let Ok(up_branch) = local_branch.upstream() {
-                            if let Some(up_oid) = up_branch.get().target() {
-                                if let Ok((ahead, behind)) =
-                                    repo.graph_ahead_behind(local_oid, up_oid)
-                                {
-                                    if ahead > 0 && behind > 0 {
-                                        if !cfg.symbols.diverged.is_empty() {
-                                            ahead_behind = cfg.symbols.diverged.clone();
-                                        }
-                                    } else if ahead > 0 {
-                                        if !cfg.symbols.ahead.is_empty() {
-                                            ahead_behind =
-                                                format!("{}{}", cfg.symbols.ahead, ahead);
-                                        }
-                                    } else if behind > 0 && !cfg.symbols.behind.is_empty() {
-                                        ahead_behind = format!("{}{}", cfg.symbols.behind, behind);
-                                    }
-                                }
-                            }
+        if let Ok(head) = repo.head()
+            && head.is_branch()
+        {
+            if let Some(local_oid) = head.target() {
+                let shorthand = head.shorthand().unwrap_or("");
+                if let Ok(local_branch) = repo.find_branch(shorthand, git2::BranchType::Local)
+                    && let Ok(up_branch) = local_branch.upstream()
+                    && let Some(up_oid) = up_branch.get().target()
+                    && let Ok((ahead, behind)) = repo.graph_ahead_behind(local_oid, up_oid)
+                {
+                    if ahead > 0 && behind > 0 {
+                        if !cfg.symbols.diverged.is_empty() {
+                            ahead_behind = cfg.symbols.diverged.clone();
                         }
+                    } else if ahead > 0 {
+                        if !cfg.symbols.ahead.is_empty() {
+                            ahead_behind = format!("{}{}", cfg.symbols.ahead, ahead);
+                        }
+                    } else if behind > 0 && !cfg.symbols.behind.is_empty() {
+                        ahead_behind = format!("{}{}", cfg.symbols.behind, behind);
                     }
                 }
             }
@@ -339,7 +333,6 @@ mod tests {
         assert!(module.should_display(&ctx, &ctx.config.git_status));
         let rendered = module.render(&ctx, &ctx.config.git_status);
         let plain = String::from_utf8(strip(rendered)).unwrap();
-
         // expect substrings: +1 (staged), !1 (modified), ?1 (untracked), ⇡1 (ahead)
         assert!(plain.contains("+1"));
         assert!(plain.contains("!1"));
@@ -365,7 +358,7 @@ mod tests {
         let module = GitStatusModule::new();
         let rendered = module.render(&ctx, &ctx.config.git_status);
         let plain = String::from_utf8(strip(rendered)).unwrap();
-        println!("clean repo git_status plain='{}'", plain);
+        println!("clean repo git_status plain='{plain}'");
         assert!(plain.is_empty());
     }
 }

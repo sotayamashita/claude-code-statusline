@@ -19,38 +19,6 @@ pub struct Engine {
     config: Config,
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::types::claude::{ClaudeInput, ModelInfo, WorkspaceInfo};
-
-    #[test]
-    fn engine_renders_default_format() {
-        let input = ClaudeInput {
-            hook_event_name: None,
-            session_id: "test-session".into(),
-            transcript_path: None,
-            cwd: "/tmp".into(),
-            model: ModelInfo {
-                id: "claude-opus".into(),
-                display_name: "Opus".into(),
-            },
-            workspace: Some(WorkspaceInfo {
-                current_dir: "/tmp".into(),
-                project_dir: Some("/tmp".into()),
-            }),
-            version: Some("1.0.0".into()),
-            output_style: None,
-        };
-        let cfg = Config::default();
-        let engine = Engine::new(cfg);
-        let out = engine.render(&input).expect("render ok");
-        let plain = String::from_utf8(strip_ansi_escapes::strip(out)).unwrap();
-        assert!(plain.contains("/tmp"));
-        assert!(plain.contains("Opus"));
-    }
-}
-
 impl Engine {
     /// Construct a new engine with the given configuration.
     pub fn new(config: Config) -> Self {
@@ -98,5 +66,37 @@ impl Engine {
         };
 
         Ok(parse_format(format, &context, &module_outputs))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::types::claude::{ClaudeInput, ModelInfo, WorkspaceInfo};
+
+    #[test]
+    fn engine_renders_default_format() {
+        let input = ClaudeInput {
+            hook_event_name: None,
+            session_id: "test-session".into(),
+            transcript_path: None,
+            cwd: "/tmp".into(),
+            model: ModelInfo {
+                id: "claude-opus".into(),
+                display_name: "Opus".into(),
+            },
+            workspace: Some(WorkspaceInfo {
+                current_dir: "/tmp".into(),
+                project_dir: Some("/tmp".into()),
+            }),
+            version: Some("1.0.0".into()),
+            output_style: None,
+        };
+        let cfg = Config::default();
+        let engine = Engine::new(cfg);
+        let out = engine.render(&input).expect("render ok");
+        let plain = String::from_utf8(strip_ansi_escapes::strip(out)).unwrap();
+        assert!(plain.contains("/tmp"));
+        assert!(plain.contains("Opus"));
     }
 }

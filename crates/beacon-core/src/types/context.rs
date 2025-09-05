@@ -125,14 +125,7 @@ impl Context {
     }
 }
 
-impl Clone for Context {
-    fn clone(&self) -> Self {
-        // Reconstruct a fresh Context from cloned input and config.
-        // Memoized fields are intentionally not copied (per-execution cache only).
-        Self::new(self.input.clone(), self.config.clone())
-    }
-}
-
+#[allow(clippy::items_after_test_module)]
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -272,6 +265,18 @@ mod tests {
         assert_eq!(Context::test_dir_scan_count(), baseline + 1);
     }
 }
+
+// tests moved to bottom of file
+
+impl Clone for Context {
+    fn clone(&self) -> Self {
+        // Reconstruct a fresh Context from cloned input and config.
+        // Memoized fields are intentionally not copied (per-execution cache only).
+        Self::new(self.input.clone(), self.config.clone())
+    }
+}
+
+// placeholder removed
 
 /// Directory contents summary for quick lookups
 ///
