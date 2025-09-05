@@ -45,6 +45,7 @@ beacon/ (workspace)
 ```rust
 pub struct Engine {
     registry: Registry,
+    config: Config,
     timeout_ms: u64,
 }
 
@@ -53,7 +54,7 @@ impl Engine {
 
     pub fn with_registry(mut self, registry: Registry) -> Self { /* ... */ }
 
-    pub fn render(&self, input: &ClaudeInput) -> Result<String, Error> { /* ... */ }
+    pub fn render(&self, input: &ClaudeInput) -> Result<String, CoreError> { /* ... */ }
 }
 
 pub struct Registry { /* 内部: HashMap<String, Arc<dyn ModuleFactory>> */ }
@@ -61,7 +62,7 @@ pub struct Registry { /* 内部: HashMap<String, Arc<dyn ModuleFactory>> */ }
 impl Registry {
     pub fn new() -> Self { /* ... */ }
     pub fn register(&mut self, name: &str, factory: Arc<dyn ModuleFactory>) { /* ... */ }
-    pub fn get(&self, name: &str) -> Option<&Arc<dyn ModuleFactory>> { /* ... */ }
+    pub fn get(&self, name: &str) -> Option<Arc<dyn ModuleFactory>> { /* clone して返す */ }
 }
 ```
 
@@ -70,12 +71,12 @@ impl Registry {
 ```rust
 pub trait Module: Send + Sync {
     fn name(&self) -> &str;
-    fn should_display(&self, ctx: &Context, cfg: &dyn ModuleConfig) -> bool;
-    fn render(&self, ctx: &Context, cfg: &dyn ModuleConfig) -> Result<String, ModuleError>;
+    fn should_display(&self, ctx: &Context) -> bool;
+    fn render(&self, ctx: &Context) -> Result<String, ModuleError>;
 }
 
 pub trait ModuleFactory: Send + Sync {
-    fn create(&self, ctx: &Context, cfg: &dyn ConfigProvider) -> Option<Box<dyn Module>>;
+    fn create(&self, ctx: &Context, cfg: &dyn ConfigProvider) -> Result<Box<dyn Module>, ModuleError>;
 }
 ```
 
@@ -149,10 +150,10 @@ pub trait ConfigProvider {
 struct MyModuleConfig { style: String, format: String }
 
 impl ModuleFactory for MyFactory {
-    fn create(&self, ctx: &Context, cfgp: &dyn ConfigProvider) -> Option<Box<dyn Module>> {
-        let table = cfgp.module_table("my_module")?;
-        let mycfg: MyModuleConfig = table.clone().try_into().ok()?;
-        Some(Box::new(MyModule::new(mycfg)))
+    fn create(&self, _ctx: &Context, cfgp: &dyn ConfigProvider) -> Result<Box<dyn Module>, ModuleError> {
+        let table = cfgp.module_table("my_module").ok_or(ModuleError::ConfigMissing)?;
+        let mycfg: MyModuleConfig = toml::Value::Table(table.clone()).try_into().map_err(ModuleError::from)?;
+        Ok(Box::new(MyModule::new(mycfg)))
     }
 }
 ```
