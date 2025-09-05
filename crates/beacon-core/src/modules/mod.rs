@@ -83,13 +83,15 @@ pub trait Module: Send + Sync {
 // Re-export module implementations
 pub mod claude_model;
 pub mod directory;
+#[cfg(feature = "git")]
 pub mod git_branch;
+#[cfg(feature = "git")]
 pub mod git_status;
+pub mod registry;
 
 pub use claude_model::ClaudeModelModule;
 pub use directory::DirectoryModule;
-use git_branch::GitBranchModule;
-use git_status::GitStatusModule;
+pub use registry::{ModuleFactory, Registry};
 
 /// Central module dispatcher - creates module instances based on name
 ///
@@ -106,23 +108,14 @@ use git_status::GitStatusModule;
 /// * `Some(Box<dyn Module>)` - Module instance if name is recognized
 /// * `None` - If the module name is unknown
 pub fn handle_module(name: &str, context: &Context) -> Option<Box<dyn Module>> {
-    match name {
-        "directory" => Some(Box::new(DirectoryModule::from_context(context))),
-        "claude_model" => Some(Box::new(ClaudeModelModule::from_context(context))),
-        "git_branch" => Some(Box::new(GitBranchModule::from_context(context))),
-        "git_status" => Some(Box::new(GitStatusModule::from_context(context))),
-        _ => None,
-    }
+    // Gradual migration: delegate to Registry with built-in factories
+    let registry = Registry::with_defaults();
+    registry.create(name, context)
 }
 
 fn module_config_for<'a>(name: &str, context: &'a Context) -> Option<&'a dyn ModuleConfig> {
-    match name {
-        "directory" => Some(&context.config.directory),
-        "claude_model" => Some(&context.config.claude_model),
-        "git_branch" => Some(&context.config.git_branch),
-        "git_status" => Some(&context.config.git_status),
-        _ => None,
-    }
+    let registry = Registry::with_defaults();
+    registry.config(name, context)
 }
 
 /// Renders a module with timeout protection

@@ -23,25 +23,38 @@
 - [x] ビルド/テスト通過（確認）
   - 既存の `engine_api` を含むテストスイートが通過。互換バイナリにより既存の `beacon` バイナリ名を維持。
 
+- [x] Registry/ModuleFactory の導入（完了）
+  - `modules/registry.rs` を追加し、`handle_module`/設定参照を内部で委譲。
+  - 既存の `modules::handle_module` API は互換維持。
+- [x] ConfigProvider/extra_modules（完了）
+  - `Config.extra_modules`（serde flatten）で未知セクションを保持。
+  - `ConfigProvider::module_table()`/`list_extra_modules()` を実装。
+- [x] フィーチャーゲート（完了）
+  - `beacon-core` の `[features]` に `git`（= `git2` optional）と `parallel`（= `rayon` optional）を追加。
+  - Git系モジュールは feature でコンパイル制御。`beacon-cli` は `git` を有効化。
+- [x] エラー/ログ方針の移行（段階完了）
+  - CLI は `tracing` + `tracing-subscriber` に移行（stderr 出力）。既存 `eprintln!` も併用し E2E 互換維持。
+  - コアに `thiserror` ベースの `CoreError` を導入。`DebugLogger` は `tracing` にもフォワード。
+  - 注: コア全体の `thiserror` 置換はフェーズ2で継続。
+- [x] CLI サブコマンド（完了）
+  - `config --path|--default|--validate`, `modules --list|--enabled` を実装。
+- [x] ルート純ワークスペース化（完了）
+  - 互換バイナリ（`src/bin/beacon.rs`）を撤去し、バイナリ名を `beacon`（`beacon-cli`）に統一。
+- [x] 追加テスト（完了）
+  - `beacon-core` に `Engine/Registry/ConfigProvider` のユニットテストを追加。既存の CLI E2E は維持。
+- [x] ドキュメント/整備（完了）
+  - README/開発ドキュメントをワークスペース構成・Registry・実行コマンドに更新。
+- [x] パフォーマンス最適化（初期対応）
+  - `parallel` 有効時にモジュール並列レンダリング（Rayon）。
+  - `criterion` による `engine_bench` を追加。
+
 ## 未完了（次ステップ）
-- [ ] Registry/ModuleFactory の導入（未着手）
-  - `Registry`, `ModuleFactory` を追加し、`modules::handle_module` の静的 dispatch を段階的に移行。
-- [ ] ConfigProvider/extra_modules（未着手）
-  - 未知セクションを保持する `Config.extra_modules` と `ConfigProvider::module_table()` を実装。
-- [ ] フィーチャーゲート（未着手）
-  - `beacon-core` の `[features]` で `git`（= `git2` 有効）と `parallel`（= `rayon`）を定義。`beacon-cli` で `git` を有効化。
-- [ ] エラー/ログ方針の移行（未着手）
-  - コアを `thiserror` に移行、CLI は `anyhow` で文脈付与。ロギングは `tracing` + `tracing-subscriber` に置換。
-- [ ] CLI サブコマンド（未着手）
-  - `config --path|--default|--validate`, `modules --list|--enabled` 等を実装。
-- [ ] ルート純ワークスペース化（未着手）
-  - 互換バイナリ（`src/bin/beacon.rs`）を撤去し、最終的なバイナリ名を `beacon` に統一（`beacon-cli` 側で名称調整）。
-- [ ] 追加テスト（未着手）
-  - `beacon-core` 向けに `Engine/Registry/ConfigProvider` のユニットテストを追加。CLI の E2E も更新。
-- [ ] ドキュメント/整備（未着手）
-  - README/Docs のインストール手順とワークスペース構成を更新、hooks/CI の調整。
-- [ ] パフォーマンス最適化（未着手・将来）
-  - `parallel` 有効時にモジュール並列レンダリング、`criterion` による回帰計測。
+- [ ] エラー型の全面移行（継続）
+  - コア内のエラーを段階的に `thiserror` へ統一し、`anyhow` は境界層に限定。
+- [ ] CLI E2E 強化（フォローアップ）
+  - 新サブコマンドの E2E 追加と回帰テストの拡充。
+- [ ] パフォーマンス検証（フォローアップ）
+  - 実測プロファイルでのボトルネック調査とベンチ閾値の運用。
 
 ---
 最終更新: 2025-09-05

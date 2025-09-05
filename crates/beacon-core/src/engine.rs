@@ -19,6 +19,38 @@ pub struct Engine {
     config: Config,
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::types::claude::{ClaudeInput, ModelInfo, WorkspaceInfo};
+
+    #[test]
+    fn engine_renders_default_format() {
+        let input = ClaudeInput {
+            hook_event_name: None,
+            session_id: "test-session".into(),
+            transcript_path: None,
+            cwd: "/tmp".into(),
+            model: ModelInfo {
+                id: "claude-opus".into(),
+                display_name: "Opus".into(),
+            },
+            workspace: Some(WorkspaceInfo {
+                current_dir: "/tmp".into(),
+                project_dir: Some("/tmp".into()),
+            }),
+            version: Some("1.0.0".into()),
+            output_style: None,
+        };
+        let cfg = Config::default();
+        let engine = Engine::new(cfg);
+        let out = engine.render(&input).expect("render ok");
+        let plain = String::from_utf8(strip_ansi_escapes::strip(out)).unwrap();
+        assert!(plain.contains("/tmp"));
+        assert!(plain.contains("Opus"));
+    }
+}
+
 impl Engine {
     /// Construct a new engine with the given configuration.
     pub fn new(config: Config) -> Self {
@@ -32,16 +64,38 @@ impl Engine {
 
         let format = &context.config.format;
         let module_names = extract_modules_from_format(format);
-        let mut module_outputs: HashMap<String, String> = HashMap::new();
 
-        for name in &module_names {
-            if name == "character" {
-                continue;
+        // Render modules (optionally in parallel when feature enabled)
+        let module_outputs: HashMap<String, String> = {
+            #[cfg(feature = "parallel")]
+            {
+                use rayon::prelude::*;
+                module_names
+                    .par_iter()
+                    .filter_map(|name| {
+                        if name == "character" {
+                            return None;
+                        }
+                        render_module_with_timeout(name, &context, &logger)
+                            .map(|out| (name.clone(), out))
+                    })
+                    .collect()
             }
-            if let Some(out) = render_module_with_timeout(name, &context, &logger) {
-                module_outputs.insert(name.clone(), out);
+
+            #[cfg(not(feature = "parallel"))]
+            {
+                let mut map = HashMap::new();
+                for name in &module_names {
+                    if name == "character" {
+                        continue;
+                    }
+                    if let Some(out) = render_module_with_timeout(name, &context, &logger) {
+                        map.insert(name.clone(), out);
+                    }
+                }
+                map
             }
-        }
+        };
 
         Ok(parse_format(format, &context, &module_outputs))
     }

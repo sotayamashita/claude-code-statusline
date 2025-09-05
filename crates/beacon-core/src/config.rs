@@ -79,9 +79,34 @@ fn get_config_path() -> PathBuf {
         .unwrap_or_else(|| PathBuf::from("~/.config/beacon.toml"))
 }
 
+/// Lightweight provider to access module-specific configuration tables
+/// including extra/unknown sections preserved during TOML deserialization.
+pub struct ConfigProvider<'a> {
+    config: &'a Config,
+}
+
+impl<'a> ConfigProvider<'a> {
+    pub fn new(config: &'a Config) -> Self {
+        Self { config }
+    }
+
+    /// Returns a raw TOML table for the given module name if present
+    pub fn module_table(&self, module: &str) -> Option<&toml::value::Table> {
+        // Known modules are represented as typed structs and not exposed here.
+        // This function focuses on extra/unknown sections to enable pluggable modules.
+        self.config.extra_module_table(module)
+    }
+
+    /// List available extra module section names
+    pub fn list_extra_modules(&self) -> Vec<String> {
+        self.config.extra_modules.keys().cloned().collect()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::types::config::Config as Cfg;
 
     #[test]
     fn test_default_config() {
@@ -193,5 +218,27 @@ mod tests {
             // Fallback when home_dir is not available
             assert_eq!(path, PathBuf::from("~/.config/beacon.toml"));
         }
+    }
+
+    #[test]
+    fn extra_modules_are_preserved_and_accessible() {
+        let toml_str = r#"
+            [directory]
+            style = "bold blue"
+
+            [my_custom]
+            key = "value"
+            answer = 42
+        "#;
+        let cfg: Cfg = toml::from_str(toml_str).unwrap();
+        let provider = super::ConfigProvider::new(&cfg);
+        let t = provider.module_table("my_custom").expect("table exists");
+        assert_eq!(t.get("key").unwrap().as_str().unwrap(), "value");
+        assert_eq!(t.get("answer").unwrap().as_integer().unwrap(), 42);
+        assert!(
+            provider
+                .list_extra_modules()
+                .contains(&"my_custom".to_string())
+        );
     }
 }

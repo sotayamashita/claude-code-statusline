@@ -53,6 +53,12 @@ pub struct Config {
 
     #[serde(default)]
     pub git_status: GitStatusConfig,
+
+    /// Unrecognized/extra top-level tables (e.g., third-party modules)
+    /// Captures unknown sections like `[my_custom_module]` without losing them.
+    #[serde(flatten)]
+    #[serde(default)]
+    pub extra_modules: toml::value::Table,
 }
 
 /// Configuration for the directory module
@@ -104,6 +110,7 @@ impl Default for Config {
             claude_model: ClaudeModelConfig::default(),
             git_branch: GitBranchConfig::default(),
             git_status: GitStatusConfig::default(),
+            extra_modules: toml::value::Table::new(),
         }
     }
 }
@@ -447,6 +454,14 @@ impl Config {
         }
 
         warnings
+    }
+
+    /// Get a raw TOML table for an extra/unknown module section if present
+    pub fn extra_module_table(&self, name: &str) -> Option<&toml::value::Table> {
+        match self.extra_modules.get(name) {
+            Some(toml::Value::Table(t)) => Some(t),
+            _ => None,
+        }
     }
 }
 

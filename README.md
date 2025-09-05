@@ -24,6 +24,37 @@ cargo build --release
 cargo install --path .
 ```
 
+## Project Structure
+
+```
+beacon/
+├── crates/
+│   ├── beacon-core/   # Core library (engine, modules, types)
+│   └── beacon-cli/    # CLI (stdin→stdout) + subcommands
+├── tests/             # Integration tests
+├── docs/              # Design documentation
+└── Cargo.toml         # Workspace manifest
+```
+
+## Development
+
+```bash
+# Build all crates
+cargo build
+
+# Run CLI
+cargo run -q -p beacon-cli -- --help
+
+# Example run with JSON input
+echo '{"session_id":"s","cwd":"/tmp","model":{"id":"claude-opus","display_name":"Opus"}}' | \
+  cargo run -q -p beacon-cli --
+
+# Tests, fmt, clippy
+cargo test
+cargo fmt
+cargo clippy -- -D warnings
+```
+
 ## Configuration
 
 Claude Code のステータスラインに表示するための設定

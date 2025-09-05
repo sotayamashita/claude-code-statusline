@@ -1,7 +1,7 @@
 use predicates::prelude::*;
 use std::fs;
 mod common;
-use common::{beacon_cmd, input_json_with_cwd, write_basic_config};
+use common::cli::{beacon_cmd, input_json_with_cwd, write_basic_config};
 
 #[test]
 fn one_line_output_with_small_timeout() {

@@ -14,6 +14,7 @@ pub struct ClaudeInputBuilder {
     output_style: Option<OutputStyle>,
 }
 
+#[allow(dead_code)]
 impl ClaudeInputBuilder {
     pub fn new() -> Self {
         Self {
@@ -92,6 +93,7 @@ pub struct ContextBuilder {
     config: Config,
 }
 
+#[allow(dead_code)]
 impl ContextBuilder {
     pub fn new() -> Self {
         Self {
