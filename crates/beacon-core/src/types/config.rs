@@ -278,7 +278,7 @@ fn default_claude_model_style() -> String {
 }
 
 fn default_claude_model_symbol() -> String {
-    "<".to_string()
+    "".to_string()
 }
 
 // Git Branch module defaults

@@ -131,7 +131,7 @@ mod tests {
         // Test claude_model module defaults
         assert_eq!(config.claude_model.format, "[$symbol$model]($style)");
         assert_eq!(config.claude_model.style, "bold yellow");
-        assert_eq!(config.claude_model.symbol, "<");
+        assert_eq!(config.claude_model.symbol, "");
         assert!(!config.claude_model.disabled);
     }
 
@@ -200,7 +200,7 @@ mod tests {
         assert_eq!(config.format, "$directory $claude_model");
         assert_eq!(config.command_timeout, 500);
         assert_eq!(config.directory.format, "[$path]($style)");
-        assert_eq!(config.claude_model.symbol, "<");
+        assert_eq!(config.claude_model.symbol, "");
     }
 
     #[test]
@@ -244,5 +244,12 @@ mod tests {
                 .list_extra_modules()
                 .contains(&"my_custom".to_string())
         );
+    }
+
+    #[test]
+    fn test_claude_model_default_symbol_is_empty() {
+        // New desired default behavior for issue #27
+        let cfg = Config::default();
+        assert_eq!(cfg.claude_model.symbol, "");
     }
 }
