@@ -94,6 +94,10 @@ pub fn render_with_style_template(
     // First, replace known tokens except "$style"
     let mut replaced = String::from(format);
     for (k, v) in tokens.iter() {
+        if *k == "style" {
+            // Preserve "$style" for bracket style resolution to honor default_style
+            continue;
+        }
         let needle = format!("${k}");
         replaced = replaced.replace(&needle, v);
     }
