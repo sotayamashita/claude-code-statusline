@@ -8,14 +8,14 @@ Powerline の「セグメント背景＋区切り矢印（）」を淡い配�
 - 例の配色は一例（Hex）です。お好みで変更してください
 
 ```toml
-format = "\
-[$path ](fg:black bg:#a8d8ef)\
-[](fg:#a8d8ef bg:#bde5b8)\
-[ $symbol $branch ](fg:black bg:#bde5b8)\
-[](fg:#bde5b8 bg:#f8e3a1)\
-[ $all_status$ahead_behind ](fg:black bg:#f8e3a1)\
-[](fg:#f8e3a1 bg:#e4bee6)\
-[ $symbol$model ](fg:black bg:#e4bee6)"
+format = """
+[$path ](fg:black bg:#a8d8ef)
+[](fg:#a8d8ef bg:#bde5b8)
+[ $symbol $branch ](fg:black bg:#bde5b8)
+[](fg:#bde5b8 bg:#f8e3a1)
+[ $all_status$ahead_behind ](fg:black bg:#f8e3a1)
+[](fg:#f8e3a1 bg:#e4bee6)
+[ $symbol$model ](fg:black bg:#e4bee6)"""
 
 [directory]
 # directory モジュールは $path を提供
