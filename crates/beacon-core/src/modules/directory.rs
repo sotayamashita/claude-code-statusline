@@ -103,12 +103,13 @@ impl Module for DirectoryModule {
                         }
                     }
                 }
-                // Fallback discovery without git feature: look for a `.git` directory
+                // Fallback discovery without git feature: look for a `.git` directory or file (worktrees)
                 if repo_root.is_none() {
                     let mut p = context.current_dir.as_path();
                     loop {
                         let dot_git = p.join(".git");
-                        if dot_git.is_dir() {
+                        // In worktrees, `.git` can be a file; treat either as a repository marker
+                        if dot_git.is_dir() || dot_git.is_file() {
                             repo_root = Some(p.to_path_buf());
                             break;
                         }
@@ -408,6 +409,47 @@ mod tests {
         assert_eq!(
             plain,
             format!("{repo}/{tail}", repo = repo_name, tail = "d")
+        );
+    }
+
+    #[rstest]
+    fn fallback_detects_git_file_worktree() {
+        // Simulate a Git worktree-like layout where `.git` is a file, not a directory.
+        let tmp = tempfile::tempdir().unwrap();
+        let root = tmp.path();
+        let sub = root.join("src").join("module");
+        std::fs::create_dir_all(&sub).unwrap();
+        // Create a `.git` file at the root to emulate worktree behavior
+        std::fs::write(root.join(".git"), b"gitdir: /path/to/real/gitdir\n").unwrap();
+
+        let input = crate::types::claude::ClaudeInput {
+            hook_event_name: None,
+            session_id: "test".into(),
+            transcript_path: None,
+            cwd: sub.to_string_lossy().to_string(),
+            model: crate::types::claude::ModelInfo {
+                id: "id".into(),
+                display_name: "Opus".into(),
+            },
+            workspace: Some(crate::types::claude::WorkspaceInfo {
+                current_dir: sub.to_string_lossy().to_string(),
+                project_dir: Some(root.to_string_lossy().to_string()),
+            }),
+            version: Some("1.0.0".into()),
+            output_style: None,
+        };
+        let mut cfg = crate::config::Config::default();
+        cfg.directory.truncate_to_repo = true;
+        cfg.directory.truncation_length = 3; // repo + 2
+        let ctx = crate::types::context::Context::new(input, cfg);
+
+        let module = DirectoryModule::new();
+        let rendered = module.render(&ctx, &ctx.config.directory);
+        let plain = String::from_utf8(strip_ansi_escapes::strip(rendered)).unwrap();
+        let repo_name = root.file_name().unwrap().to_string_lossy().to_string();
+        assert_eq!(
+            plain,
+            format!("{repo}/{a}/{b}", repo = repo_name, a = "src", b = "module")
         );
     }
 }
