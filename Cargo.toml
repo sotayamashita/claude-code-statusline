@@ -5,6 +5,7 @@ edition = "2024"
 description = "A lightweight status line generator for Claude Code"
 
 [workspace]
+resolver = "2"
 members = [
     "crates/beacon-core",
     "crates/beacon-cli",
