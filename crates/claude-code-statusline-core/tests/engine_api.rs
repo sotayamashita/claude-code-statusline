@@ -1,6 +1,4 @@
-mod common;
-
-use claude_code_statusline::{Config, parse_claude_input};
+use claude_code_statusline_core::{Config, parse_claude_input};
 
 // TDD Red: Introduce public Engine API and verify basic rendering.
 // This test will fail to compile/run until `claude_code_statusline::engine::Engine`
@@ -16,7 +14,7 @@ fn engine_renders_basic_status_line() {
     }"#;
 
     let input = parse_claude_input(json).expect("valid input");
-    let engine = claude_code_statusline::engine::Engine::new(Config::default());
+    let engine = claude_code_statusline_core::engine::Engine::new(Config::default());
 
     let out = engine.render(&input).expect("render ok");
     assert!(!out.is_empty());

@@ -241,9 +241,16 @@ name = "claude-code-statusline-cli"
 version = "0.0.1"
 dependencies = [
  "anyhow",
+ "assert_cmd",
  "clap",
  "claude-code-statusline-core",
  "dirs",
+ "git2",
+ "predicates",
+ "regex",
+ "rstest",
+ "tempfile",
+ "test-support",
  "toml",
  "tracing",
  "tracing-subscriber",
@@ -1221,6 +1228,15 @@ name = "termtree"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8f50febec83f5ee1df3015341d8bd429f2d1cc62bcba7ea2076759d315084683"
+
+[[package]]
+name = "test-support"
+version = "0.1.0"
+dependencies = [
+ "assert_cmd",
+ "claude-code-statusline-core",
+ "rstest",
+]
 
 [[package]]
 name = "thiserror"

@@ -1,0 +1,11 @@
+[package]
+name = "test-support"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+assert_cmd = "2.0.16"
+rstest = "0.26.1"
+claude-code-statusline-core = { path = "../claude-code-statusline-core" }
+
