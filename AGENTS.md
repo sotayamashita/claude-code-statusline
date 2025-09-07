@@ -5,7 +5,7 @@
 
 ## Language Policy
 - **Code**: English only (variables, functions, comments, documentation)
-- **Conversation**: Japanese (日本語での会話を推奨)
+ - **Conversation**: Japanese (recommended)
 
 ## Project Overview
 
@@ -45,21 +45,19 @@ claude-code-statusline/
 │   │   │       ├── claude_model.rs # Model display
 │   │   │       ├── git_branch.rs   # Git branch (feature = "git")
 │   │   │       └── git_status.rs   # Git status (feature = "git")
+│   │   ├── tests/                  # Integration tests (core public API)
 │   │   └── benches/engine_bench.rs # Criterion bench (engine)
-│   └── claude-code-statusline-cli/                 # CLI (stdin→stdout、サブコマンド)
-│       └── src/lib.rs              # `run()` entry
-├── src/main.rs                     # `claude-code-statusline` binary
-├── tests/                          # Integration tests (E2E)
-│   ├── common/
-│   ├── engine_api.rs
-│   ├── integration_smoke.rs
-│   ├── integration_timeout.rs
-│   ├── error_handling.rs
-│   └── cli_subcommands.rs
-├── docs/                           # Design & development docs
-├── hooks/                          # Git hooks
-├── scripts/bench_check.py          # Bench threshold gate
-└── Cargo.toml                      # Workspace root
+│   ├── claude-code-statusline-cli/               # CLI (stdin->stdout, subcommands)
+│   │   ├── src/lib.rs            # `run()` entry
+│   │   └── tests/                # Integration tests (CLI behaviors)
+│   └── test-support/                             # Shared test utilities (dev-only)
+│       └── src/common/          # builders.rs, cli.rs, fixtures.rs, mod.rs
+├── src/main.rs                   # `claude-code-statusline` binary
+├── tests/                        # Reserved for workspace-level E2E (currently empty)
+├── docs/                         # Design & development docs
+├── hooks/                        # Git hooks
+├── scripts/bench_check.py        # Bench threshold gate
+└── Cargo.toml                    # Workspace root
 ```
 
 ### Module System
@@ -168,10 +166,12 @@ claude-code-statusline modules --enabled    # List modules enabled by current fo
 ## Testing Strategy
 
 ### Framework & Tools
-- **Unit Tests**: Built-in `#[test]` attributes, colocated with code
-- **Parametrized Tests**: `rstest` for data-driven testing
-- **Integration Tests**: `tests/` directory with shared helpers in `tests/common/`
-- **Pre-commit Hooks**: Automatic format, lint, and test on commit
+- **Unit Tests**: Place `#[test]` within modules/files to test private APIs
+- **Parametrized Tests**: Data-driven testing with `rstest`
+- **Integration Tests (per crate)**: Place under `crates/<crate>/tests/` to test public APIs
+- **Shared Test Utilities**: Reuse `crates/test-support` as `dev-dependencies` across crates
+- **Workspace E2E**: Reserve root `tests/` for E2E/cross-crate (currently empty)
+- **Pre-commit Hooks**: Automatically run format / lint / test
 
 ### Test Coverage Focus
 - Parser logic (`crates/claude-code-statusline-core/src/parser.rs`) - JSON input validation
@@ -199,7 +199,7 @@ mod tests {
 ## Architecture & Design Patterns
 
 ### Error Handling
-- Core: Structured `CoreError` via `thiserror`（`crates/claude-code-statusline-core/src/error.rs`）
+- Core: Structured `CoreError` via `thiserror` (`crates/claude-code-statusline-core/src/error.rs`)
 - CLI: Boundary uses `anyhow::Result<()>`; logs via `tracing` to stderr
 - Never panic in production - graceful degradation
 - Informative error messages with context
@@ -376,5 +376,5 @@ debug = true
 - Logs: `tracing` to stderr, controlled by debug flag
 
 ---
-*Last updated: 2025-09-05*
+*Last updated: 2025-09-07*
 *claude-code-statusline - Fast, modular status line for AI development*
