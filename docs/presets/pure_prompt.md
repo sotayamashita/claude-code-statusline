@@ -26,7 +26,12 @@ style = "bold yellow"
 ## Notes
 - Beacon prints without a trailing newline by design (`print!` not `println!`).
 - Keep spacing tight and avoid decorative padding to preserve the “pure” feel.
-- Supported style tokens: `bold`, `italic`, `underline`, and 8 named colors.
+- Supported style tokens: `bold`, `italic`, `underline`, plus colors as:
+  - named and bright (e.g., `blue`, `bright-blue`)
+  - 8-bit indexes `0..=255` (e.g., `196`)
+  - 24-bit hex (e.g., `#RRGGBB`)
+  - `fg:`/`bg:` prefixes and `none`
+  This preset uses simple named foreground colors for portability.
 - Outside a Git repo, `git_branch` and `git_status` hide automatically.
 
 ## References
