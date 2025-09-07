@@ -72,7 +72,7 @@ cargo test  -p claude-code-statusline-core --features git
 }
 ```
 
-_**[Lean more about Claude Code status line integration](https://docs.anthropic.com/en/docs/claude-code/statusline)**_
+_**[Learn more about Claude Code status line integration](https://docs.anthropic.com/en/docs/claude-code/statusline)**_
 
 ## Configuration
 
