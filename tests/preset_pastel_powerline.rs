@@ -2,7 +2,9 @@ use assert_cmd::Command;
 use predicates::prelude::*;
 use std::fs;
 
-fn ccs_cmd() -> Command { Command::cargo_bin(env!("CARGO_PKG_NAME")).expect("binary exists") }
+fn ccs_cmd() -> Command {
+    Command::cargo_bin(env!("CARGO_PKG_NAME")).expect("binary exists")
+}
 
 fn valid_input_json() -> String {
     r#"{

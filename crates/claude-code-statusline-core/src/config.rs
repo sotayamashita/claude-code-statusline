@@ -44,7 +44,7 @@ impl Config {
     /// # Examples
     ///
     /// ```no_run
-/// use claude_code_statusline_core::Config;
+    /// use claude_code_statusline_core::Config;
     ///
     /// let config = Config::load().expect("Failed to load config");
     /// println!("Format: {}", config.format);

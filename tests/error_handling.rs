@@ -3,7 +3,9 @@ use predicates::prelude::*;
 use std::env;
 use std::fs;
 
-fn ccs_cmd() -> Command { Command::cargo_bin(env!("CARGO_PKG_NAME")).expect("binary exists") }
+fn ccs_cmd() -> Command {
+    Command::cargo_bin(env!("CARGO_PKG_NAME")).expect("binary exists")
+}
 
 fn valid_input_json() -> String {
     // minimal valid JSON based on types
@@ -43,7 +45,11 @@ fn invalid_toml_config_produces_concise_stdout_and_stderr_details() {
     let home = tmp.path();
     let cfg_dir = home.join(".config");
     fs::create_dir_all(&cfg_dir).unwrap();
-    fs::write(cfg_dir.join("claude-code-statusline.toml"), "this is not = toml").unwrap();
+    fs::write(
+        cfg_dir.join("claude-code-statusline.toml"),
+        "this is not = toml",
+    )
+    .unwrap();
 
     let mut cmd = ccs_cmd();
     cmd.env("HOME", home);

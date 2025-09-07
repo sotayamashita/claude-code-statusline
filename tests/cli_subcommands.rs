@@ -10,9 +10,9 @@ fn config_path_uses_home_and_points_to_new_toml() {
     let mut cmd = ccs_cmd();
     cmd.env("HOME", home);
     cmd.arg("config").arg("--path");
-    cmd.assert()
-        .success()
-        .stdout(predicates::str::contains(".config/claude-code-statusline.toml"));
+    cmd.assert().success().stdout(predicates::str::contains(
+        ".config/claude-code-statusline.toml",
+    ));
 }
 
 #[test]

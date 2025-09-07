@@ -57,13 +57,16 @@ pub fn run() -> Result<()> {
                     // Mirror core config path logic
                     let path = dirs::home_dir()
                         .map(|home| home.join(".config").join("claude-code-statusline.toml"))
-                        .unwrap_or_else(|| std::path::PathBuf::from("~/.config/claude-code-statusline.toml"));
+                        .unwrap_or_else(|| {
+                            std::path::PathBuf::from("~/.config/claude-code-statusline.toml")
+                        });
                     println!("{}", path.display());
                     return Ok(());
                 }
                 if *default {
-                    let toml = toml::to_string_pretty(&claude_code_statusline_core::Config::default())
-                        .unwrap_or_else(|_| "".into());
+                    let toml =
+                        toml::to_string_pretty(&claude_code_statusline_core::Config::default())
+                            .unwrap_or_else(|_| "".into());
                     println!("{toml}");
                     return Ok(());
                 }
@@ -99,7 +102,9 @@ pub fn run() -> Result<()> {
                 }
                 if *enabled {
                     let cfg = claude_code_statusline_core::Config::load().unwrap_or_default();
-                    let names = claude_code_statusline_core::parser::extract_modules_from_format(&cfg.format);
+                    let names = claude_code_statusline_core::parser::extract_modules_from_format(
+                        &cfg.format,
+                    );
                     let reg = claude_code_statusline_core::modules::Registry::with_defaults();
                     for name in names {
                         if name == "character" {

@@ -38,7 +38,7 @@ impl DebugLogger {
     /// # Examples
     ///
     /// ```
-/// use claude_code_statusline_core::debug::DebugLogger;
+    /// use claude_code_statusline_core::debug::DebugLogger;
     ///
     /// let logger = DebugLogger::new(true);
     /// logger.log("Debug message");
