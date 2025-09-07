@@ -11,7 +11,7 @@ This preset recreates Starship’s “Pastel Powerline” look: soft, pastel blo
 
 ```toml
 format = """
-[ ](#9A348E)\
+[ ](bg:#9A348E)\
 $directory\
 [ ](bg:#DA627D fg:#9A348E)\
 $git_branch$git_status\
@@ -36,7 +36,7 @@ style = "bg:#DA627D"
 format = "[$all_status$ahead_behind ]($style)"
 
 [claude_model]
-style = "bg:#FCA17D"
+style = "fg:black bg:#FCA17D"
 format = "[$model]($style)"
 ```
 
