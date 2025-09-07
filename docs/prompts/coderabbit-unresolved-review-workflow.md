@@ -30,6 +30,7 @@ Here are the workflow steps and rules:
 - Run quality gates: `cargo fmt --all -- --check`, `cargo clippy --workspace --all-targets -- -D warnings`, `cargo test --workspace -- --nocapture`, `cargo build --workspace`.
 - Commit with a clear Conventional Commit message that references the review comment URL.
 - Reply to the exact review comment: “Addressed in commit `{hash}`” using the script.
+  - Important: push the commit before replying so CodeRabbit can fetch the hash.
 - Keep commits small and scoped to a single review topic.
 
 Review checklist (apply where relevant):
@@ -162,6 +163,9 @@ while IFS= read -r enc; do
   git add -A
   git commit -m "fix: address CodeRabbit review in $FILE_PATH" -m "Refs: $COMMENT_URL"
   COMMIT_HASH=$(git rev-parse --short HEAD)
+  # Ensure the commit is available remotely so CodeRabbit can resolve the hash
+  CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+  git push -u origin "$CURRENT_BRANCH"
 
   # Post a concise reply. The helper script posts a standard message.
   bash scripts/post-addressed-to-review-comment.sh "$PR_URL" "$COMMENT_URL" "$COMMIT_HASH"
