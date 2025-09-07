@@ -78,6 +78,10 @@ pub struct DirectoryConfig {
     #[serde(default = "default_directory_truncate_to_repo")]
     pub truncate_to_repo: bool,
 
+    /// Symbol to indicate truncated paths (e.g., "…/")
+    #[serde(default = "default_directory_truncation_symbol")]
+    pub truncation_symbol: String,
+
     #[serde(default = "default_disabled")]
     pub disabled: bool,
 }
@@ -122,6 +126,7 @@ impl Default for DirectoryConfig {
             style: default_directory_style(),
             truncation_length: default_directory_truncation_length(),
             truncate_to_repo: default_directory_truncate_to_repo(),
+            truncation_symbol: default_directory_truncation_symbol(),
             disabled: default_disabled(),
         }
     }
@@ -266,6 +271,10 @@ fn default_directory_truncation_length() -> usize {
 
 fn default_directory_truncate_to_repo() -> bool {
     true
+}
+
+fn default_directory_truncation_symbol() -> String {
+    "".to_string()
 }
 
 // Claude Model module defaults
