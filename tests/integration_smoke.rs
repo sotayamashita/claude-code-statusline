@@ -2,7 +2,7 @@ use predicates::prelude::*;
 use rstest::*;
 use std::fs;
 mod common;
-use common::cli::{ccs_cmd, input_json_with_cwd, write_basic_config};
+use common::cli::{ccs_cmd, config_dir_for_home, input_json_with_cwd, write_basic_config};
 
 #[rstest]
 #[case(false)]
@@ -46,8 +46,10 @@ fn smoke_one_line_output(#[case] with_git_repo: bool) {
         d
     };
 
+    let cfg_dir = config_dir_for_home(home);
     let mut cmd = ccs_cmd();
     cmd.env("HOME", home);
+    cmd.env("XDG_CONFIG_HOME", &cfg_dir);
     cmd.write_stdin(input_json_with_cwd(cwd.to_str().unwrap()));
 
     let assert = cmd
