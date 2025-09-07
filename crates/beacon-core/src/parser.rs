@@ -48,18 +48,20 @@ pub fn parse_claude_input(json_str: &str) -> Result<ClaudeInput, CoreError> {
 
 /// Parses format string and substitutes variables with module outputs
 ///
-/// Processes a format string by replacing variable placeholders (e.g., `$directory`)
-/// with their corresponding values from the module outputs map.
+/// Replaces `$<name>` tokens anywhere in the string (not only when
+/// separated by whitespace) with their corresponding rendered outputs.
+/// Unknown tokens are removed (replaced by an empty string).
 ///
 /// # Arguments
 ///
-/// * `format` - Format string containing variable placeholders
-/// * `_context` - Context (currently unused, reserved for future use)
+/// * `format` - Format string containing `$<name>` variable tokens
+/// * `_context` - Context (reserved for future use)
 /// * `module_outputs` - Map of module names to their rendered outputs
 ///
 /// # Returns
 ///
-/// A string with all variables replaced by their values
+/// A string with all `$<name>` tokens replaced by their values while
+/// preserving all other characters (including spaces) verbatim.
 ///
 /// # Examples
 ///
@@ -82,21 +84,53 @@ pub fn parse_format(
     _context: &Context,
     module_outputs: &HashMap<String, String>,
 ) -> String {
-    // Process the format string token by token to handle variables correctly
-    let tokens: Vec<String> = format
-        .split_whitespace()
-        .map(|token| {
-            if token.starts_with('$') && token.len() > 1 {
-                let module_name = &token[1..];
-                module_outputs.get(module_name).cloned().unwrap_or_default()
-            } else {
-                token.to_string()
+    // Scan the string and replace $<name> inline without altering
+    // any other characters. A valid name starts with [A-Za-z_]
+    // and continues with [A-Za-z0-9_]*.
+    let bytes = format.as_bytes();
+    let mut i = 0;
+    let mut out = String::with_capacity(format.len());
+    while i < bytes.len() {
+        if bytes[i] == b'$' {
+            let start = i;
+            let j = i + 1;
+            // validate first identifier char
+            let mut k = j;
+            if k < bytes.len() {
+                let c = bytes[k] as char;
+                if c.is_ascii_alphabetic() || c == '_' {
+                    k += 1;
+                    // consume rest of identifier
+                    while k < bytes.len() {
+                        let c2 = bytes[k] as char;
+                        if c2.is_ascii_alphanumeric() || c2 == '_' {
+                            k += 1;
+                        } else {
+                            break;
+                        }
+                    }
+                    let name = &format[j..k];
+                    // Replace with module output (or empty string if missing)
+                    if let Some(val) = module_outputs.get(name) {
+                        out.push_str(val);
+                    }
+                    i = k;
+                    continue;
+                }
             }
-        })
-        .filter(|s| !s.is_empty())
-        .collect();
-
-    tokens.join(" ")
+            // Not a valid token — treat '$' literally
+            out.push('$');
+            i = start + 1;
+        } else {
+            out.push(bytes[i] as char);
+            i += 1;
+        }
+    }
+    // Avoid a dangling trailing space when unknown tokens are removed
+    // at the end (e.g., "$directory $character"). Do not alter
+    // interior whitespace to preserve precise layout for Powerline-style
+    // compositions.
+    out.trim_end().to_string()
 }
 
 /// Extracts module names from a format string
@@ -121,16 +155,41 @@ pub fn parse_format(
 /// assert_eq!(modules, vec!["directory", "claude_model"]);
 /// ```
 pub fn extract_modules_from_format(format: &str) -> Vec<String> {
-    format
-        .split_whitespace()
-        .filter_map(|part| {
-            if part.starts_with('$') && part.len() > 1 {
-                Some(part[1..].to_string())
-            } else {
-                None
+    // Scan for `$<name>` anywhere in the string and return unique names
+    // in encounter order.
+    use std::collections::HashSet;
+    let bytes = format.as_bytes();
+    let mut i = 0;
+    let mut out: Vec<String> = Vec::new();
+    let mut seen: HashSet<String> = HashSet::new();
+    while i < bytes.len() {
+        if bytes[i] == b'$' {
+            let j = i + 1;
+            let mut k = j;
+            if k < bytes.len() {
+                let c = bytes[k] as char;
+                if c.is_ascii_alphabetic() || c == '_' {
+                    k += 1;
+                    while k < bytes.len() {
+                        let c2 = bytes[k] as char;
+                        if c2.is_ascii_alphanumeric() || c2 == '_' {
+                            k += 1;
+                        } else {
+                            break;
+                        }
+                    }
+                    let name = &format[j..k];
+                    if seen.insert(name.to_string()) {
+                        out.push(name.to_string());
+                    }
+                    i = k;
+                    continue;
+                }
             }
-        })
-        .collect()
+        }
+        i += 1;
+    }
+    out
 }
 
 #[cfg(test)]
@@ -251,10 +310,10 @@ mod tests {
         let result = parse_format(format, &context, &module_outputs);
         assert_eq!(result, "long short");
 
-        // Test with variables without whitespace boundaries
+        // Variables without whitespace boundaries must also be replaced now
         let format = "prefix$directory suffix";
         let result = parse_format(format, &context, &module_outputs);
-        assert_eq!(result, "prefix$directory suffix");
+        assert_eq!(result, "prefixlong suffix");
     }
 
     #[test]

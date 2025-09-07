@@ -1,15 +1,8 @@
-# Preset: Pure Prompt (single-line, no linebreak)
+# Preset: Pure Prompt (single line)
 
-This preset emulates Starship’s "Pure Prompt (no linebreak)" — minimal, compact, and strictly single-line.
-It focuses on succinct directory + git context, with an optional model indicator at the end.
+This preset mirrors Starship’s “Pure (no linebreak)”: minimal, compact, and strictly single-line. It focuses on concise directory and Git context, with an optional model indicator at the end.
 
-## Goals
-
-- Single-line output with no trailing newline
-- Minimal visual noise; concise separators and symbols
-- Uses Beacon’s built-in style engine only (bold + 8 colors)
-
-## TOML Snippet (~/.config/beacon.toml)
+## Configuration (~/.config/beacon.toml)
 
 ```toml
 format = "$directory $git_branch $git_status $claude_model"
@@ -21,7 +14,7 @@ truncate_to_repo = true
 
 [git_branch]
 style = "bold green"
-# symbol = ""   # if your font supports it; default is "🌿"
+symbol = ""
 
 [git_status]
 style = "bold red"
@@ -30,27 +23,16 @@ style = "bold red"
 style = "bold yellow"
 ```
 
-Notes:
-- Beacon prints without a trailing newline by design (uses `print!`, not `println!`).
-- Keep spacing tight; avoid decorative padding to preserve the “pure” feel.
-- Use only supported style tokens: `bold/italic/underline` and 8 colors.
-- When outside a git repo, `git_branch` / `git_status` auto-hide safely.
-
-## Example (plain, colors omitted)
-
-```
-project/src 🌿 main (+1!1?1 ⇡1) <Sonnet>
-```
-
-Depending on repo state, `(+1!1?1 ⇡1)` appears only when there are changes or upstream divergence.
-
-## How to Use
-
-- Put the TOML above into `~/.config/beacon.toml`.
-- Verify enabled modules: `beacon modules --enabled`.
-- Try a run: `echo '{"cwd":"/tmp","session_id":"s","model":{"id":"claude-3.5-sonnet","display_name":"Sonnet"}}' | beacon`.
+## Notes
+- Beacon prints without a trailing newline by design (`print!` not `println!`).
+- Keep spacing tight and avoid decorative padding to preserve the “pure” feel.
+- Supported style tokens: `bold`, `italic`, `underline`, plus colors as:
+  - named and bright (e.g., `blue`, `bright-blue`)
+  - 8-bit indexes `0..=255` (e.g., `196`)
+  - 24-bit hex (e.g., `#RRGGBB`)
+  - `fg:`/`bg:` prefixes and `none`
+  This preset uses simple named foreground colors for portability.
+- Outside a Git repo, `git_branch` and `git_status` hide automatically.
 
 ## References
-
-- Starship Presets: https://starship.rs/presets/pure-preset
-- Pure: https://github.com/sindresorhus/pure
+- Starship Pure preset: https://starship.rs/presets/pure-preset

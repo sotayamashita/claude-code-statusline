@@ -125,11 +125,31 @@ Tokens: `$all_status`, `$ahead_behind`
 
 ### ANSI スタイル指定
 
+`[$text]($style)` 構文で装飾を付けられます。`($style)` が `$style` の場合は、そのモジュール設定の `style` 値を適用します。
+
 サポート済みトークン（空白区切り）:
 - 装飾: `bold`, `italic`, `underline`
-- 色: `black`, `red`, `green`, `yellow`, `blue`, `magenta`, `cyan`, `white`
+- 色（従来互換・前景）: `black`, `red`, `green`, `yellow`, `blue`, `magenta`, `cyan`, `white`
 
-`[$text]($style)` 構文で装飾を付けられます。`($style)` が `$style` の場合は、そのモジュール設定の `style` 値を適用します。
+拡張カラー指定（fg:/bg:）:
+- 形式: `fg:<spec>` / `bg:<spec>`
+- `<spec>` は以下を受け付けます
+  - 名前色: `black|red|green|yellow|blue|magenta|cyan|white`
+  - 明色: `bright-<name>`（例: `bright-yellow`, `bright-blue`）
+  - 8bit インデックス: `0..=255`（例: `fg:196`, `bg:238`）
+  - 24bit Hex: `#RRGGBB`（例: `fg:#bf5700`, `bg:#003366`）
+- リセット: `fg:none` / `bg:none` はそのチャンネルを未設定（端末デフォルト）にします
+- ベアカラー（接頭辞なし）: 従来同様に前景として扱われます（例: `yellow` ≒ `fg:yellow`）
+
+例:
+
+```
+style = "bold fg:green bg:black"        # 太字 + 前景緑 + 背景黒
+style = "bright-yellow bg:bright-blue"    # 明るい黄(前景) + 明るい青(背景)
+style = "fg:196 bg:238"                  # 8bit インデックス色
+style = "fg:#bf5700 bg:#003366"          # 24bit TrueColor
+style = "fg:none italic"                 # 前景は未設定、italic のみ
+```
 
 ### 例: 最小構成
 
@@ -141,5 +161,4 @@ style = "bold cyan"
 
 [claude_model]
 style = "bold yellow"
-symbol = "<"
 ```

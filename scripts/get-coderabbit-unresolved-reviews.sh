@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Fetch unresolved CodeRabbit review comments from a PR URL and output as JSON.
+# Fetch unresolved, non-outdated CodeRabbit review comments from a PR URL and output as JSON.
 #
 # Usage:
 #   bash scripts/get-coderabbit-unresolved-reviews.sh https://github.com/<owner>/<repo>/pull/<number>
@@ -9,6 +9,9 @@
 #
 # Output:
 #   JSON array of comment objects with fields: author, created_at, path, url, body
+#   Notes:
+#     - Only comments from unresolved AND non-outdated review threads are included.
+#     - Comments authored by CodeRabbit (case-insensitive match) are selected.
 
 set -euo pipefail
 
@@ -49,6 +52,7 @@ query($owner:String!, $name:String!, $number:Int!) {
       reviewThreads(first: 100) {
         nodes {
           isResolved
+          isOutdated
           comments(first: 100) {
             nodes {
               id
@@ -75,7 +79,7 @@ gh api graphql \
   -f query="$GQL" \
   --jq '[
     .data.repository.pullRequest.reviewThreads.nodes[]
-    | select(.isResolved == false)
+    | select((.isResolved == false) and (.isOutdated == false))
     | .comments.nodes[]
     | select(.author.login | test("coderabbit"; "i"))
     | {
