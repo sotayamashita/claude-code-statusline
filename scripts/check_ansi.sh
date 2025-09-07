@@ -33,8 +33,10 @@ tmpdir=$(mktemp -d)
 stdout_bin="$tmpdir/stdout.bin"
 stderr_txt="$tmpdir/stderr.txt"
 
-printf '%s' "$JSON" | "${RUN[@]}" >"$stdout_bin" 2>"$stderr_txt" || true
+set +e
+printf '%s' "$JSON" | "${RUN[@]}" >"$stdout_bin" 2>"$stderr_txt"
 code=$?
+set -e
 
 STDOUT_BIN="$stdout_bin" STDERR_TXT="$stderr_txt" CODE="$code" python3 - <<'PY'
 import os, pathlib
@@ -50,4 +52,3 @@ if len(out) == 0 or os.environ.get("CODE") != "0":
 PY
 
 rm -rf "$tmpdir"
-
