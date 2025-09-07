@@ -260,15 +260,17 @@ pub fn render_with_style_template(
     tokens: &std::collections::HashMap<&str, String>,
     default_style: &str,
 ) -> String {
-    // First, replace known tokens except "$style"
+    // First, replace known tokens except "$style" using deterministic,
+    // longest-key-first ordering to avoid overlaps (e.g., $git vs $git_branch).
     let mut replaced = String::from(format);
-    for (k, v) in tokens.iter() {
-        if *k == "style" {
-            // Preserve "$style" for bracket style resolution to honor default_style
-            continue;
+    let mut keys: Vec<&str> = tokens.keys().copied().filter(|k| *k != "style").collect();
+    // Sort by descending length so longer tokens are substituted first
+    keys.sort_by_key(|k| std::cmp::Reverse(k.len()));
+    for k in keys {
+        if let Some(v) = tokens.get(k) {
+            let needle = format!("${k}");
+            replaced = replaced.replace(&needle, v);
         }
-        let needle = format!("${k}");
-        replaced = replaced.replace(&needle, v);
     }
 
     // Robust pass to process [text](style) while ignoring ANSI escape
@@ -459,6 +461,20 @@ mod tests {
         assert!(s.contains("32") || s.contains("38;2;") || s.contains("38;5;"));
         // Should not introduce 38; for fg if using named mapping 32; but mainly ensure still wrapped
         assert!(s.starts_with("\u{1b}[") && s.ends_with("\u{1b}[0m"));
+    }
+
+    #[test]
+    fn token_substitution_uses_longest_key_first() {
+        use std::collections::HashMap;
+        // Simulate overlapping token names like $git and $git_branch
+        let mut tokens = HashMap::new();
+        tokens.insert("git", String::from("G"));
+        tokens.insert("git_branch", String::from("BR"));
+
+        let out = render_with_style_template("$git_branch $git", &tokens, "");
+        // Expect both tokens fully replaced without partial corruption
+        assert_eq!(out, "BR G");
+        assert!(!out.contains("_branch"));
     }
 
     #[test]
