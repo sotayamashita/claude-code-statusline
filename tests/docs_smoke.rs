@@ -1,12 +1,7 @@
-use assert_cmd::Command;
 use predicates::prelude::*;
 use std::fs;
 mod common;
-use common::cli::config_dir_for_home;
-
-fn ccs_cmd() -> Command {
-    Command::cargo_bin(env!("CARGO_PKG_NAME")).expect("binary exists")
-}
+use common::cli::{ccs_cmd_with_home, config_dir_for_home};
 
 fn valid_input_json() -> String {
     r#"{
@@ -46,9 +41,7 @@ fn docs_format_example_runs_without_error() {
     "#;
     fs::write(cfg_dir.join("claude-code-statusline.toml"), toml).unwrap();
 
-    let mut cmd = ccs_cmd();
-    cmd.env("HOME", home);
-    cmd.env("XDG_CONFIG_HOME", &cfg_dir);
+    let mut cmd = ccs_cmd_with_home(home);
     cmd.write_stdin(valid_input_json());
     // Should succeed; stdout should contain model name and not contain error text
     cmd.assert()

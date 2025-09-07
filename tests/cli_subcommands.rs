@@ -1,16 +1,14 @@
 use std::fs;
 
 mod common;
-use common::cli::{ccs_cmd, config_dir_for_home, write_basic_config};
+use common::cli::{ccs_cmd, ccs_cmd_with_home, config_dir_for_home, write_basic_config};
 
 #[test]
 fn config_path_uses_home_and_points_to_new_toml() {
     let tmp = tempfile::tempdir().unwrap();
     let home = tmp.path();
     let cfg_dir = config_dir_for_home(home);
-    let mut cmd = ccs_cmd();
-    cmd.env("HOME", home);
-    cmd.env("XDG_CONFIG_HOME", &cfg_dir);
+    let mut cmd = ccs_cmd_with_home(home);
     cmd.arg("config").arg("--path");
     // Compute expected path using same resolution logic
     let expected = cfg_dir.join("claude-code-statusline.toml");
@@ -36,10 +34,7 @@ fn config_validate_ok_and_invalid() {
     let home = tmp.path();
     // valid config
     write_basic_config(home, Some(100));
-    let cfg_dir = config_dir_for_home(home);
-    let mut ok = ccs_cmd();
-    ok.env("HOME", home);
-    ok.env("XDG_CONFIG_HOME", &cfg_dir);
+    let mut ok = ccs_cmd_with_home(home);
     ok.arg("config").arg("--validate");
     ok.assert()
         .success()
@@ -55,9 +50,7 @@ format = "$directory $claude_model"
 "#,
     )
     .unwrap();
-    let mut bad = ccs_cmd();
-    bad.env("HOME", home);
-    bad.env("XDG_CONFIG_HOME", &cfg_dir);
+    let mut bad = ccs_cmd_with_home(home);
     bad.arg("config").arg("--validate");
     bad.assert()
         .success()
@@ -73,8 +66,7 @@ fn modules_list_and_enabled() {
     write_basic_config(home, None);
 
     // --list: should contain at least core modules
-    let mut list = ccs_cmd();
-    list.env("HOME", home);
+    let mut list = ccs_cmd_with_home(home);
     list.arg("modules").arg("--list");
     let out = list.assert().success().get_output().stdout.clone();
     let s = String::from_utf8(out).unwrap();
@@ -85,8 +77,7 @@ fn modules_list_and_enabled() {
     assert!(s.contains("git_status"));
 
     // --enabled: subset based on format and disabled flags
-    let mut enabled = ccs_cmd();
-    enabled.env("HOME", home);
+    let mut enabled = ccs_cmd_with_home(home);
     enabled.arg("modules").arg("--enabled");
     let out2 = enabled.assert().success().get_output().stdout.clone();
     let s2 = String::from_utf8(out2).unwrap();

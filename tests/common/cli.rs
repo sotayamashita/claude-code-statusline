@@ -43,6 +43,16 @@ pub fn config_dir_for_home(home: &Path) -> PathBuf {
         .unwrap_or_else(|| home.join(".config"))
 }
 
+/// Create a `cargo_bin` command with `HOME` and `XDG_CONFIG_HOME` configured
+/// to point at the per-test config directory under the given `home`.
+pub fn ccs_cmd_with_home(home: &Path) -> Command {
+    let cfg_dir = config_dir_for_home(home);
+    let mut cmd = ccs_cmd();
+    cmd.env("HOME", home);
+    cmd.env("XDG_CONFIG_HOME", &cfg_dir);
+    cmd
+}
+
 pub fn write_basic_config(home: &Path, command_timeout: Option<u64>) {
     let cfg_dir = config_dir_for_home(home);
     fs::create_dir_all(&cfg_dir).unwrap();
