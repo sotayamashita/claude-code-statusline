@@ -1,7 +1,7 @@
 use std::fs;
 
 mod common;
-use common::cli::{ccs_cmd, write_basic_config};
+use common::cli::{ccs_cmd, config_dir_for_home, write_basic_config};
 
 #[test]
 fn config_path_uses_home_and_points_to_new_toml() {
@@ -10,9 +10,11 @@ fn config_path_uses_home_and_points_to_new_toml() {
     let mut cmd = ccs_cmd();
     cmd.env("HOME", home);
     cmd.arg("config").arg("--path");
-    cmd.assert().success().stdout(predicates::str::contains(
-        ".config/claude-code-statusline.toml",
-    ));
+    // Compute expected path using same resolution logic
+    let expected = config_dir_for_home(home).join("claude-code-statusline.toml");
+    let out = cmd.assert().success().get_output().stdout.clone();
+    let s = String::from_utf8(out).unwrap();
+    assert_eq!(s.trim(), expected.display().to_string());
 }
 
 #[test]
@@ -40,7 +42,7 @@ fn config_validate_ok_and_invalid() {
         .stdout(predicates::str::contains("OK"));
 
     // invalid config (too small timeout)
-    let cfg_dir = home.join(".config");
+    let cfg_dir = config_dir_for_home(home);
     fs::create_dir_all(&cfg_dir).unwrap();
     fs::write(
         cfg_dir.join("claude-code-statusline.toml"),

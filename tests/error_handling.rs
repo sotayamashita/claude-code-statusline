@@ -2,6 +2,8 @@ use assert_cmd::Command;
 use predicates::prelude::*;
 use std::env;
 use std::fs;
+mod common;
+use common::cli::config_dir_for_home;
 
 fn ccs_cmd() -> Command {
     Command::cargo_bin(env!("CARGO_PKG_NAME")).expect("binary exists")
@@ -43,7 +45,7 @@ fn invalid_toml_config_produces_concise_stdout_and_stderr_details() {
     // Prepare a temp HOME with invalid config
     let tmp = tempfile::tempdir().unwrap();
     let home = tmp.path();
-    let cfg_dir = home.join(".config");
+    let cfg_dir = config_dir_for_home(home);
     fs::create_dir_all(&cfg_dir).unwrap();
     fs::write(
         cfg_dir.join("claude-code-statusline.toml"),

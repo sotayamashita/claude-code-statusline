@@ -1,14 +1,42 @@
 #![allow(dead_code)]
 use assert_cmd::Command;
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
+use std::sync::{Mutex, OnceLock};
 
 pub fn ccs_cmd() -> Command {
     Command::cargo_bin(env!("CARGO_PKG_NAME")).expect("binary exists")
 }
 
+fn env_lock() -> &'static Mutex<()> {
+    static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+    LOCK.get_or_init(|| Mutex::new(()))
+}
+
+/// Resolve the config directory for a given HOME path using the same
+/// logic as the application (dirs::config_dir), without relying on the
+/// current process HOME. This is done by temporarily setting HOME while
+/// computing the path and restoring it immediately after.
+pub fn config_dir_for_home(home: &Path) -> PathBuf {
+    let _guard = env_lock().lock().unwrap();
+    let orig_home = std::env::var_os("HOME");
+    // SAFETY: tests are serialized by the lock above
+    unsafe {
+        std::env::set_var("HOME", home);
+    }
+    let path = claude_code_statusline_core::config_path();
+    // restore original HOME
+    match orig_home {
+        Some(h) => unsafe { std::env::set_var("HOME", h) },
+        None => unsafe { std::env::remove_var("HOME") },
+    }
+    path.parent()
+        .map(|p| p.to_path_buf())
+        .unwrap_or_else(|| home.join(".config"))
+}
+
 pub fn write_basic_config(home: &Path, command_timeout: Option<u64>) {
-    let cfg_dir = home.join(".config");
+    let cfg_dir = config_dir_for_home(home);
     fs::create_dir_all(&cfg_dir).unwrap();
     let mut toml = String::from(
         r#"

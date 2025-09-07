@@ -17,6 +17,7 @@ pub mod types;
 // Convenience re-exports for common types/functions
 pub use config::Config;
 pub use config::ConfigProvider;
+pub use config::config_path;
 pub use engine::Engine;
 pub use error::CoreError;
 pub use parser::parse_claude_input;

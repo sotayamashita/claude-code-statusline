@@ -54,12 +54,7 @@ pub fn run() -> Result<()> {
                 validate,
             } => {
                 if *path {
-                    // Mirror core config path logic
-                    let path = dirs::home_dir()
-                        .map(|home| home.join(".config").join("claude-code-statusline.toml"))
-                        .unwrap_or_else(|| {
-                            std::path::PathBuf::from("~/.config/claude-code-statusline.toml")
-                        });
+                    let path = claude_code_statusline_core::config_path();
                     println!("{}", path.display());
                     return Ok(());
                 }
