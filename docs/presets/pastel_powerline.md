@@ -14,7 +14,8 @@ format = """
 [ ](bg:#9A348E)\
 $directory\
 [ ](bg:#DA627D fg:#9A348E)\
-$git_branch$git_status\
+$git_branch
+$git_status\
 [ ](fg:#DA627D bg:#FCA17D)\
 $claude_model\
 [ ](fg:#FCA17D)\
