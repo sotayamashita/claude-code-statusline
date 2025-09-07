@@ -202,45 +202,88 @@ pub fn render_with_style_template(
         replaced = replaced.replace(&needle, v);
     }
 
-    // Process zero or more occurrences of [text](style)
-    let mut out = String::new();
-    let mut rest = replaced.as_str();
-    while let Some(lbrack) = rest.find('[') {
-        out.push_str(&rest[..lbrack]);
-        rest = &rest[lbrack + 1..];
+    // Robust pass to process [text](style) while ignoring ANSI escape
+    // sequences already present in the string (e.g., from substituted
+    // module outputs). We skip any ESC[..terminator sequences to avoid
+    // misinterpreting the '[' in "\x1b[" as a text-group opener.
+    let bytes = replaced.as_bytes();
+    let mut i = 0;
+    let len = bytes.len();
+    let mut out = String::with_capacity(len + 16);
+    // Start index of the current literal chunk to be copied as-is
+    let mut seg_start = 0usize;
 
-        if let Some(rbrack) = rest.find(']') {
-            let inner = &rest[..rbrack];
-            rest = &rest[rbrack + 1..];
-            if rest.starts_with('(') {
-                if let Some(rparen) = rest.find(')') {
-                    let style_spec = &rest[1..rparen];
-                    rest = &rest[rparen + 1..];
+    while i < len {
+        let b = bytes[i];
+        if b == 0x1b {
+            // ESC: copy SGR/CSI sequence verbatim
+            let start = i;
+            i += 1; // Skip ESC
+            if i < len && bytes[i] == b'[' {
+                i += 1;
+                while i < len {
+                    let bb = bytes[i];
+                    if (0x40..=0x7E).contains(&bb) {
+                        i += 1; // include terminator
+                        break;
+                    }
+                    i += 1;
+                }
+            }
+            // flush preceding literal then CSI
+            if seg_start < start {
+                out.push_str(&replaced[seg_start..start]);
+            }
+            out.push_str(&replaced[start..i]);
+            seg_start = i;
+            continue;
+        }
 
-                    // Resolve style
+        if b == b'[' {
+            // Potential text group
+            // Flush any preceding literal chunk
+            if seg_start < i {
+                out.push_str(&replaced[seg_start..i]);
+            }
+            let mut j = i + 1;
+            while j < len && bytes[j] != b']' {
+                j += 1;
+            }
+            if j < len && j + 1 < len && bytes[j + 1] == b'(' {
+                // Find right parenthesis
+                let mut k = j + 2;
+                while k < len && bytes[k] != b')' {
+                    k += 1;
+                }
+                if k < len {
+                    let inner = &replaced[i + 1..j];
+                    let style_spec = &replaced[j + 2..k];
                     let style_to_use = if style_spec == "$style" {
                         default_style
                     } else {
                         style_spec
                     };
                     out.push_str(&apply_style(inner, style_to_use));
+                    i = k + 1;
+                    seg_start = i;
                     continue;
                 }
             }
-            // If we get here, brackets weren't in the expected form; restore literally
+
+            // Fallback: literal '['
             out.push('[');
-            out.push_str(inner);
-            out.push(']');
+            i += 1;
+            seg_start = i;
             continue;
-        } else {
-            // No closing bracket, push the rest literally
-            out.push('[');
-            out.push_str(rest);
-            rest = "";
-            break;
         }
+
+        // Regular byte; advance. We'll copy in bulk using seg_start when needed.
+        i += 1;
     }
-    out.push_str(rest);
+    // Flush remaining literal
+    if seg_start < len {
+        out.push_str(&replaced[seg_start..len]);
+    }
     out
 }
 
@@ -280,6 +323,21 @@ mod tests {
         assert!(out.contains("~/proj"));
         assert!(out.starts_with("\u{1b}["));
         assert!(out.ends_with("\u{1b}[0m"));
+    }
+
+    #[test]
+    fn ignores_ansi_sequences_when_parsing_text_groups() {
+        use std::collections::HashMap;
+        // Pre-styled token (simulating a module output already ANSI-wrapped)
+        let styled = apply_style("X", "fg:#ff0000");
+        let mut tokens = HashMap::new();
+        tokens.insert("t", styled);
+        // Surrounding group should be styled, but the existing ANSI inside $t
+        // must not confuse the parser.
+        let s = render_with_style_template("[](bg:#003366)$t", &tokens, "");
+        // After stripping ANSI, we should see the glyph and the token text only.
+        let plain = String::from_utf8(strip_ansi_escapes::strip(s)).unwrap();
+        assert_eq!(plain, "X");
     }
 
     // New spec tests for fg:/bg: and extended colors

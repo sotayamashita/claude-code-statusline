@@ -18,10 +18,7 @@ format = """
 [ $symbol$model ](fg:black bg:#e4bee6)"""
 
 [directory]
-# directory モジュールは $path を提供
-# セグメント本体の style は format 側で直接指定するため、ここは未使用でも可
 style = ""
-format = "[$path ]($style)"  # モジュール単体でのプレビュー用（本番は上記 format を使用）
 
 [git_branch]
 style = ""

@@ -9,7 +9,7 @@ use crate::Config;
 use crate::debug::DebugLogger;
 use crate::error::CoreError;
 use crate::modules::render_module_with_timeout;
-use crate::parser::{extract_modules_from_format, parse_format};
+use crate::parser::extract_modules_from_format;
 use crate::types::claude::ClaudeInput;
 use crate::types::context::Context;
 use std::collections::HashMap;
@@ -65,7 +65,17 @@ impl Engine {
             }
         };
 
-        Ok(parse_format(format, &context, &module_outputs))
+        // Replace tokens anywhere and apply top-level bracket styles like
+        // [text](fg:.. bg:..), matching Starship-style presets.
+        let mut tokens: HashMap<&str, String> = HashMap::new();
+        for (k, v) in &module_outputs {
+            tokens.insert(k.as_str(), v.clone());
+        }
+        let mut rendered = crate::style::render_with_style_template(format, &tokens, "");
+        // Ensure a final reset to avoid leaking styles into hosts that
+        // don't strictly track nested resets.
+        rendered.push_str("\x1b[0m");
+        Ok(rendered)
     }
 }
 

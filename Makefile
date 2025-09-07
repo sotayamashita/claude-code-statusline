@@ -13,11 +13,11 @@ install-hooks:
 
 .PHONY: debug
 debug:
-    @echo "Building debug version..."
-    @cargo build --workspace --release
-    @mv target/release/beacon $(CLAUDE_CODE_DIR)/beacon
-    @chmod +x $(CLAUDE_CODE_DIR)/beacon
-    @echo "✅ Debug version built and installed"
+	@echo "Building debug version..."
+	@cargo build --workspace --release
+	@mv target/release/beacon $(CLAUDE_CODE_DIR)/beacon
+	@chmod +x $(CLAUDE_CODE_DIR)/beacon
+	@echo "✅ Debug version built and installed"
 
 .PHONY: bench
 bench:

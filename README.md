@@ -151,14 +151,12 @@ format = """
 style = ""
 
 [git_branch]
-symbol = "🌿"
 style = ""
 
 [git_status]
 style = ""
 
 [claude_model]
-symbol = "<"
 style = ""
 ```
 
