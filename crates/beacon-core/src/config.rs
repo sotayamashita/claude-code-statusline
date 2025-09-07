@@ -111,7 +111,7 @@ impl<'a> ConfigProvider<'a> {
 mod tests {
     use super::*;
     use crate::types::config::Config as Cfg;
-    use std::env;
+
     use std::sync::{Mutex, OnceLock};
 
     fn env_lock() -> &'static Mutex<()> {
@@ -147,15 +147,17 @@ mod tests {
         // Serialize env mutation to avoid races across tests
         let _guard = env_lock().lock().unwrap();
         let tmp = tempfile::tempdir().unwrap();
-        let orig_home = env::var("HOME").ok();
+        // Capture the original HOME (if any) so we can restore it later
+        let orig_home = std::env::var_os("HOME");
+        // Set HOME to the temp dir for the duration of this test
         unsafe {
-            env::set_var("HOME", tmp.path());
+            std::env::set_var("HOME", tmp.path());
         }
         let config = Config::load().unwrap();
-        if let Some(h) = orig_home {
-            unsafe {
-                env::set_var("HOME", h);
-            }
+        // Fully restore HOME: reset to original value, or remove if it was unset
+        match orig_home {
+            Some(h) => unsafe { std::env::set_var("HOME", h) },
+            None => unsafe { std::env::remove_var("HOME") },
         }
         assert_eq!(config.format, "$directory $claude_model");
         assert_eq!(config.command_timeout, 500);
