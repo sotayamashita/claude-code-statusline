@@ -9,25 +9,33 @@ Powerline の「セグメント背景＋区切り矢印（）」を淡い配�
 
 ```toml
 format = """
-[$path ](fg:black bg:#a8d8ef)
-[](fg:#a8d8ef bg:#bde5b8)
-[ $symbol $branch ](fg:black bg:#bde5b8)
-[](fg:#bde5b8 bg:#f8e3a1)
-[ $all_status$ahead_behind ](fg:black bg:#f8e3a1)
-[](fg:#f8e3a1 bg:#e4bee6)
-[ $symbol$model ](fg:black bg:#e4bee6)"""
+[](#9A348E)\
+$directory\
+[ ](bg:#DA627D fg:#9A348E)\
+$git_branch$git_status\
+[ ](fg:#DA627D bg:#FCA17D)\
+$claude_model\
+[ ](fg:#FCA17D)\
+"""
 
 [directory]
-style = ""
+style = "bg:#9A348E"
+format = "[$path]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
 
 [git_branch]
-style = ""
+symbol = ""
+style = "bg:#DA627D"
+format = "[$symbol $branch]($style)"
 
 [git_status]
-style = ""
+style = "bg:#DA627D"
+format = "[$all_status$ahead_behind ]($style)"
 
 [claude_model]
-style = ""
+style = "bg:#FCA17D"
+format = "[$model]($style)"
 ```
 
 配色例（Hex）

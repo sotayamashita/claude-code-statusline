@@ -139,25 +139,33 @@ A pastel-colored Powerline-style preset that uses both foreground and background
 
 ```toml
 format = """
-[$path ](fg:black bg:#a8d8ef)
-[](fg:#a8d8ef bg:#bde5b8)
-[ $symbol $branch ](fg:black bg:#bde5b8)
-[](fg:#bde5b8 bg:#f8e3a1)
-[ $all_status$ahead_behind ](fg:black bg:#f8e3a1)
-[](fg:#f8e3a1 bg:#e4bee6)
-[ $symbol$model ](fg:black bg:#e4bee6)"""
+[](#9A348E)\
+$directory\
+[ ](bg:#DA627D fg:#9A348E)\
+$git_branch$git_status\
+[ ](fg:#DA627D bg:#FCA17D)\
+$claude_model\
+[ ](fg:#FCA17D)\
+"""
 
 [directory]
-style = ""
+style = "bg:#9A348E"
+format = "[$path]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
 
 [git_branch]
-style = ""
+symbol = ""
+style = "bg:#DA627D"
+format = "[$symbol $branch]($style)"
 
 [git_status]
-style = ""
+style = "bg:#DA627D"
+format = "[$all_status$ahead_behind ]($style)"
 
 [claude_model]
-style = ""
+style = "bg:#FCA17D"
+format = "[$model]($style)"
 ```
 
 Notes:
@@ -165,6 +173,12 @@ Notes:
 - Requires fonts that support Powerline symbols.
 
 _**[See docs/presets/pastel_powerline.md for details and background.](docs/presets/pastel_powerline.md)**_
+
+### Color Modes (Truecolor vs ANSI-256)
+
+- Beacon outputs 24-bit colors for `#rrggbb` by default. Some terminals silently downgrade colors, which can make a separator like `[](#9A348E)` look slightly different from a segment with `bg:#9A348E`.
+- To keep colors visually identical on environments without truecolor, Beacon now auto-detects support (via `COLORTERM`/`TERM`) and downgrades both foreground and background to the same ANSI-256 index.
+- Force truecolor: `export COLORTERM=truecolor` or `export BEACON_TRUECOLOR=1`.
 
 ## Acknowledgments
 

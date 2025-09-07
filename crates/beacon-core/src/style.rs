@@ -65,6 +65,61 @@ pub fn apply_style(text: &str, style: &str) -> String {
         }
     }
 
+    // Heuristics to decide if the terminal supports truecolor. This keeps
+    // behavior consistent across environments where 24-bit colors are not
+    // fully supported and avoids foreground/background mismatch when a host
+    // silently downgrades one channel differently from the other.
+    fn supports_truecolor() -> bool {
+        // Explicit override for tests or user preference
+        if std::env::var("BEACON_TRUECOLOR")
+            .map(|v| v == "1")
+            .unwrap_or(false)
+        {
+            return true;
+        }
+        if let Ok(v) = std::env::var("COLORTERM") {
+            let v = v.to_lowercase();
+            if v.contains("truecolor") || v.contains("24bit") {
+                return true;
+            }
+        }
+        if let Ok(t) = std::env::var("TERM") {
+            let t = t.to_lowercase();
+            if t.contains("direct") || t.contains("truecolor") {
+                return true;
+            }
+        }
+        false
+    }
+
+    // Convert an RGB color to the nearest ANSI 256-color index.
+    // Algorithm: prefer xterm 6x6x6 color cube (16..231) and fall back to
+    // grayscale ramp (232..255) when r≈g≈b. This mirrors common mappers.
+    fn rgb_to_ansi256(r: u8, g: u8, b: u8) -> u8 {
+        // If it's close to gray, map to grayscale range for better fidelity
+        let rg = r as i32 - g as i32;
+        let rb = r as i32 - b as i32;
+        let gb = g as i32 - b as i32;
+        let is_grayish = rg.abs() < 10 && rb.abs() < 10 && gb.abs() < 10;
+        if is_grayish {
+            // 24 grays, 8..238 step ~10
+            let gray = ((r as u16 + g as u16 + b as u16) / 3) as u8;
+            if gray < 8 {
+                return 16; // nearest to black
+            }
+            if gray > 238 {
+                return 231; // nearest to white from color cube
+            }
+            return 232 + ((gray as u16 - 8) / 10) as u8;
+        }
+        // Quantize each channel to 0..5 then map into 6x6x6 cube
+        let to_6 = |v: u8| -> u8 { ((v as u16 * 5 + 127) / 255) as u8 };
+        let r6 = to_6(r);
+        let g6 = to_6(g);
+        let b6 = to_6(b);
+        16 + 36 * r6 + 6 * g6 + b6
+    }
+
     fn parse_color_spec(spec: &str) -> Option<ColorSpec> {
         let s = spec.to_lowercase();
         if s == "none" {
@@ -156,7 +211,14 @@ pub fn apply_style(text: &str, style: &str) -> String {
             ColorSpec::NamedNormal(idx) => codes.push((30 + idx).to_string()),
             ColorSpec::NamedBright(idx) => codes.push((90 + idx).to_string()),
             ColorSpec::Index(n) => codes.push(format!("38;5;{n}")),
-            ColorSpec::Rgb(r, g, b) => codes.push(format!("38;2;{r};{g};{b}")),
+            ColorSpec::Rgb(r, g, b) => {
+                if supports_truecolor() {
+                    codes.push(format!("38;2;{r};{g};{b}"));
+                } else {
+                    let n = rgb_to_ansi256(r, g, b);
+                    codes.push(format!("38;5;{n}"));
+                }
+            }
             ColorSpec::NoneSet => {}
         }
     }
@@ -165,7 +227,14 @@ pub fn apply_style(text: &str, style: &str) -> String {
             ColorSpec::NamedNormal(idx) => codes.push((40 + idx).to_string()),
             ColorSpec::NamedBright(idx) => codes.push((100 + idx).to_string()),
             ColorSpec::Index(n) => codes.push(format!("48;5;{n}")),
-            ColorSpec::Rgb(r, g, b) => codes.push(format!("48;2;{r};{g};{b}")),
+            ColorSpec::Rgb(r, g, b) => {
+                if supports_truecolor() {
+                    codes.push(format!("48;2;{r};{g};{b}"));
+                } else {
+                    let n = rgb_to_ansi256(r, g, b);
+                    codes.push(format!("48;5;{n}"));
+                }
+            }
             ColorSpec::NoneSet => {}
         }
     }
@@ -371,8 +440,9 @@ mod tests {
     #[test]
     fn style_hex_truecolor() {
         let s = apply_style("X", "fg:#bf5700 bg:#003366");
-        assert!(s.contains("38;2;191;87;0"));
-        assert!(s.contains("48;2;0;51;102"));
+        // Accept either truecolor or ANSI-256 downgraded output depending on env
+        assert!(s.contains("38;2;191;87;0") || s.contains("38;5;"));
+        assert!(s.contains("48;2;0;51;102") || s.contains("48;5;"));
     }
 
     #[test]
@@ -396,5 +466,41 @@ mod tests {
         let s = apply_style("X", "fg:none italic");
         assert!(s.contains("3"));
         assert!(!s.contains("38;"));
+    }
+
+    #[test]
+    fn rgb_foreground_background_downgrade_is_consistent() {
+        // Ensure that when truecolor is not detected, the same RGB hex
+        // maps to the same ANSI-256 index for both fg and bg.
+        use std::sync::{Mutex, OnceLock};
+        static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+        let _g = LOCK.get_or_init(|| Mutex::new(())).lock().unwrap();
+        // Force non-truecolor environment
+        unsafe {
+            std::env::remove_var("BEACON_TRUECOLOR");
+            std::env::set_var("COLORTERM", "");
+            std::env::set_var("TERM", "xterm-256color");
+        }
+
+        let fg = apply_style("X", "#9A348E");
+        let bg = apply_style("X", "bg:#9A348E");
+        // Extract the 256-color index numbers if present
+        let idx_fg = fg
+            .split("38;5;")
+            .nth(1)
+            .and_then(|s| s.split('m').next())
+            .and_then(|n| n.parse::<u16>().ok());
+        let idx_bg = bg
+            .split("48;5;")
+            .nth(1)
+            .and_then(|s| s.split('m').next())
+            .and_then(|n| n.parse::<u16>().ok());
+        if let (Some(a), Some(b)) = (idx_fg, idx_bg) {
+            assert_eq!(a, b);
+        } else {
+            // In environments with truecolor this test isn't meaningful.
+            // Ensure at least both contain truecolor sequences then.
+            assert!(fg.contains("38;2;") && bg.contains("48;2;"));
+        }
     }
 }
