@@ -12,13 +12,13 @@ This preset approximates Starship’s “Tokyo Night” with cool, dark-friendly
 ```toml
 format = """
 [░▒▓](#a3aed2)\
-[ ](bg:#769ff0 fg:#a3aed2)\
+[ ](bg:#769ff0 fg:#a3aed2)\
 $directory\
-[ ](fg:#769ff0 bg:#394260)\
+[ ](fg:#769ff0 bg:#394260)\
 $git_branch$git_status\
-[ ](fg:#394260 bg:#212736)\
+[ ](fg:#394260 bg:#212736)\
 $claude_model\
-[ ](fg:#212736)\
+[ ](fg:#212736)\
 """
 
 [directory]
