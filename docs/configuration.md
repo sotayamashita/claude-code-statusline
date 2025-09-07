@@ -27,6 +27,7 @@ format = "[$path]($style)"
 style = "bold cyan"
 truncation_length = 3
 truncate_to_repo = true
+truncation_symbol = ""
 disabled = false
 ```
 
@@ -38,6 +39,7 @@ Tokens: `$path`
  - `truncate_to_repo = true` のとき、ディレクトリが Git リポジトリ配下であれば、`$path` を「`<repo-name>/<relative>`」形式（リポジトリ名 + リポジトリ内相対パス）で表示します。
    - 検出順序: `feature = "git"` 有効時は `git2` の `workdir()` を優先。見つからない場合や `git` 無効時は、カレントから親に向かって `.git` ディレクトリを探索して推定します。
    - `truncation_length` は表示セグメント数の上限です。常に先頭のリポジトリ名を保持し、残りは末尾のディレクトリから詰めて表示します（例: `truncation_length = 2` → `repo/last`）。
+   - `truncation_symbol` はパスが短縮された場合の省略記号を表します。短縮が発生したとき、保持された先頭（例: リポジトリ名）と末尾の間に挿入されます（例: `repo/…/tail`）。既定値は空文字です。
    - リポジトリ外ではこのオプションは無視され、ホーム短縮のみの通常表示になります。
 
 例:
