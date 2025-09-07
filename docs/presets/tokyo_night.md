@@ -10,34 +10,34 @@ This preset approximates Starship’s “Tokyo Night” with cool, dark-friendly
 ## Configuration (~/.config/claude-code-statusline.toml)
 
 ```toml
-# Background + truecolor variant
 format = """
-[ ](bg:#1f2335)\
+[░▒▓](#a3aed2)\
+[ ](bg:#769ff0 fg:#a3aed2)\
 $directory\
-[ ](bg:#2a2f4a fg:#1f2335)\
+[ ](fg:#769ff0 bg:#394260)\
 $git_branch$git_status\
-[ ](bg:#3b4261 fg:#2a2f4a)\
+[ ](fg:#394260 bg:#212736)\
 $claude_model\
-[ ](fg:#3b4261)\
+[ ](fg:#212736)\
 """
 
 [directory]
-style = "fg:#c0caf5 bg:#1f2335"
+style = "fg:#e3e5e5 bg:#769ff0"
 format = "[ $path ]($style)"
 truncation_length = 3
 truncation_symbol = "…/"
 
 [git_branch]
+style = "bg:#394260"
 symbol = ""
-style = "fg:#7aa2f7 bg:#2a2f4a"
 format = "[$symbol $branch]($style)"
 
 [git_status]
-style = "fg:#9ece6a bg:#2a2f4a"
+style = "bg:#394260"
 format = "[$all_status$ahead_behind ]($style)"
 
 [claude_model]
-style = "fg:#c0caf5 bg:#3b4261"
+style = "bg:#212736"
 format = "[$model]($style)"
 ```
 
