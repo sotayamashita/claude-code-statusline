@@ -1,15 +1,17 @@
-## Pastel Powerline
+# Preset: Pastel Powerline
 
-Powerline の「セグメント背景＋区切り矢印（）」を淡い配色で実現するプリセット例です。各セグメントは必ず `fg:` と `bg:` の両方を指定し、セグメント間の矢印は「前の背景＝前景」「次の背景＝背景」でブリッジします。
+This preset recreates Starship’s “Pastel Powerline” look: soft, pastel blocks connected by arrows. Each segment explicitly sets both foreground and background, and the arrow bridges use the previous segment’s background as the arrow foreground and the next segment’s background as the arrow background.
 
-ポイント:
-- `[$content]($style)` を複数連ねて、ブロックと矢印を個別に着色
-- セグメント本体は `fg:black`（薄色背景に対して可読性を確保）
-- 例の配色は一例（Hex）です。お好みで変更してください
+## Key decisions
+- Avoid the left-edge curved separator ``. Start with a background-colored space instead to prevent anti‑aliasing halos in web-based renderers.
+- Bridge arrows `` must always specify `fg:<prev-bg> bg:<next-bg>` to ensure seamless color.
+- Use `fg:black` for text on light pastel backgrounds to keep contrast readable.
+
+## Configuration (~/.config/beacon.toml)
 
 ```toml
 format = """
-[](#9A348E)\
+[ ](#9A348E)\
 $directory\
 [ ](bg:#DA627D fg:#9A348E)\
 $git_branch$git_status\
@@ -20,7 +22,7 @@ $claude_model\
 
 [directory]
 style = "bg:#9A348E"
-format = "[$path]($style)"
+format = "[ $path]($style)"
 truncation_length = 3
 truncation_symbol = "…/"
 
@@ -38,11 +40,13 @@ style = "bg:#FCA17D"
 format = "[$model]($style)"
 ```
 
-配色例（Hex）
-- directory: `bg:#a8d8ef`
-- git_branch: `bg:#bde5b8`
-- git_status: `bg:#f8e3a1`
-- claude_model: `bg:#e4bee6`
+## Why avoid the left-edge ``
+- Web renderers (e.g., editor-integrated terminals) apply strong subpixel anti‑aliasing to curved glyphs. The glyph edge blends with the cell background, so a “foreground glyph” and a “painted background cell” can look slightly different even with the same color.
+- At the left edge, the neighbor is often the terminal’s default background (theme), not your previous segment, making the halo more visible.
+- The `` glyph lives in the Private Use Area and can vary across fonts, which hurts visual consistency.
 
-注意:
-- 現状のコアは「前セグメントの色を自動で引き継ぐ」機能は未実装です（仕様の Future Work）。本プリセットは上記のように矢印ごとに明示的に `fg:`/`bg:` を指定して再現します。
+## Notes
+- The core does not yet implement “inherit previous colors automatically” between segments. Always set both `fg:` and `bg:` explicitly for blocks and bridge arrows.
+
+## References
+- Starship Pastel Powerline: https://starship.rs/presets/pastel-powerline

@@ -106,79 +106,12 @@ style = "bold red"
 style = "bold yellow"
 ```
 
-### Presets Style
+### Presets Styles
 
-#### Pure Prompt (single-line, no linebreak)
-
-A minimal, single-line preset inspired by [Starship’s Pure Prompt](https://starship.rs/presets/pure_prompt).
-
-```toml
-format = "$directory $git_branch $git_status $claude_model"
-
-[directory]
-style = "bold blue"
-truncation_length = 3
-truncate_to_repo = true
-
-[git_branch]
-style = "bold green"
-symbol = ""
-
-[git_status]
-style = "bold red"
-
-[claude_model]
-style = "bold yellow"
-```
-
-_**[See docs/presets/pure_prompt.md for details and notes.](docs/presets/pure_prompt.md)**_
-
-#### Pastel Powerline (fg+bg with bridged separators)
-
-A pastel-colored Powerline-style preset that uses both foreground and background colors per segment, bridging separators () by setting the separator’s foreground to the previous segment’s background and its background to the next segment’s background.
-
-```toml
-format = """
-[](#9A348E)\
-$directory\
-[ ](bg:#DA627D fg:#9A348E)\
-$git_branch$git_status\
-[ ](fg:#DA627D bg:#FCA17D)\
-$claude_model\
-[ ](fg:#FCA17D)\
-"""
-
-[directory]
-style = "bg:#9A348E"
-format = "[$path]($style)"
-truncation_length = 3
-truncation_symbol = "…/"
-
-[git_branch]
-symbol = ""
-style = "bg:#DA627D"
-format = "[$symbol $branch]($style)"
-
-[git_status]
-style = "bg:#DA627D"
-format = "[$all_status$ahead_behind ]($style)"
-
-[claude_model]
-style = "bg:#FCA17D"
-format = "[$model]($style)"
-```
-
-Notes:
-- Colors are examples; adjust any Hex or 8-bit indices to your taste.
-- Requires fonts that support Powerline symbols.
-
-_**[See docs/presets/pastel_powerline.md for details and background.](docs/presets/pastel_powerline.md)**_
-
-### Color Modes (Truecolor vs ANSI-256)
-
-- Beacon outputs 24-bit colors for `#rrggbb` by default. Some terminals silently downgrade colors, which can make a separator like `[](#9A348E)` look slightly different from a segment with `bg:#9A348E`.
-- To keep colors visually identical on environments without truecolor, Beacon now auto-detects support (via `COLORTERM`/`TERM`) and downgrades both foreground and background to the same ANSI-256 index.
-- Force truecolor: `export COLORTERM=truecolor` or `export BEACON_TRUECOLOR=1`.
+- Pure Prompt (single-line, no linebreak)
+    - _**[See docs/presets/pure_prompt.md.](docs/presets/pure_prompt.md)**_
+- Pastel Powerline
+    - _**[See docs/presets/pastel_powerline.md](docs/presets/pastel_powerline.md)**_
 
 ## Acknowledgments
 
