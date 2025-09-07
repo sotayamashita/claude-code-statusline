@@ -1,47 +1,49 @@
 # Preset: Tokyo Night
 
-This preset approximates Starship’s “Tokyo Night” using foreground-only colors and simple character separators. It targets dark terminals with cool-toned accents and avoids backgrounds/truecolor for maximum portability.
+This preset approximates Starship’s “Tokyo Night” with cool, dark-friendly tones. The core supports both foreground and background colors, including 24-bit hex.
 
 ## Key decisions
-- Foreground-only styling: no backgrounds, no truecolor required.
-- Subtle separators using `` in gray;
-- Cool tones (cyan/blue/magenta) for a Tokyo Night feel on dark themes.
+- Use truecolor backgrounds with Powerline-style bridges for a cohesive look.
+- Bridge arrows `` specify `fg:<prev-bg> bg:<next-bg>` for seamless transitions.
+- Provide a simple `|` fallback when Powerline glyphs are unavailable.
 
 ## Configuration (~/.config/claude-code-statusline.toml)
 
 ```toml
-# Characters-only, foreground-only approximation
+# Background + truecolor variant
 format = """
-[░▒▓](#a3aed2)\
-[ ](bg:#769ff0 fg:#a3aed2)\
+[ ](bg:#1f2335)\
 $directory\
-[ ](fg:#769ff0 bg:#394260)\
-$git_branch\
-$git_status\
-[ ](fg:#394260 bg:#212736)\
+[ ](bg:#2a2f4a fg:#1f2335)\
+$git_branch$git_status\
+[ ](bg:#3b4261 fg:#2a2f4a)\
 $claude_model\
-[ ](fg:#212736)\
+[ ](fg:#3b4261)\
+"""
 
 [directory]
-style = "fg:#e3e5e5 bg:#769ff0"
+style = "fg:#c0caf5 bg:#1f2335"
 format = "[ $path ]($style)"
 truncation_length = 3
 truncation_symbol = "…/"
 
 [git_branch]
 symbol = ""
-style = "bg:#394260"
+style = "fg:#7aa2f7 bg:#2a2f4a"
+format = "[$symbol $branch]($style)"
 
 [git_status]
-style = "bg:#394260"
+style = "fg:#9ece6a bg:#2a2f4a"
+format = "[$all_status$ahead_behind ]($style)"
 
 [claude_model]
-style = "bg:#212736"
+style = "fg:#c0caf5 bg:#3b4261"
+format = "[$model]($style)"
 ```
 
 ## Notes
-- This preset intentionally avoids backgrounds to remain readable and consistent across terminals that don’t support truecolor or custom palettes.
 - Outside a Git repository, `git_branch` and `git_status` hide automatically.
+- If your terminal doesn’t support 24‑bit color, replace hex with nearest 8‑bit indexes or switch to a foreground‑only style.
 
 ## References
 - Starship Preset (Tokyo Night): https://starship.rs/presets/tokyo-night

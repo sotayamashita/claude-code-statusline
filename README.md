@@ -113,7 +113,7 @@ style = "bold yellow"
     - _**[See docs/presets/pure_prompt.md.](docs/presets/pure_prompt.md)**_
 - Pastel Powerline
     - _**[See docs/presets/pastel_powerline.md](docs/presets/pastel_powerline.md)**_
-- Tokyo Night (foreground-only)
+- Tokyo Night
     - _**[See docs/presets/tokyo_night.md](docs/presets/tokyo_night.md)**_
 
 ## Acknowledgments
