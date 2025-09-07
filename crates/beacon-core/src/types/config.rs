@@ -413,25 +413,61 @@ impl Config {
     /// break the program, but we surface them as warnings.
     pub fn collect_warnings(&self) -> Vec<String> {
         let mut warnings = Vec::new();
+        fn is_named(name: &str) -> bool {
+            matches!(
+                name,
+                "black" | "red" | "green" | "yellow" | "blue" | "magenta" | "cyan" | "white"
+            )
+        }
 
-        // Allowed style tokens
-        let allowed_styles = [
-            "bold",
-            "italic",
-            "underline",
-            "black",
-            "red",
-            "green",
-            "yellow",
-            "blue",
-            "magenta",
-            "cyan",
-            "white",
-        ];
+        fn valid_color_spec(spec: &str) -> bool {
+            let s = spec.to_lowercase();
+            if s == "none" {
+                return true;
+            }
+            if let Some(hex) = s.strip_prefix('#') {
+                if hex.len() == 6
+                    && u8::from_str_radix(&hex[0..2], 16).is_ok()
+                    && u8::from_str_radix(&hex[2..4], 16).is_ok()
+                    && u8::from_str_radix(&hex[4..6], 16).is_ok()
+                {
+                    return true;
+                }
+            }
+            if s.chars().all(|c| c.is_ascii_digit()) {
+                if let Ok(n) = s.parse::<u16>() {
+                    if n <= 255 {
+                        return true;
+                    }
+                }
+            }
+            if let Some(n) = s.strip_prefix("bright-") {
+                return is_named(n);
+            }
+            is_named(&s)
+        }
 
         let check_style = |name: &str, style: &str, warnings: &mut Vec<String>| {
             for tok in style.split_whitespace() {
-                if !allowed_styles.contains(&tok) {
+                let t = tok.to_lowercase();
+                match t.as_str() {
+                    "bold" | "italic" | "underline" => continue,
+                    _ => {}
+                }
+                if let Some(rest) = t.strip_prefix("fg:") {
+                    if !valid_color_spec(rest) {
+                        warnings.push(crate::messages::warn_unknown_style_token(name, tok));
+                    }
+                    continue;
+                }
+                if let Some(rest) = t.strip_prefix("bg:") {
+                    if !valid_color_spec(rest) {
+                        warnings.push(crate::messages::warn_unknown_style_token(name, tok));
+                    }
+                    continue;
+                }
+                // Bare color spec -> treat as foreground
+                if !valid_color_spec(&t) {
                     warnings.push(crate::messages::warn_unknown_style_token(name, tok));
                 }
             }
@@ -515,5 +551,33 @@ mod validation_tests {
             fmt.contains("$symbol"),
             "default format must reference $symbol; got: {fmt}"
         );
+    }
+
+    #[test]
+    fn style_validation_accepts_fg_bg_and_colors() {
+        let mut cfg = Config::default();
+        cfg.directory.style = "bold fg:green bg:black".to_string();
+        cfg.claude_model.style = "bright-yellow bg:bright-blue".to_string();
+        cfg.git_branch.style = "fg:196 bg:238".to_string();
+        cfg.git_status.style = "fg:#bf5700 bg:#003366".to_string();
+        let ws = cfg.collect_warnings();
+        // No warnings for valid color specs
+        assert!(ws.is_empty(), "unexpected warnings: {ws:?}");
+    }
+
+    #[test]
+    fn style_validation_warns_on_invalid_color_specs() {
+        let mut cfg = Config::default();
+        cfg.directory.style = "fg:xxx".to_string();
+        cfg.claude_model.style = "bg:#12AB".to_string();
+        cfg.git_branch.style = "fg:300".to_string();
+        cfg.git_status.style = "bold sparkle".to_string();
+        let ws = cfg.collect_warnings();
+        // Expect at least 4 warnings (three invalid fg/bg, one unknown token)
+        assert!(ws.len() >= 4, "warnings: {ws:?}");
+        assert!(ws.iter().any(|w| w.contains("fg:xxx")));
+        assert!(ws.iter().any(|w| w.contains("bg:#12AB")));
+        assert!(ws.iter().any(|w| w.contains("fg:300")));
+        assert!(ws.iter().any(|w| w.contains("sparkle")));
     }
 }

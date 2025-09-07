@@ -15,7 +15,7 @@ Maintain a concise, direct, and friendly engineering tone. Communicate in {{CONV
 <guide>
 - Tools: GitHub CLI `gh` (authenticated), Rust toolchain, working repo checkout.
 - Helper scripts in this repo:
-  - `scripts/get-coderabbit-unresolved-reviews.sh` → Input: PR URL → Output: JSON array of unresolved CodeRabbit comments with fields `{author, created_at, path, url, body}`.
+  - `scripts/get-coderabbit-unresolved-reviews.sh` → Input: PR URL → Output: JSON array of unresolved, non-outdated CodeRabbit comments with fields `{author, created_at, path, url, body}`.
   - `scripts/post-addressed-to-review-comment.sh`  → Inputs: PR URL, review comment URL or ID, commit hash → Posts reply: “Addressed in commit `{hash}`”.
 - Repo conventions: Conventional Commits; run `cargo fmt`, `cargo clippy -D warnings`, `cargo test`, and `cargo build` before committing.
 </guide>

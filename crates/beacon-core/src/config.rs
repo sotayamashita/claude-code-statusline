@@ -112,6 +112,13 @@ mod tests {
     use super::*;
     use crate::types::config::Config as Cfg;
 
+    use std::sync::{Mutex, OnceLock};
+
+    fn env_lock() -> &'static Mutex<()> {
+        static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+        LOCK.get_or_init(|| Mutex::new(()))
+    }
+
     #[test]
     fn test_default_config() {
         let config = Config::default();
@@ -137,19 +144,23 @@ mod tests {
 
     #[test]
     fn test_load_missing_config_returns_default() {
-        // Note: This test may use actual config file if it exists
-        // The test name is misleading - it's testing Config::load() in general
+        // Serialize env mutation to avoid races across tests
+        let _guard = env_lock().lock().unwrap();
+        let tmp = tempfile::tempdir().unwrap();
+        // Capture the original HOME (if any) so we can restore it later
+        let orig_home = std::env::var_os("HOME");
+        // Set HOME to the temp dir for the duration of this test
+        unsafe {
+            std::env::set_var("HOME", tmp.path());
+        }
         let config = Config::load().unwrap();
-        // Accept common real-world formats that may be present in a user's local config
-        let ok_formats = [
-            "$directory $claude_model",
-            "$directory $git_branch $claude_model",
-            "$directory $git_branch $git_status $claude_model",
-        ];
-        assert!(ok_formats.contains(&config.format.as_str()));
-        // If config file exists with command_timeout = 300, that will be loaded
-        // If not, default 500 will be used
-        assert!(config.command_timeout == 300 || config.command_timeout == 500);
+        // Fully restore HOME: reset to original value, or remove if it was unset
+        match orig_home {
+            Some(h) => unsafe { std::env::set_var("HOME", h) },
+            None => unsafe { std::env::remove_var("HOME") },
+        }
+        assert_eq!(config.format, "$directory $claude_model");
+        assert_eq!(config.command_timeout, 500);
     }
 
     #[test]

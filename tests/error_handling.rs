@@ -24,7 +24,12 @@ fn valid_input_json() -> String {
 
 #[test]
 fn invalid_json_produces_concise_stdout_and_stderr_details() {
+    // Use an isolated HOME so that a user's invalid ~/.config/beacon.toml
+    // does not interfere with this test.
+    let tmp = tempfile::tempdir().unwrap();
+    let home = tmp.path();
     let mut cmd = beacon_cmd();
+    cmd.env("HOME", home);
     cmd.write_stdin("this is not json");
     cmd.assert()
         .stdout(predicate::str::contains(

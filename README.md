@@ -106,32 +106,12 @@ style = "bold red"
 style = "bold yellow"
 ```
 
-### Presets Style
+### Presets Styles
 
-#### Pure Prompt (single-line, no linebreak)
-
-A minimal, single-line preset inspired by [Starship’s Pure Prompt](https://starship.rs/presets/pure_prompt).
-
-```toml
-format = "$directory $git_branch $git_status $claude_model"
-
-[directory]
-style = "bold blue"
-truncation_length = 3
-truncate_to_repo = true
-
-[git_branch]
-style = "bold green"
-symbol = ""
-
-[git_status]
-style = "bold red"
-
-[claude_model]
-style = "bold yellow"
-```
-
-_**[See docs/presets/pure_prompt.md for details and notes.](docs/presets/pure_prompt.md)**_
+- Pure Prompt (single-line, no linebreak)
+    - _**[See docs/presets/pure_prompt.md.](docs/presets/pure_prompt.md)**_
+- Pastel Powerline
+    - _**[See docs/presets/pastel_powerline.md](docs/presets/pastel_powerline.md)**_
 
 ## Acknowledgments
 
