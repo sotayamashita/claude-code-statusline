@@ -15,6 +15,7 @@ install-hooks:
 debug:
 	@echo "Building debug version..."
 	@cargo build --workspace --release
+	@mkdir -p $(CLAUDE_CODE_DIR)
 	@mv target/release/claude-code-statusline $(CLAUDE_CODE_DIR)/claude-code-statusline
 	@chmod +x $(CLAUDE_CODE_DIR)/claude-code-statusline
 	@echo "✅ Debug version built and installed"
