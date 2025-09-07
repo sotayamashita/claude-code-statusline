@@ -20,15 +20,23 @@ fn env_lock() -> &'static Mutex<()> {
 pub fn config_dir_for_home(home: &Path) -> PathBuf {
     let _guard = env_lock().lock().unwrap();
     let orig_home = std::env::var_os("HOME");
+    let orig_xdg = std::env::var_os("XDG_CONFIG_HOME");
     // SAFETY: tests are serialized by the lock above
     unsafe {
         std::env::set_var("HOME", home);
+        // Ensure dirs::config_dir() resolves under the provided HOME
+        std::env::set_var("XDG_CONFIG_HOME", home.join(".config"));
     }
     let path = claude_code_statusline_core::config_path();
     // restore original HOME
     match orig_home {
         Some(h) => unsafe { std::env::set_var("HOME", h) },
         None => unsafe { std::env::remove_var("HOME") },
+    }
+    // restore original XDG_CONFIG_HOME
+    match orig_xdg {
+        Some(v) => unsafe { std::env::set_var("XDG_CONFIG_HOME", v) },
+        None => unsafe { std::env::remove_var("XDG_CONFIG_HOME") },
     }
     path.parent()
         .map(|p| p.to_path_buf())

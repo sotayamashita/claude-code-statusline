@@ -1,6 +1,8 @@
 use assert_cmd::Command;
 use predicates::prelude::*;
 use std::fs;
+mod common;
+use common::cli::config_dir_for_home;
 
 fn ccs_cmd() -> Command {
     Command::cargo_bin(env!("CARGO_PKG_NAME")).expect("binary exists")
@@ -25,7 +27,7 @@ fn docs_format_example_runs_without_error() {
     // Prepare a temp HOME with docs example format including $claude_session (not implemented)
     let tmp = tempfile::tempdir().unwrap();
     let home = tmp.path();
-    let cfg_dir = home.join(".config");
+    let cfg_dir = config_dir_for_home(home);
     fs::create_dir_all(&cfg_dir).unwrap();
     let toml = r#"
         format = "$directory $git_branch $claude_model $claude_session"
@@ -46,6 +48,7 @@ fn docs_format_example_runs_without_error() {
 
     let mut cmd = ccs_cmd();
     cmd.env("HOME", home);
+    cmd.env("XDG_CONFIG_HOME", &cfg_dir);
     cmd.write_stdin(valid_input_json());
     // Should succeed; stdout should contain model name and not contain error text
     cmd.assert()

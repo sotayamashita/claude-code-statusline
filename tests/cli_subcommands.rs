@@ -7,11 +7,13 @@ use common::cli::{ccs_cmd, config_dir_for_home, write_basic_config};
 fn config_path_uses_home_and_points_to_new_toml() {
     let tmp = tempfile::tempdir().unwrap();
     let home = tmp.path();
+    let cfg_dir = config_dir_for_home(home);
     let mut cmd = ccs_cmd();
     cmd.env("HOME", home);
+    cmd.env("XDG_CONFIG_HOME", &cfg_dir);
     cmd.arg("config").arg("--path");
     // Compute expected path using same resolution logic
-    let expected = config_dir_for_home(home).join("claude-code-statusline.toml");
+    let expected = cfg_dir.join("claude-code-statusline.toml");
     let out = cmd.assert().success().get_output().stdout.clone();
     let s = String::from_utf8(out).unwrap();
     assert_eq!(s.trim(), expected.display().to_string());
@@ -34,8 +36,10 @@ fn config_validate_ok_and_invalid() {
     let home = tmp.path();
     // valid config
     write_basic_config(home, Some(100));
+    let cfg_dir = config_dir_for_home(home);
     let mut ok = ccs_cmd();
     ok.env("HOME", home);
+    ok.env("XDG_CONFIG_HOME", &cfg_dir);
     ok.arg("config").arg("--validate");
     ok.assert()
         .success()
@@ -53,6 +57,7 @@ format = "$directory $claude_model"
     .unwrap();
     let mut bad = ccs_cmd();
     bad.env("HOME", home);
+    bad.env("XDG_CONFIG_HOME", &cfg_dir);
     bad.arg("config").arg("--validate");
     bad.assert()
         .success()

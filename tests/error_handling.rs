@@ -30,8 +30,10 @@ fn invalid_json_produces_concise_stdout_and_stderr_details() {
     // does not interfere with this test.
     let tmp = tempfile::tempdir().unwrap();
     let home = tmp.path();
+    let cfg_dir = config_dir_for_home(home);
     let mut cmd = ccs_cmd();
     cmd.env("HOME", home);
+    cmd.env("XDG_CONFIG_HOME", &cfg_dir);
     cmd.write_stdin("this is not json");
     cmd.assert()
         .stdout(predicate::str::contains(
@@ -55,6 +57,7 @@ fn invalid_toml_config_produces_concise_stdout_and_stderr_details() {
 
     let mut cmd = ccs_cmd();
     cmd.env("HOME", home);
+    cmd.env("XDG_CONFIG_HOME", &cfg_dir);
     cmd.write_stdin(valid_input_json());
     cmd.assert()
         .stdout(predicate::str::contains(
