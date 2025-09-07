@@ -3,7 +3,7 @@ use rstest::*;
 use std::fs;
 
 mod common;
-use common::cli::{beacon_cmd, input_json_with_cwd, write_basic_config};
+use common::cli::{ccs_cmd, input_json_with_cwd, write_basic_config};
 
 /// Verify the Pure Prompt preset renders a single line and module order.
 #[rstest]
@@ -43,7 +43,7 @@ fn pure_preset_renders_single_line_in_order() {
     writeln!(uf, "u").unwrap();
     uf.sync_all().unwrap();
 
-    let mut cmd = beacon_cmd();
+    let mut cmd = ccs_cmd();
     cmd.env("HOME", home);
     cmd.write_stdin(input_json_with_cwd(repo_dir.to_str().unwrap()));
 

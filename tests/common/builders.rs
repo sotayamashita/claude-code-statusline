@@ -1,6 +1,6 @@
-use beacon::config::Config;
-use beacon::types::claude::{ClaudeInput, ModelInfo, OutputStyle, WorkspaceInfo};
-use beacon::types::context::Context;
+use claude_code_statusline::config::Config;
+use claude_code_statusline::types::claude::{ClaudeInput, ModelInfo, OutputStyle, WorkspaceInfo};
+use claude_code_statusline::types::context::Context;
 
 /// Builder for creating test ClaudeInput instances
 pub struct ClaudeInputBuilder {
@@ -119,7 +119,7 @@ impl ContextBuilder {
 
     pub fn with_directory_config<F>(mut self, f: F) -> Self
     where
-        F: FnOnce(&mut beacon::types::config::DirectoryConfig),
+        F: FnOnce(&mut claude_code_statusline::types::config::DirectoryConfig),
     {
         f(&mut self.config.directory);
         self
@@ -127,7 +127,7 @@ impl ContextBuilder {
 
     pub fn with_claude_model_config<F>(mut self, f: F) -> Self
     where
-        F: FnOnce(&mut beacon::types::config::ClaudeModelConfig),
+        F: FnOnce(&mut claude_code_statusline::types::config::ClaudeModelConfig),
     {
         f(&mut self.config.claude_model);
         self

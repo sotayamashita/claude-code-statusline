@@ -37,7 +37,7 @@ enum Command {
     },
 }
 
-/// Run the Beacon CLI: read stdin JSON, render status line, write stdout.
+/// Run the claude-code-statusline CLI: read stdin JSON, render status line, write stdout.
 pub fn run() -> Result<()> {
     let _cli = Cli::parse();
     if let Some(cmd) = &_cli.command {
@@ -56,19 +56,19 @@ pub fn run() -> Result<()> {
                 if *path {
                     // Mirror core config path logic
                     let path = dirs::home_dir()
-                        .map(|home| home.join(".config").join("beacon.toml"))
-                        .unwrap_or_else(|| std::path::PathBuf::from("~/.config/beacon.toml"));
+                        .map(|home| home.join(".config").join("claude-code-statusline.toml"))
+                        .unwrap_or_else(|| std::path::PathBuf::from("~/.config/claude-code-statusline.toml"));
                     println!("{}", path.display());
                     return Ok(());
                 }
                 if *default {
-                    let toml = toml::to_string_pretty(&beacon_core::Config::default())
+                    let toml = toml::to_string_pretty(&claude_code_statusline_core::Config::default())
                         .unwrap_or_else(|_| "".into());
                     println!("{toml}");
                     return Ok(());
                 }
                 if *validate {
-                    match beacon_core::Config::load() {
+                    match claude_code_statusline_core::Config::load() {
                         Ok(cfg) => match cfg.validate() {
                             Ok(()) => {
                                 println!("OK");
@@ -91,16 +91,16 @@ pub fn run() -> Result<()> {
             }
             Command::Modules { list, enabled } => {
                 if *list {
-                    let reg = beacon_core::modules::Registry::with_defaults();
+                    let reg = claude_code_statusline_core::modules::Registry::with_defaults();
                     for name in reg.list() {
                         println!("{name}");
                     }
                     return Ok(());
                 }
                 if *enabled {
-                    let cfg = beacon_core::Config::load().unwrap_or_default();
-                    let names = beacon_core::parser::extract_modules_from_format(&cfg.format);
-                    let reg = beacon_core::modules::Registry::with_defaults();
+                    let cfg = claude_code_statusline_core::Config::load().unwrap_or_default();
+                    let names = claude_code_statusline_core::parser::extract_modules_from_format(&cfg.format);
+                    let reg = claude_code_statusline_core::modules::Registry::with_defaults();
                     for name in names {
                         if name == "character" {
                             continue;
@@ -129,7 +129,7 @@ pub fn run() -> Result<()> {
     }
 
     // Load configuration with graceful error handling
-    let config = match beacon_core::Config::load() {
+    let config = match claude_code_statusline_core::Config::load() {
         Ok(cfg) => cfg,
         Err(e) => {
             // Initialize minimal subscriber to show errors (stderr)
@@ -139,7 +139,7 @@ pub fn run() -> Result<()> {
                 .try_init();
             tracing::error!(error = %e, "Config error");
             eprintln!("Config error: {e}");
-            let msg = beacon_core::messages::MSG_FAILED_INVALID_CONFIG;
+            let msg = claude_code_statusline_core::messages::MSG_FAILED_INVALID_CONFIG;
             print!("{msg}");
             io::Write::flush(&mut io::stdout())?;
             return Ok(());
@@ -157,7 +157,7 @@ pub fn run() -> Result<()> {
     }
 
     // Initialize debug logger
-    let logger = beacon_core::debug::DebugLogger::new(config.debug);
+    let logger = claude_code_statusline_core::debug::DebugLogger::new(config.debug);
     logger.log_execution_start();
     logger.log_config(config.debug, config.command_timeout);
 
@@ -176,7 +176,7 @@ pub fn run() -> Result<()> {
     // Read JSON input from stdin
     let mut buffer = String::new();
     if io::stdin().read_to_string(&mut buffer).is_err() || buffer.trim().is_empty() {
-        let msg = beacon_core::messages::MSG_FAILED_EMPTY_INPUT;
+        let msg = claude_code_statusline_core::messages::MSG_FAILED_EMPTY_INPUT;
         print!("{msg}");
         io::Write::flush(&mut io::stdout())?;
         return Ok(());
@@ -184,12 +184,12 @@ pub fn run() -> Result<()> {
     logger.log_input(&buffer);
 
     // Parse JSON input
-    let input = match beacon_core::parse_claude_input(&buffer) {
+    let input = match claude_code_statusline_core::parse_claude_input(&buffer) {
         Ok(i) => i,
         Err(e) => {
             tracing::error!(error = %e, "Failed to parse JSON");
             eprintln!("Failed to parse JSON: {e}");
-            let msg = beacon_core::messages::MSG_FAILED_INVALID_JSON;
+            let msg = claude_code_statusline_core::messages::MSG_FAILED_INVALID_JSON;
             print!("{msg}");
             io::Write::flush(&mut io::stdout())?;
             return Ok(());
@@ -198,7 +198,7 @@ pub fn run() -> Result<()> {
     logger.log_success(&input.model.display_name, &input.cwd);
 
     // Render via engine
-    let engine = beacon_core::Engine::new(config);
+    let engine = claude_code_statusline_core::Engine::new(config);
     match engine.render(&input) {
         Ok(out) => {
             print!("{out}");

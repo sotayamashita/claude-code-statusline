@@ -6,7 +6,7 @@
 //!
 //! # Configuration File
 //!
-//! The configuration file is located at `~/.config/beacon.toml` and
+//! The configuration file is located at `~/.config/claude-code-statusline.toml` and
 //! uses TOML format. All fields are optional and will use defaults
 //! if not specified.
 
@@ -544,7 +544,7 @@ mod validation_tests {
     #[test]
     fn git_branch_default_format_uses_symbol_token() {
         // The default git_branch format should include $symbol so that
-        // configuring [git_branch].symbol in beacon.toml takes effect
+        // configuring [git_branch].symbol in claude-code-statusline.toml takes effect
         // without requiring users to also override the format.
         let fmt = super::default_git_branch_format();
         assert!(

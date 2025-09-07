@@ -1,8 +1,8 @@
-# Beacon - Specification Document
+# claude-code-statusline - Specification Document
 
 ## 1. Overview
 
-**Beacon** is a lightweight, customizable status line generator for Claude Code, written in Rust. It provides a starship-like configuration experience while being specifically optimized for Claude Code's statusLine feature.
+**claude-code-statusline** is a lightweight, customizable status line generator for Claude Code, written in Rust. It provides a starship-like configuration experience while being specifically optimized for Claude Code's statusLine feature.
 
 ### 1.1 Goals
 - Provide a blazing-fast status line generator for Claude Code
@@ -28,7 +28,7 @@
 ```
 Claude Code
     ↓ (JSON via stdin)
-beacon CLI
+claude-code-statusline CLI
     ↓ (reads config.toml)
 Module System
     ↓ (execute modules)
@@ -40,7 +40,7 @@ Claude Code (display)
 ### 2.2 Core Components
 
 ```rust
-beacon/
+claude-code-statusline/
 ├── src/
 │   ├── main.rs           // Entry point & CLI handling
 │   ├── config/
@@ -65,7 +65,7 @@ beacon/
 
 ### 3.1 Configuration File Location
 ```
-~/.config/beacon.toml
+~/.config/claude-code-statusline.toml
 ```
 
 ### 3.2 Configuration Validation
@@ -116,7 +116,7 @@ format = "[$symbol$branch]($style) "
 truncation_length = 20
 truncation_symbol = "..."
 
-# Module: Claude Model (Beacon-specific)
+# Module: Claude Model (project-specific)
 [claude_model]
 style = "cyan bold"
 format = "[<$model>]($style) "
@@ -290,7 +290,7 @@ Claude Code sends comprehensive session information via stdin in JSON format:
 
 ```
 ANSI-formatted string (single line)
-Example: "~/projects/beacon 🌱 main <Opus>"
+Example: "~/projects/claude-code-statusline 🌱 main <Opus>"
 ```
 
 ### 5.3 ANSI Color Support
@@ -314,28 +314,28 @@ Example: "~/projects/beacon 🌱 main <Opus>"
 
 ```bash
 # Main command (called by Claude Code)
-beacon
+claude-code-statusline
 
 # Configuration management
-beacon config --path         # Show config file path
-beacon config --default      # Print default configuration
-beacon config --validate     # Validate current config
+claude-code-statusline config --path         # Show config file path
+claude-code-statusline config --default      # Print default configuration
+claude-code-statusline config --validate     # Validate current config
 
 # Module information
-beacon modules --list        # List available modules
-beacon modules --enabled     # Show enabled modules
+claude-code-statusline modules --list        # List available modules
+claude-code-statusline modules --enabled     # Show enabled modules
 
 # Debugging
-beacon --version            # Show version
-beacon --debug              # Enable debug output
+claude-code-statusline --version            # Show version
+claude-code-statusline --debug              # Enable debug output
 ```
 
 ### 6.2 Environment Variables
 
 ```bash
-BEACON_CONFIG      # Override config file location
-BEACON_LOG         # Log level (error, warn, info, debug, trace)
-BEACON_CACHE_DIR   # Cache directory location
+CCS_CONFIG      # Override config file location
+CCS_LOG         # Log level (error, warn, info, debug, trace)
+CCS_CACHE_DIR   # Cache directory location
 ```
 
 ## 7. Performance Requirements
@@ -399,7 +399,7 @@ fn render(&self, context: &Context, config: &ModuleConfig) -> Result<String> {
 - Never panic in production
 - Graceful degradation
 - Minimal fallback display
-- Log errors to stderr (if BEACON_LOG set)
+- Log errors to stderr (if CCS_LOG set)
 
 ### 8.2 Error Type Architecture
 - **Library Code**: Use `thiserror` for strongly-typed custom errors
@@ -437,7 +437,7 @@ fn main() -> Result<()> {
 
 // Phase 2: Custom error types with thiserror
 #[derive(Debug, thiserror::Error)]
-enum BeaconError {
+enum StatuslineError {
     #[error("Configuration error: {0}")]
     Config(#[from] toml::de::Error),
     
@@ -499,7 +499,7 @@ mod tests {
     #[test]
     fn test_directory_module() {
         let actual = ModuleRenderer::new("directory")
-            .path("/home/user/projects/beacon")
+            .path("/home/user/projects/claude-code-statusline")
             .config(toml::toml! {
                 [directory]
                 truncation_length = 2
@@ -507,7 +507,7 @@ mod tests {
             })
             .collect();
         
-        assert_eq!(actual, Some("~/projects/beacon ".to_string()));
+        assert_eq!(actual, Some("~/projects/claude-code-statusline ".to_string()));
     }
     
     #[test]
@@ -612,7 +612,7 @@ Each module will have detailed configuration documentation in `/docs/modules/`.
 
 ## Appendix B: Color Reference
 
-Standard ANSI colors and their meanings in Beacon context.
+Standard ANSI colors and their meanings in the project context.
 
 ## Appendix C: Comparison with Starship
 

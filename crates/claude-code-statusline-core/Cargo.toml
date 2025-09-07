@@ -1,11 +1,11 @@
 [package]
-name = "beacon-core"
+name = "claude-code-statusline-core"
 version = "0.0.1"
 edition = "2024"
-description = "Core library for Beacon: public API, types, and modules"
+description = "Core library for claude-code-statusline: public API, types, and modules"
 
 [lib]
-name = "beacon_core"
+name = "claude_code_statusline_core"
 path = "src/lib.rs"
 
 [dependencies]

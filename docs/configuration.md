@@ -1,6 +1,6 @@
 ## Configuration
 
-Beacon は `~/.config/beacon.toml` から設定を読み込みます（存在しない場合は既定値）。本書は主要オプションと各モジュールのカスタマイズ方法をまとめたものです。
+claude-code-statusline は `~/.config/claude-code-statusline.toml` から設定を読み込みます（存在しない場合は既定値）。本書は主要オプションと各モジュールのカスタマイズ方法をまとめたものです。
 
 ### Top-level
 
@@ -89,7 +89,7 @@ Tokens: `$branch`, `$symbol`
 振る舞い:
 - ブランチ名を表示。detached HEAD の場合は短縮 SHA（7〜8 桁）。
 - Git2 が失敗した環境では `git` コマンドへフォールバックします。
- - ライブラリ利用時（`beacon-core` を直接依存する場合）にこのモジュールを使うには
+ - ライブラリ利用時（`claude-code-statusline-core` を直接依存する場合）にこのモジュールを使うには
    crate の feature `git` を有効にしてください。CLI バイナリは既定で有効です。
 
 ### Module: `git_status`
@@ -120,7 +120,7 @@ Tokens: `$all_status`, `$ahead_behind`
 - `$all_status` は以下の順序の集合表示: `conflicted stashed deleted renamed modified typechanged staged untracked`
 - 各セグメントは `symbol + 件数`（件数 0 は非表示）
 - `$ahead_behind` は upstream が設定されているとき `⇡n` / `⇣n` / `⇕` を表示
- - ライブラリ利用時（`beacon-core` を直接依存する場合）にこのモジュールを使うには
+ - ライブラリ利用時（`claude-code-statusline-core` を直接依存する場合）にこのモジュールを使うには
    crate の feature `git` を有効にしてください。CLI バイナリは既定で有効です。
 
 ### ANSI スタイル指定

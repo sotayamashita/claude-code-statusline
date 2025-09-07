@@ -1,30 +1,31 @@
-# Beacon
+# claude-code-statusline
 
-[![CI](https://github.com/sotayamashita/beacon/actions/workflows/ci.yml/badge.svg)](https://github.com/sotayamashita/beacon/actions/workflows/ci.yml)
+[![CI](https://github.com/sotayamashita/claude-code-statusline/actions/workflows/ci.yml/badge.svg)](https://github.com/sotayamashita/claude-code-statusline/actions/workflows/ci.yml)
 
 ## Overview
 <!-- LLM Instructions: Update @specs/project.md when you change this section -->
 
-**Beacon** is a lightweight, high-performance status line generator written in Rust, designed for AI-powered development environments. It provides a starship-like configuration experience.
+**claude-code-statusline** is a lightweight, high-performance status line generator written in Rust, designed for AI-powered development environments. It provides a starship-like configuration experience.
 
 ## Motivation
 
-Beacon exists to provide a fast, embeddable status line specifically tailored for Claude Code. I deeply respect and admire Starship for setting the bar on modular, configurable prompts across shells. However, Starship is intentionally delivered as a standalone CLI and does not expose a stable, supported Rust library API or a general plugin API for embedding its internals into other binaries. Because I need programmatic composition with JSON input and tight integration within AI-driven editor workflows, I built Beacon as a small Rust library/binary that borrows Starship’s proven ideas (modules, formatting, styling) while remaining easy to integrate as part of a larger toolchain.
+claude-code-statusline exists to provide a fast, embeddable status line specifically tailored for Claude Code. I deeply respect and admire Starship for setting the bar on modular, configurable prompts across shells. However, Starship is intentionally delivered as a standalone CLI and does not expose a stable, supported Rust library API or a general plugin API for embedding its internals into other binaries. Because I need programmatic composition with JSON input and tight integration within AI-driven editor workflows, I built claude-code-statusline as a small Rust library/binary that borrows Starship’s proven ideas (modules, formatting, styling) while remaining easy to integrate as part of a larger toolchain.
 
 ## Installation
 
 ```bash
 # Clone the repository
-git clone https://github.com/sotayamashita/beacon.git && cd beacon
+git clone https://github.com/sotayamashita/claude-code-statusline.git && cd claude-code-statusline
 
 # Build workspace
 cargo build --workspace --release
 
 # Option A) Copy the built binary to your PATH
-cp target/release/beacon ~/.local/bin/
+cp target/release/claude-code-statusline ~/.local/bin/
 
 # Option B) Install from the CLI crate
-cargo install --path crates/beacon-cli
+# Install the binary from workspace root
+cargo install --path .
 ```
 
 ## Development
@@ -34,27 +35,27 @@ cargo install --path crates/beacon-cli
 cargo build --workspace
 
 # Run CLI
-cargo run -p beacon-cli -q -- --help
+cargo run -p claude-code-statusline-cli -q -- --help
 
 # Example run with JSON input
 echo '{"session_id":"s","cwd":"/tmp","model":{"id":"claude-opus","display_name":"Opus"}}' | \
-  cargo run -p beacon-cli -q --
+  cargo run -p claude-code-statusline-cli -q --
 
 # Benchmarks (criterion) and threshold check (< 50ms mean by default)
 make bench
 make bench-check
 
 # Run benches/tests with feature flags (optional)
-# Default benches run beacon-core without optional features.
+# Default benches run claude-code-statusline-core without optional features.
 # Enable Git modules when you need them in benches/tests:
-cargo bench -p beacon-core --features git --no-run
-cargo test  -p beacon-core --features git
+cargo bench -p claude-code-statusline-core --features git --no-run
+cargo test  -p claude-code-statusline-core --features git
 ```
 
 ## Feature Flags
 
 - `git`: Enables Git-powered modules (`git_branch`, `git_status`). The CLI depends on
-  `beacon-core` with `features = ["git"]`, so the `beacon` binary includes Git support by default.
+  `claude-code-statusline-core` with `features = ["git"]`, so the `claude-code-statusline` binary includes Git support by default.
   Library consumers and standalone benches/tests must enable it explicitly with
   `--features git` when needed.
 - `parallel`: Enables Rayon-based parallel rendering (planned/optional).
@@ -65,7 +66,7 @@ cargo test  -p beacon-core --features git
 {
   "statusLine": {
     "type": "command",
-    "command": "beacon",
+    "command": "claude-code-statusline",
     "padding": 0
   }
 }
@@ -73,12 +74,12 @@ cargo test  -p beacon-core --features git
 
 _**[Lean more about Claude Code status line integration](https://docs.anthropic.com/en/docs/claude-code/statusline)**_
 
-## Beacon Configuration:
+## Configuration
 
 ### Config File Location
 
 ```bash
-~/.config/beacon.toml
+~/.config/claude-code-statusline.toml
 ```
 
 ### Supported Modules

@@ -5,7 +5,7 @@
 //!
 //! # Configuration File Location
 //!
-//! The configuration file is expected at `~/.config/beacon.toml`.
+//! The configuration file is expected at `~/.config/claude-code-statusline.toml`.
 //! If the file doesn't exist, default configuration values are used.
 //!
 //! # Example Configuration
@@ -33,7 +33,7 @@ impl Config {
     /// Loads configuration from the default location
     ///
     /// Attempts to read and parse the configuration file from
-    /// `~/.config/beacon.toml`. If the file doesn't exist or
+    /// `~/.config/claude-code-statusline.toml`. If the file doesn't exist or
     /// cannot be read, returns the default configuration.
     ///
     /// # Returns
@@ -44,7 +44,7 @@ impl Config {
     /// # Examples
     ///
     /// ```no_run
-    /// use beacon_core::Config;
+/// use claude_code_statusline_core::Config;
     ///
     /// let config = Config::load().expect("Failed to load config");
     /// println!("Format: {}", config.format);
@@ -70,7 +70,7 @@ impl Config {
 
 /// Determines the path to the configuration file
 ///
-/// Constructs the path to `~/.config/beacon.toml` using the user's
+/// Constructs the path to `~/.config/claude-code-statusline.toml` using the user's
 /// home directory. Falls back to the literal path if home directory
 /// cannot be determined.
 ///
@@ -79,8 +79,8 @@ impl Config {
 /// A `PathBuf` pointing to the expected configuration file location
 fn get_config_path() -> PathBuf {
     dirs::home_dir()
-        .map(|home| home.join(".config").join("beacon.toml"))
-        .unwrap_or_else(|| PathBuf::from("~/.config/beacon.toml"))
+        .map(|home| home.join(".config").join("claude-code-statusline.toml"))
+        .unwrap_or_else(|| PathBuf::from("~/.config/claude-code-statusline.toml"))
 }
 
 /// Lightweight provider to access module-specific configuration tables
@@ -227,11 +227,11 @@ mod tests {
         let path = get_config_path();
 
         if let Some(home) = dirs::home_dir() {
-            let expected = home.join(".config").join("beacon.toml");
+            let expected = home.join(".config").join("claude-code-statusline.toml");
             assert_eq!(path, expected);
         } else {
             // Fallback when home_dir is not available
-            assert_eq!(path, PathBuf::from("~/.config/beacon.toml"));
+            assert_eq!(path, PathBuf::from("~/.config/claude-code-statusline.toml"));
         }
     }
 

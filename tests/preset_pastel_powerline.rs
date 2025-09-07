@@ -2,9 +2,7 @@ use assert_cmd::Command;
 use predicates::prelude::*;
 use std::fs;
 
-fn beacon_cmd() -> Command {
-    Command::cargo_bin(env!("CARGO_PKG_NAME")).expect("binary exists")
-}
+fn ccs_cmd() -> Command { Command::cargo_bin(env!("CARGO_PKG_NAME")).expect("binary exists") }
 
 fn valid_input_json() -> String {
     r#"{
@@ -41,9 +39,9 @@ fn pastel_powerline_minimal_directory_and_model() {
         style = ""
         symbol = "<"
     "#;
-    fs::write(cfg_dir.join("beacon.toml"), toml).unwrap();
+    fs::write(cfg_dir.join("claude-code-statusline.toml"), toml).unwrap();
 
-    let mut cmd = beacon_cmd();
+    let mut cmd = ccs_cmd();
     cmd.env("HOME", home);
     cmd.write_stdin(valid_input_json());
     cmd.assert()

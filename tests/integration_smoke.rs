@@ -2,7 +2,7 @@ use predicates::prelude::*;
 use rstest::*;
 use std::fs;
 mod common;
-use common::cli::{beacon_cmd, input_json_with_cwd, write_basic_config};
+use common::cli::{ccs_cmd, input_json_with_cwd, write_basic_config};
 
 #[rstest]
 #[case(false)]
@@ -46,7 +46,7 @@ fn smoke_one_line_output(#[case] with_git_repo: bool) {
         d
     };
 
-    let mut cmd = beacon_cmd();
+    let mut cmd = ccs_cmd();
     cmd.env("HOME", home);
     cmd.write_stdin(input_json_with_cwd(cwd.to_str().unwrap()));
 

@@ -1,7 +1,7 @@
-//! Beacon Core Library
+//! claude-code-statusline Core Library
 //!
 //! This crate hosts the core modules, types, parser, style helpers,
-//! timeout utilities, and configuration used by Beacon.
+//! timeout utilities, and configuration used by claude-code-statusline.
 
 pub mod config;
 pub mod debug;

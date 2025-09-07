@@ -1,7 +1,7 @@
 //! Type definitions and data structures
 //!
 //! This module contains all the core type definitions used throughout
-//! the Beacon application. Types are organized into submodules by
+//! the claude-code-statusline application. Types are organized into submodules by
 //! their domain.
 //!
 //! # Submodules

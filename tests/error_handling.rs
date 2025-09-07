@@ -3,9 +3,7 @@ use predicates::prelude::*;
 use std::env;
 use std::fs;
 
-fn beacon_cmd() -> Command {
-    Command::cargo_bin(env!("CARGO_PKG_NAME")).expect("binary exists")
-}
+fn ccs_cmd() -> Command { Command::cargo_bin(env!("CARGO_PKG_NAME")).expect("binary exists") }
 
 fn valid_input_json() -> String {
     // minimal valid JSON based on types
@@ -24,11 +22,11 @@ fn valid_input_json() -> String {
 
 #[test]
 fn invalid_json_produces_concise_stdout_and_stderr_details() {
-    // Use an isolated HOME so that a user's invalid ~/.config/beacon.toml
+    // Use an isolated HOME so that a user's invalid ~/.config/claude-code-statusline.toml
     // does not interfere with this test.
     let tmp = tempfile::tempdir().unwrap();
     let home = tmp.path();
-    let mut cmd = beacon_cmd();
+    let mut cmd = ccs_cmd();
     cmd.env("HOME", home);
     cmd.write_stdin("this is not json");
     cmd.assert()
@@ -45,9 +43,9 @@ fn invalid_toml_config_produces_concise_stdout_and_stderr_details() {
     let home = tmp.path();
     let cfg_dir = home.join(".config");
     fs::create_dir_all(&cfg_dir).unwrap();
-    fs::write(cfg_dir.join("beacon.toml"), "this is not = toml").unwrap();
+    fs::write(cfg_dir.join("claude-code-statusline.toml"), "this is not = toml").unwrap();
 
-    let mut cmd = beacon_cmd();
+    let mut cmd = ccs_cmd();
     cmd.env("HOME", home);
     cmd.write_stdin(valid_input_json());
     cmd.assert()

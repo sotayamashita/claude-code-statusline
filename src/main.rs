@@ -1,3 +1,3 @@
 fn main() -> anyhow::Result<()> {
-    beacon_cli::run()
+    claude_code_statusline_cli::run()
 }

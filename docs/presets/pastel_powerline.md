@@ -7,7 +7,7 @@ This preset recreates Starship’s “Pastel Powerline” look: soft, pastel blo
 - Bridge arrows `` must always specify `fg:<prev-bg> bg:<next-bg>` to ensure seamless color.
 - Use `fg:black` for text on light pastel backgrounds to keep contrast readable.
 
-## Configuration (~/.config/beacon.toml)
+## Configuration (~/.config/claude-code-statusline.toml)
 
 ```toml
 format = """

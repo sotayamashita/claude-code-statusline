@@ -3,7 +3,7 @@ use assert_cmd::Command;
 use std::fs;
 use std::path::Path;
 
-pub fn beacon_cmd() -> Command {
+pub fn ccs_cmd() -> Command {
     Command::cargo_bin(env!("CARGO_PKG_NAME")).expect("binary exists")
 }
 
@@ -30,7 +30,7 @@ style = "bold yellow"
     if let Some(ms) = command_timeout {
         toml = format!("command_timeout = {ms}\n{toml}");
     }
-    fs::write(cfg_dir.join("beacon.toml"), toml).unwrap();
+    fs::write(cfg_dir.join("claude-code-statusline.toml"), toml).unwrap();
 }
 
 pub fn input_json_with_cwd(cwd: &str) -> String {

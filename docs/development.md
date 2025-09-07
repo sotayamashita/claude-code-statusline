@@ -1,20 +1,20 @@
 ## Development Guide
 
-Beacon の内部構造と、モジュール追加・テスト・開発ワークフローの指針をまとめます。
+claude-code-statusline の内部構造と、モジュール追加・テスト・開発ワークフローの指針をまとめます。
 
 ### プロジェクト構成
 
-- コア: `crates/beacon-core/src/`
+- コア: `crates/claude-code-statusline-core/src/`
   - `engine.rs`（レンダリングエンジン）/ `lib.rs`（公開面）
   - `config.rs` / `types/config.rs`（TOML 設定の型と読み込み/検証）
   - `types/claude.rs` / `types/context.rs`（入力/コンテキスト）
   - `modules/*`（各モジュール・`registry.rs`）
   - `parser.rs` / `style.rs` / `timeout.rs`
-- CLI: `crates/beacon-cli/`（stdin→stdout とサブコマンド）
+- CLI: `crates/claude-code-statusline-cli/`（stdin→stdout とサブコマンド）
 
 ### モジュール実装（追加手順）
 
-1) `crates/beacon-core/src/modules/<name>.rs` を作成し、`Module` を実装
+1) `crates/claude-code-statusline-core/src/modules/<name>.rs` を作成し、`Module` を実装
 
 ```rust
 use super::{Module, ModuleConfig};
@@ -30,14 +30,14 @@ impl Module for MyModule {
 }
 ```
 
-2) レジストリ登録: `crates/beacon-core/src/modules/registry.rs`
+2) レジストリ登録: `crates/claude-code-statusline-core/src/modules/registry.rs`
 
 ```rust
 // 例: `struct MyModuleFactory;` を追加して `ModuleFactory` を実装
 // `Registry::with_defaults()` に `reg.register_factory(MyModuleFactory);` を追加
 ```
 
-3) 設定型の追加（必要に応じて）: `crates/beacon-core/src/types/config.rs`
+3) 設定型の追加（必要に応じて）: `crates/claude-code-statusline-core/src/types/config.rs`
 
 - `struct MyModuleConfig { format, style, disabled, ... }`
 - `impl Default for MyModuleConfig { ... }`
@@ -73,7 +73,7 @@ cargo fmt
 - ベンチ実行（criterion）
 
 ```
-make bench    # crates/beacon-core のベンチを実行
+make bench    # crates/claude-code-statusline-core のベンチを実行
 ```
 
 - 閾値チェック（既定: 平均 < 50ms）
@@ -87,16 +87,16 @@ make bench-check
 
 #### Feature flags（git）
 
-- 既定の `make bench` は optional features（例: `git`）を無効のまま `beacon-core` をベンチビルドします。
+- 既定の `make bench` は optional features（例: `git`）を無効のまま `claude-code-statusline-core` をベンチビルドします。
 - Git 連携を含むベンチ/テストを実行したい場合は feature を明示的に有効化してください。
 
 ```
-cargo bench -p beacon-core --features git --no-run
-cargo test  -p beacon-core --features git
+cargo bench -p claude-code-statusline-core --features git --no-run
+cargo test  -p claude-code-statusline-core --features git
 ```
 
-CLI バイナリ（`crates/beacon-cli`）は `beacon-core` を `features = ["git"]` で依存しているため、
-通常の `cargo run -p beacon-cli` やインストール済み `beacon` 実行では Git 機能が有効です。
+CLI バイナリ（`crates/claude-code-statusline-cli`）は `claude-code-statusline-core` を `features = ["git"]` で依存しているため、
+通常の `cargo run -p claude-code-statusline-cli` やインストール済み `claude-code-statusline` 実行では Git 機能が有効です。
 
 ### 開発ワークフロー
 

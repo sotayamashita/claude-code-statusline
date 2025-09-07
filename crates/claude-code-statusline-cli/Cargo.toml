@@ -1,10 +1,10 @@
 [package]
-name = "beacon-cli"
+name = "claude-code-statusline-cli"
 version = "0.0.1"
 edition = "2024"
 
 [dependencies]
-beacon-core = { path = "../beacon-core", features = ["git"] }
+claude-code-statusline-core = { path = "../claude-code-statusline-core", features = ["git"] }
 clap = { version = "4.5.45", features = ["derive"] }
 anyhow = "1.0.99"
 tracing = "0.1.40"

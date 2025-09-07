@@ -1,23 +1,23 @@
 use std::fs;
 
 mod common;
-use common::cli::{beacon_cmd, write_basic_config};
+use common::cli::{ccs_cmd, write_basic_config};
 
 #[test]
-fn config_path_uses_home_and_points_to_beacon_toml() {
+fn config_path_uses_home_and_points_to_new_toml() {
     let tmp = tempfile::tempdir().unwrap();
     let home = tmp.path();
-    let mut cmd = beacon_cmd();
+    let mut cmd = ccs_cmd();
     cmd.env("HOME", home);
     cmd.arg("config").arg("--path");
     cmd.assert()
         .success()
-        .stdout(predicates::str::contains(".config/beacon.toml"));
+        .stdout(predicates::str::contains(".config/claude-code-statusline.toml"));
 }
 
 #[test]
 fn config_default_prints_valid_toml() {
-    let mut cmd = beacon_cmd();
+    let mut cmd = ccs_cmd();
     cmd.arg("config").arg("--default");
     let out = cmd.assert().success().get_output().stdout.clone();
     let s = String::from_utf8(out).unwrap();
@@ -32,7 +32,7 @@ fn config_validate_ok_and_invalid() {
     let home = tmp.path();
     // valid config
     write_basic_config(home, Some(100));
-    let mut ok = beacon_cmd();
+    let mut ok = ccs_cmd();
     ok.env("HOME", home);
     ok.arg("config").arg("--validate");
     ok.assert()
@@ -43,13 +43,13 @@ fn config_validate_ok_and_invalid() {
     let cfg_dir = home.join(".config");
     fs::create_dir_all(&cfg_dir).unwrap();
     fs::write(
-        cfg_dir.join("beacon.toml"),
+        cfg_dir.join("claude-code-statusline.toml"),
         r#"command_timeout = 10
 format = "$directory $claude_model"
 "#,
     )
     .unwrap();
-    let mut bad = beacon_cmd();
+    let mut bad = ccs_cmd();
     bad.env("HOME", home);
     bad.arg("config").arg("--validate");
     bad.assert()
@@ -66,7 +66,7 @@ fn modules_list_and_enabled() {
     write_basic_config(home, None);
 
     // --list: should contain at least core modules
-    let mut list = beacon_cmd();
+    let mut list = ccs_cmd();
     list.env("HOME", home);
     list.arg("modules").arg("--list");
     let out = list.assert().success().get_output().stdout.clone();
@@ -78,7 +78,7 @@ fn modules_list_and_enabled() {
     assert!(s.contains("git_status"));
 
     // --enabled: subset based on format and disabled flags
-    let mut enabled = beacon_cmd();
+    let mut enabled = ccs_cmd();
     enabled.env("HOME", home);
     enabled.arg("modules").arg("--enabled");
     let out2 = enabled.assert().success().get_output().stdout.clone();

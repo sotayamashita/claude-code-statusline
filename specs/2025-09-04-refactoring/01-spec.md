@@ -1,8 +1,8 @@
-# Beacon リファクタリング計画（2025-09-04）
+# claude-code-statusline リファクタリング計画（2025-09-04）
 
-この文書は Beacon を「再利用可能なライブラリ API」と「薄い CLI」に明確分離し、将来的に外部ライブラリからモジュール拡張できるアーキテクチャへ移行するための具体的な計画です。実装はオーナー承認後に着手します。
+この文書は claude-code-statusline を「再利用可能なライブラリ API」と「薄い CLI」に明確分離し、将来的に外部ライブラリからモジュール拡張できるアーキテクチャへ移行するための具体的な計画です。実装はオーナー承認後に着手します。
 
-- 対象リポジトリ: beacon
+- 対象リポジトリ: claude-code-statusline
 - 参照仕様: `specs/project.md`, `specs/2025-08-18-mvp/01-spec.md`
 - 目的: API/CLI の境界を明確化し、拡張可能なモジュールシステムと安定した公開 API を提供
 - 非目的: 動的リンク型プラグイン（`dlopen` 等）の導入、完全な Starship 互換パーサの実装
@@ -26,19 +26,19 @@
 Rust ワークスペース化しクレート分割します。
 
 ```
-beacon/ (workspace)
+claude-code-statusline/ (workspace)
 ├─ crates/
-│  ├─ beacon-core/   # ライブラリ: 公開 API、型、フォーマッタ、タイムアウト、Context、ConfigProvider
-│  └─ beacon-cli/    # バイナリ: CLI エントリ、stdin/stdout、ログ初期化、サブコマンド
+│  ├─ claude-code-statusline-core/   # ライブラリ: 公開 API、型、フォーマッタ、タイムアウト、Context、ConfigProvider
+│  └─ claude-code-statusline-cli/    # バイナリ: CLI エントリ、stdin/stdout、ログ初期化、サブコマンド
 └─ (既存 tests/ はトップで維持しつつ調整)
 ```
 
 オプション案（将来）:
-- `beacon-modules`: 標準モジュール群を分離（または `beacon-core` に内蔵 + feature で制御）
+- `ccs-modules`: 標準モジュール群を分離（または `claude-code-statusline-core` に内蔵 + feature で制御）
 
 ---
 
-## 3. 公開 API 設計（beacon-core）
+## 3. 公開 API 設計（claude-code-statusline-core）
 
 ### 3.1 エンジンとレジストリ
 
@@ -104,7 +104,7 @@ pub trait ConfigProvider {
 
 ---
 
-## 4. CLI 設計（beacon-cli）
+## 4. CLI 設計（claude-code-statusline-cli）
 
 - `stdin` から `ClaudeInput` を読み、`Engine::render()` の 1 呼び出しに集約
 - サブコマンドの整理:
@@ -117,13 +117,13 @@ pub trait ConfigProvider {
 
 ## 5. 依存関係と Feature Gate 方針
 
-- コア（beacon-core）
+- コア（claude-code-statusline-core）
   - 必須: `serde`, `serde_json`, `toml`, `once_cell`
   - エラー: `thiserror`（コアの型付けエラー）、CLI 側は `anyhow`
   - Git 機能: `git2` を `features = ["git"]` でオプション化（既定 off、CLI で on）
   - 並列: `rayon` をオプション `feature = "parallel"`（既定 off）
   - ログ: `tracing`（ロガーは CLI）
-- CLI（beacon-cli）
+- CLI（claude-code-statusline-cli）
   - `clap`, `tracing-subscriber`, 必要に応じて `anstream`/`colorchoice`
 
 ---
@@ -171,7 +171,7 @@ impl ModuleFactory for MyFactory {
 ## 9. 段階的移行計画（マイルストーン）
 
 ### フェーズ 1（API 抽出・無破壊移行）
-- ワークスペース化し `crates/beacon-core`, `crates/beacon-cli` を作成
+- ワークスペース化し `crates/claude-code-statusline-core`, `crates/claude-code-statusline-cli` を作成
 - `Engine`, `Registry`, `ConfigProvider` を導入（箱だけ）
 - 既存 `generate_prompt` を `Engine::render` に移し、CLI から呼ぶ
 - 既存テストを極力変更せずに通るよう shims を用意
@@ -195,7 +195,7 @@ impl ModuleFactory for MyFactory {
 ## 10. テスト/移行ガイド
 
 - 既存の単体・結合テストは最大限温存。
-- 新規: `beacon-core` 単体テスト（Engine/Registry/ConfigProvider）
+- 新規: `claude-code-statusline-core` 単体テスト（Engine/Registry/ConfigProvider）
 - CLI は E2E テストで `stdin -> stdout` の 1 行出力保証を継続検証
 - パフォーマンステスト（任意）: `criterion` を core に追加検討
 
@@ -203,7 +203,7 @@ impl ModuleFactory for MyFactory {
 
 ## 11. 成功基準（Definition of Done）
 
-- `beacon-core` を他クレートから依存して `Engine::render` が利用できる
+- `claude-code-statusline-core` を他クレートから依存して `Engine::render` が利用できる
 - 既存 CLI 動作・メッセージ互換（ユーザ体験は変えない）
 - 既存テストスイートがグリーン（微調整を除く）
 - ドキュメント更新（README/開発ドキュメント/この計画の反映）
@@ -232,7 +232,7 @@ impl ModuleFactory for MyFactory {
 ## 14. 実装タスク（チェックリスト）
 
 - [ ] ワークスペース化 (`Cargo.toml` ルート + `crates/` 生成)
-- [ ] `beacon-core` へ型/ユーティリティ移行（`types/*`, `parser`, `style`, `timeout`, `messages`）
+- [ ] `claude-code-statusline-core` へ型/ユーティリティ移行（`types/*`, `parser`, `style`, `timeout`, `messages`）
 - [ ] `Engine`/`Registry`/`ConfigProvider` の追加
 - [ ] 既存モジュールを `Registry` 登録方式に移行（内部は最小変更）
 - [ ] `generate_prompt` → `Engine::render` 移動
@@ -262,7 +262,7 @@ impl ModuleFactory for MyFactory {
 
 ## 17. オープン事項（要オーナー確認）
 
-- 外部モジュールの設定は Beacon 既定の TOML と同ファイルで運用する想定で良いか
+- 外部モジュールの設定は claude-code-statusline 既定の TOML と同ファイルで運用する想定で良いか
 - トップレベル format の仕様拡張（連結表記）は後方互換のため別フェーズで良いか
 - ログは `tracing` への一本化で問題ないか（既存 DebugLogger はラッパに留める/削除）
 
