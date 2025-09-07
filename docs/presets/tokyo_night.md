@@ -1,4 +1,4 @@
-# Preset: Tokyo Night (foreground-only)
+# Preset: Tokyo Night
 
 This preset approximates Starship’s “Tokyo Night” using foreground-only colors and simple character separators. It targets dark terminals with cool-toned accents and avoids backgrounds/truecolor for maximum portability.
 
