@@ -2,7 +2,7 @@
 
 - Date: 2025-09-05
 - Status: Draft
-- Owner: Beacon Core
+- Owner: claude-code-statusline Core
 
 ## Summary
 
@@ -128,7 +128,7 @@ bright: black=90/100, red=91/101, green=92/102, yellow=93/103, blue=94/104,
 
 ## Testing
 
-Add unit tests in `crates/beacon-core/src/style.rs`:
+Add unit tests in `crates/claude-code-statusline-core/src/style.rs`:
 
 1) Named fg/bg:
    - `apply_style("X", "bold fg:green bg:black")` contains `1;32;40` and wraps `X`.

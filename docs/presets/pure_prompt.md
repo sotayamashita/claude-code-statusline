@@ -2,7 +2,7 @@
 
 This preset mirrors Starship’s “Pure (no linebreak)”: minimal, compact, and strictly single-line. It focuses on concise directory and Git context, with an optional model indicator at the end.
 
-## Configuration (~/.config/beacon.toml)
+## Configuration (~/.config/claude-code-statusline.toml)
 
 ```toml
 format = "$directory $git_branch $git_status $claude_model"
@@ -24,7 +24,7 @@ style = "bold yellow"
 ```
 
 ## Notes
-- Beacon prints without a trailing newline by design (`print!` not `println!`).
+- The CLI prints without a trailing newline by design (`print!` not `println!`).
 - Keep spacing tight and avoid decorative padding to preserve the “pure” feel.
 - Supported style tokens: `bold`, `italic`, `underline`, plus colors as:
   - named and bright (e.g., `blue`, `bright-blue`)

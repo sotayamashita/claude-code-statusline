@@ -15,13 +15,14 @@ install-hooks:
 debug:
 	@echo "Building debug version..."
 	@cargo build --workspace --release
-	@mv target/release/beacon $(CLAUDE_CODE_DIR)/beacon
-	@chmod +x $(CLAUDE_CODE_DIR)/beacon
+	@mkdir -p $(CLAUDE_CODE_DIR)
+	@mv target/release/claude-code-statusline $(CLAUDE_CODE_DIR)/claude-code-statusline
+	@chmod +x $(CLAUDE_CODE_DIR)/claude-code-statusline
 	@echo "✅ Debug version built and installed"
 
 .PHONY: bench
 bench:
-	cargo bench -p beacon-core
+	cargo bench -p claude-code-statusline-core
 
 .PHONY: bench-check
 bench-check: bench

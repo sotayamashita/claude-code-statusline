@@ -5,8 +5,9 @@
 //!
 //! # Configuration File Location
 //!
-//! The configuration file is expected at `~/.config/beacon.toml`.
-//! If the file doesn't exist, default configuration values are used.
+//! The configuration file is expected in the user's configuration directory
+//! (e.g., `~/.config/claude-code-statusline.toml` on Unix). If the file
+//! doesn't exist, default configuration values are used.
 //!
 //! # Example Configuration
 //!
@@ -32,8 +33,9 @@ use std::path::PathBuf;
 impl Config {
     /// Loads configuration from the default location
     ///
-    /// Attempts to read and parse the configuration file from
-    /// `~/.config/beacon.toml`. If the file doesn't exist or
+    /// Attempts to read and parse the configuration file from the user's
+    /// configuration directory (e.g., `~/.config/claude-code-statusline.toml`).
+    /// If the file doesn't exist or
     /// cannot be read, returns the default configuration.
     ///
     /// # Returns
@@ -44,7 +46,7 @@ impl Config {
     /// # Examples
     ///
     /// ```no_run
-    /// use beacon_core::Config;
+    /// use claude_code_statusline_core::Config;
     ///
     /// let config = Config::load().expect("Failed to load config");
     /// println!("Format: {}", config.format);
@@ -70,17 +72,27 @@ impl Config {
 
 /// Determines the path to the configuration file
 ///
-/// Constructs the path to `~/.config/beacon.toml` using the user's
-/// home directory. Falls back to the literal path if home directory
-/// cannot be determined.
+/// Constructs the path to `claude-code-statusline.toml` within the user's
+/// configuration directory. Uses `dirs::config_dir()` for cross-platform
+/// compatibility and falls back to the literal
+/// `~/.config/claude-code-statusline.toml` if no config directory can be
+/// determined.
 ///
 /// # Returns
 ///
 /// A `PathBuf` pointing to the expected configuration file location
 fn get_config_path() -> PathBuf {
-    dirs::home_dir()
-        .map(|home| home.join(".config").join("beacon.toml"))
-        .unwrap_or_else(|| PathBuf::from("~/.config/beacon.toml"))
+    dirs::config_dir()
+        .map(|base| base.join("claude-code-statusline.toml"))
+        .unwrap_or_else(|| PathBuf::from("~/.config/claude-code-statusline.toml"))
+}
+
+/// Public accessor for the resolved configuration file path
+///
+/// Exposes a stable path resolution for consumers (e.g., CLI) so that all
+/// components agree on the location of the configuration file.
+pub fn config_path() -> PathBuf {
+    get_config_path()
 }
 
 /// Lightweight provider to access module-specific configuration tables
@@ -222,16 +234,16 @@ mod tests {
     }
 
     #[test]
-    fn test_config_path_with_home() {
-        // This test checks the path construction logic
+    fn test_config_path_with_config_dir() {
+        // This test checks the path construction logic via dirs::config_dir
         let path = get_config_path();
 
-        if let Some(home) = dirs::home_dir() {
-            let expected = home.join(".config").join("beacon.toml");
+        if let Some(cfg_dir) = dirs::config_dir() {
+            let expected = cfg_dir.join("claude-code-statusline.toml");
             assert_eq!(path, expected);
         } else {
-            // Fallback when home_dir is not available
-            assert_eq!(path, PathBuf::from("~/.config/beacon.toml"));
+            // Fallback when config_dir is not available
+            assert_eq!(path, PathBuf::from("~/.config/claude-code-statusline.toml"));
         }
     }
 

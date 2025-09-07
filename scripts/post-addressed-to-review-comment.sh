@@ -9,12 +9,12 @@
 #
 # Examples:
 #   bash scripts/post-addressed-to-review-comment.sh \
-#     https://github.com/sotayamashita/beacon/pull/12 \
-#     https://github.com/sotayamashita/beacon/pull/12#discussion_r2324015980 \
+#     https://github.com/sotayamashita/claude-code-statusline/pull/12 \
+#     https://github.com/sotayamashita/claude-code-statusline/pull/12#discussion_r2324015980 \
 #     abc1234
 #
 #   bash scripts/post-addressed-to-review-comment.sh \
-#     https://github.com/sotayamashita/beacon/pull/12 \
+#     https://github.com/sotayamashita/claude-code-statusline/pull/12 \
 #     2324015980 \
 #     abc1234
 #

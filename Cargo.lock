@@ -107,59 +107,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c08606f8c3cbf4ce6ec8e28fb0014a2c086708fe954eaa885384a6165172e7e8"
 
 [[package]]
-name = "beacon"
-version = "0.0.1"
-dependencies = [
- "anyhow",
- "assert_cmd",
- "atty",
- "beacon-cli",
- "beacon-core",
- "clap",
- "dirs",
- "git2",
- "predicates",
- "regex",
- "rstest",
- "serde",
- "serde_json",
- "strip-ansi-escapes",
- "tempfile",
- "toml",
-]
-
-[[package]]
-name = "beacon-cli"
-version = "0.0.1"
-dependencies = [
- "anyhow",
- "beacon-core",
- "clap",
- "dirs",
- "toml",
- "tracing",
- "tracing-subscriber",
-]
-
-[[package]]
-name = "beacon-core"
-version = "0.0.1"
-dependencies = [
- "criterion",
- "dirs",
- "git2",
- "rayon",
- "rstest",
- "serde",
- "serde_json",
- "strip-ansi-escapes",
- "tempfile",
- "thiserror",
- "toml",
- "tracing",
-]
-
-[[package]]
 name = "bitflags"
 version = "2.9.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -266,6 +213,59 @@ name = "clap_lex"
 version = "0.7.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b94f61472cee1439c0b966b47e3aca9ae07e45d070759512cd390ea2bebc6675"
+
+[[package]]
+name = "claude-code-statusline"
+version = "0.0.1"
+dependencies = [
+ "anyhow",
+ "assert_cmd",
+ "atty",
+ "clap",
+ "claude-code-statusline-cli",
+ "claude-code-statusline-core",
+ "dirs",
+ "git2",
+ "predicates",
+ "regex",
+ "rstest",
+ "serde",
+ "serde_json",
+ "strip-ansi-escapes",
+ "tempfile",
+ "toml",
+]
+
+[[package]]
+name = "claude-code-statusline-cli"
+version = "0.0.1"
+dependencies = [
+ "anyhow",
+ "clap",
+ "claude-code-statusline-core",
+ "dirs",
+ "toml",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
+name = "claude-code-statusline-core"
+version = "0.0.1"
+dependencies = [
+ "criterion",
+ "dirs",
+ "git2",
+ "rayon",
+ "rstest",
+ "serde",
+ "serde_json",
+ "strip-ansi-escapes",
+ "tempfile",
+ "thiserror",
+ "toml",
+ "tracing",
+]
 
 [[package]]
 name = "colorchoice"

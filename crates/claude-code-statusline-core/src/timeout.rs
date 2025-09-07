@@ -28,7 +28,7 @@ use std::time::Duration;
 /// # Examples
 ///
 /// ```
-/// use beacon_core::timeout::run_with_timeout;
+/// use claude_code_statusline_core::timeout::run_with_timeout;
 /// use std::time::Duration;
 ///
 /// let result = run_with_timeout(Duration::from_millis(100), || {

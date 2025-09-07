@@ -1,4 +1,4 @@
-use beacon_core::{Config, Engine, parse_claude_input};
+use claude_code_statusline_core::{Config, Engine, parse_claude_input};
 use criterion::{Criterion, criterion_group, criterion_main};
 
 fn bench_engine_render(c: &mut Criterion) {

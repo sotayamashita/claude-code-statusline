@@ -1,7 +1,7 @@
 use crate::common::builders::{ClaudeInputBuilder, ContextBuilder};
-use beacon::config::Config;
-use beacon::types::claude::ClaudeInput;
-use beacon::types::context::Context;
+use claude_code_statusline::config::Config;
+use claude_code_statusline::types::claude::ClaudeInput;
+use claude_code_statusline::types::context::Context;
 use rstest::*;
 
 /// Default test configuration fixture
@@ -27,7 +27,7 @@ pub fn default_context() -> Context {
 pub fn test_paths() -> TestPaths {
     TestPaths {
         home: "/Users/test".to_string(),
-        project: "/Users/test/projects/beacon".to_string(),
+        project: "/Users/test/projects/claude-code-statusline".to_string(),
         deep_nested: "/Users/test/very/deep/nested/directory/structure/project".to_string(),
     }
 }
@@ -79,9 +79,9 @@ impl TestRenderer {
     }
 
     /// Render a module and return its output
-    pub fn render<M: beacon::modules::Module>(&self, module: &M) -> String {
+    pub fn render<M: claude_code_statusline::modules::Module>(&self, module: &M) -> String {
         // For testing, we use EmptyConfig as default
-        module.render(&self.context, &beacon::modules::EmptyConfig)
+        module.render(&self.context, &claude_code_statusline::modules::EmptyConfig)
     }
 }
 

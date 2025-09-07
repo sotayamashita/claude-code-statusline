@@ -1,4 +1,4 @@
-# Beacon Roadmap (Overview)
+# claude-code-statusline Roadmap (Overview)
 
 > This document merges the `docs/init/*` (spec/plan/todo/statusline/refactoring etc.) and the existing code (src/*) to provide an overview of the implementation status and the future plans. The check boxes indicate the completion status: completed `- [x]` / not completed `- [ ]` .
 
@@ -20,7 +20,7 @@
 - [x] Format parser (`$directory $claude_model` replacement)
 - [x] Single-line output (non-line output using `print!` and stdout flushing)
 - [x] Fallback for failure (`JSON parsing failure` and `empty input`)
-- [x] Configuration file (loading `~/.config/beacon.toml` as TOML)
+- [x] Configuration file (loading `~/.config/claude-code-statusline.toml` as TOML)
 - [x] `Context` structure (aggregation of runtime information and configuration)
 - [x] Debug logger (`src/debug.rs` with stderr/file output toggle)
 - [x] Test (unit tests for `config.rs`, `parser.rs`, and each module)

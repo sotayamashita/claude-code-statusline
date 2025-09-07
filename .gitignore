@@ -5,7 +5,7 @@
 .claude/settings.local.json
 
 # Ignore generated file by cargo build
-.claude/beacon
+.claude/claude-code-statusline
 
 # Ignore Serena output files except project.yml
 # @see {@link https://github.com/oraios/serena}

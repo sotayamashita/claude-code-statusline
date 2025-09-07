@@ -1,7 +1,7 @@
 //! Engine - Public API facade for rendering status lines
 //!
 //! This module introduces a thin `Engine` wrapper that will later move
-//! to `beacon-core` per the refactoring plan. For now, it delegates to
+//! to `claude-code-statusline-core` per the refactoring plan. For now, it delegates to
 //! existing internals to keep behavior identical while exposing a stable
 //! entrypoint for library users and tests.
 

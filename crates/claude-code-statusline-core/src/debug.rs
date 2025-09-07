@@ -12,13 +12,13 @@ use std::path::{Path, PathBuf};
 ///
 /// Writes debug information to a temporary log file when enabled.
 /// Can be activated through configuration (`debug = true`) or
-/// environment variable (`BEACON_DEBUG=1`).
+/// environment variable (`CCS_DEBUG=1`).
 ///
 /// # Log Location
 ///
-/// - Unix/Linux: `/tmp/beacon.log`
-/// - Windows: `%TEMP%\beacon.log`
-/// - macOS: `/var/folders/.../beacon.log`
+/// - Unix/Linux: `/tmp/claude-code-statusline.log`
+/// - Windows: `%TEMP%\claude-code-statusline.log`
+/// - macOS: `/var/folders/.../claude-code-statusline.log`
 pub struct DebugLogger {
     enabled: bool,
     log_file: PathBuf,
@@ -33,22 +33,22 @@ impl DebugLogger {
     ///
     /// # Environment Variables
     ///
-    /// - `BEACON_DEBUG=1` - Forces debug logging regardless of config
+    /// - `CCS_DEBUG=1` - Forces debug logging regardless of config
     ///
     /// # Examples
     ///
     /// ```
-    /// use beacon_core::debug::DebugLogger;
+    /// use claude_code_statusline_core::debug::DebugLogger;
     ///
     /// let logger = DebugLogger::new(true);
     /// logger.log("Debug message");
     /// ```
     pub fn new(enabled: bool) -> Self {
         // Check environment variable as well
-        let enabled = enabled || std::env::var("BEACON_DEBUG").unwrap_or_default() == "1";
+        let enabled = enabled || std::env::var("CCS_DEBUG").unwrap_or_default() == "1";
 
         // Use cross-platform temp directory
-        let log_file = std::env::temp_dir().join("beacon.log");
+        let log_file = std::env::temp_dir().join("claude-code-statusline.log");
 
         Self { enabled, log_file }
     }
@@ -57,7 +57,7 @@ impl DebugLogger {
     pub fn log(&self, message: &str) {
         if !self.enabled {
             // Still forward to tracing at debug level for centralized logging
-            tracing::debug!(target: "beacon", "{message}");
+            tracing::debug!(target: "claude-code-statusline", "{message}");
             return;
         }
 
@@ -78,7 +78,7 @@ impl DebugLogger {
     /// Log to stderr if debug mode is enabled
     pub fn log_stderr(&self, message: &str) {
         // Emit via tracing; subscriber decides output
-        tracing::debug!(target: "beacon", "{message}");
+        tracing::debug!(target: "claude-code-statusline", "{message}");
         if self.enabled {
             eprintln!("[DEBUG] {message}");
         }
@@ -119,7 +119,7 @@ impl DebugLogger {
 
     /// Log error
     pub fn log_error(&self, error: &str) {
-        tracing::error!(target: "beacon", "{error}");
+        tracing::error!(target: "claude-code-statusline", "{error}");
         self.log(&format!("ERROR: {error}"));
     }
 

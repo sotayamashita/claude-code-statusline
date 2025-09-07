@@ -27,7 +27,7 @@ pub const MSG_FAILED_INVALID_JSON: &str = "Failed to build status line due to in
 /// # Examples
 ///
 /// ```
-/// use beacon_core::messages::warn_unknown_style_token;
+/// use claude_code_statusline_core::messages::warn_unknown_style_token;
 ///
 /// let msg = warn_unknown_style_token("directory", "blink");
 /// assert_eq!(msg, "Unknown style token in directory.style: 'blink' (ignored)");
@@ -49,7 +49,7 @@ pub fn warn_unknown_style_token(module_name: &str, token: &str) -> String {
 /// # Examples
 ///
 /// ```
-/// use beacon_core::messages::warn_unknown_format_token;
+/// use claude_code_statusline_core::messages::warn_unknown_format_token;
 ///
 /// let msg = warn_unknown_format_token("unknown");
 /// assert_eq!(msg, "Unknown format token: '$unknown'");

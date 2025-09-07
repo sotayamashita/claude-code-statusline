@@ -27,7 +27,7 @@
 /// # Examples
 ///
 /// ```
-/// use beacon_core::style::apply_style;
+/// use claude_code_statusline_core::style::apply_style;
 ///
 /// let styled = apply_style("Hello", "bold red");
 /// // Returns: "\x1b[1;31mHello\x1b[0m"
@@ -71,7 +71,7 @@ pub fn apply_style(text: &str, style: &str) -> String {
     // silently downgrades one channel differently from the other.
     fn supports_truecolor() -> bool {
         // Explicit override for tests or user preference
-        if std::env::var("BEACON_TRUECOLOR")
+        if std::env::var("CCS_TRUECOLOR")
             .map(|v| v == "1")
             .unwrap_or(false)
         {
@@ -493,7 +493,7 @@ mod tests {
         let _g = LOCK.get_or_init(|| Mutex::new(())).lock().unwrap();
         // Force non-truecolor environment
         unsafe {
-            std::env::remove_var("BEACON_TRUECOLOR");
+            std::env::remove_var("CCS_TRUECOLOR");
             std::env::set_var("COLORTERM", "");
             std::env::set_var("TERM", "xterm-256color");
         }

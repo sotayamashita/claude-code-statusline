@@ -1,4 +1,4 @@
-# Beacon - Detailed Tasks (Consolidated)
+# claude-code-statusline - Detailed Tasks (Consolidated)
 
 This document is the latest version of the consolidated plan and task documents. The latest progress and decisions are based on this file, and if necessary, differences are incorporated.
 
@@ -25,7 +25,7 @@ This document is the latest version of the consolidated plan and task documents.
 - CLI/Arguments and Help implementation (using clap)
 - ClaudeInput/ModelInfo/WorkspaceInfo/OutputStyle type definition and stdin JSON reading
 - Config Default/Loading/Test
-- DebugLogger introduction and BEACON_DEBUG/Configuration interaction
+- DebugLogger introduction and CCS_DEBUG/Configuration interaction
 - Context construction and individual module Contextization
 - Directory/ClaudeModel module implementation (should_display/render)
 - Generation process (generate_prompt) and single line output

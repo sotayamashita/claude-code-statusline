@@ -1,10 +1,7 @@
-use assert_cmd::Command;
 use predicates::prelude::*;
 use std::fs;
-
-fn beacon_cmd() -> Command {
-    Command::cargo_bin(env!("CARGO_PKG_NAME")).expect("binary exists")
-}
+mod common;
+use common::cli::{ccs_cmd_with_home, config_dir_for_home};
 
 fn valid_input_json() -> String {
     r#"{
@@ -26,7 +23,7 @@ fn pastel_powerline_minimal_directory_and_model() {
     // and do not leak as plain text.
     let tmp = tempfile::tempdir().unwrap();
     let home = tmp.path();
-    let cfg_dir = home.join(".config");
+    let cfg_dir = config_dir_for_home(home);
     fs::create_dir_all(&cfg_dir).unwrap();
     let toml = r#"
         format = "$directory $claude_model"
@@ -41,10 +38,9 @@ fn pastel_powerline_minimal_directory_and_model() {
         style = ""
         symbol = "<"
     "#;
-    fs::write(cfg_dir.join("beacon.toml"), toml).unwrap();
+    fs::write(cfg_dir.join("claude-code-statusline.toml"), toml).unwrap();
 
-    let mut cmd = beacon_cmd();
-    cmd.env("HOME", home);
+    let mut cmd = ccs_cmd_with_home(home);
     cmd.write_stdin(valid_input_json());
     cmd.assert()
         .success()

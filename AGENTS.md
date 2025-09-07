@@ -13,7 +13,7 @@ Refer to `specs/project.md` for a high-level overview.
 
 ### Key Features
 - Modular architecture with pluggable status components
-- TOML-based configuration (`~/.config/beacon.toml`)
+- TOML-based configuration (`~/.config/claude-code-statusline.toml`)
 - JSON input via stdin for dynamic context
 - ANSI-formatted output for terminal display
 - Performance-optimized with Rust 2024 edition
@@ -22,9 +22,9 @@ Refer to `specs/project.md` for a high-level overview.
 
 ### Directory Layout
 ```
-beacon/
+claude-code-statusline/
 ├── crates/
-│   ├── beacon-core/                # Core library (public API, types, modules)
+│   ├── claude-code-statusline-core/                # Core library (public API, types, modules)
 │   │   ├── src/
 │   │   │   ├── lib.rs              # pub use {Engine, Config, parse_claude_input, Context}
 │   │   │   ├── engine.rs           # Rendering engine
@@ -46,9 +46,9 @@ beacon/
 │   │   │       ├── git_branch.rs   # Git branch (feature = "git")
 │   │   │       └── git_status.rs   # Git status (feature = "git")
 │   │   └── benches/engine_bench.rs # Criterion bench (engine)
-│   └── beacon-cli/                 # CLI (stdin→stdout、サブコマンド)
-│       ├── src/main.rs             # `beacon` binary
+│   └── claude-code-statusline-cli/                 # CLI (stdin→stdout、サブコマンド)
 │       └── src/lib.rs              # `run()` entry
+├── src/main.rs                     # `claude-code-statusline` binary
 ├── tests/                          # Integration tests (E2E)
 │   ├── common/
 │   ├── engine_api.rs
@@ -64,7 +64,7 @@ beacon/
 
 ### Module System
 - Each status component implements the `Module` trait
-- Dynamic creation via `Registry` + `ModuleFactory` (`crates/beacon-core/src/modules/registry.rs`)
+- Dynamic creation via `Registry` + `ModuleFactory` (`crates/claude-code-statusline-core/src/modules/registry.rs`)
 - Feature gates:
   - `git` enables `git_branch` / `git_status` (optional `git2` dep)
   - `parallel` enables Rayon-based parallel rendering
@@ -82,14 +82,14 @@ beacon/
 ```bash
 # Clone and build
 git clone <repository>
-cd beacon
+cd claude-code-statusline
 cargo build --workspace --release
 
 # Install git hooks
 make install-hooks
 
 # Copy binary to PATH (example)
-cp target/release/beacon ~/.local/bin/
+cp target/release/claude-code-statusline ~/.local/bin/
 ```
 
 ## Development Commands
@@ -98,8 +98,8 @@ cp target/release/beacon ~/.local/bin/
 ```bash
 cargo build --workspace                 # Build all crates (debug)
 cargo build --workspace --release       # Optimized build
-cargo run -p beacon-cli -q              # Run CLI quietly
-cargo run -p beacon-cli -- --help       # Show CLI help
+cargo run -p claude-code-statusline-cli -q              # Run CLI quietly
+cargo run -p claude-code-statusline-cli -- --help       # Show CLI help
 ```
 
 ### Testing & Quality
@@ -117,7 +117,7 @@ make bench-check                           # Enforce mean < 50ms (default)
 ### Example Usage
 ```bash
 # Basic run with JSON input
-echo '{"cwd":"/tmp","session_id":"abc","model":{"id":"claude-opus","display_name":"Opus"}}' | cargo run -p beacon-cli -q
+echo '{"cwd":"/tmp","session_id":"abc","model":{"id":"claude-opus","display_name":"Opus"}}' | cargo run -p claude-code-statusline-cli -q
 
 # With full context
 echo '{
@@ -131,19 +131,19 @@ echo '{
     "current_dir": "/project/src",
     "project_dir": "/project"
   }
-}' | cargo run -p beacon-cli -q
+}' | cargo run -p claude-code-statusline-cli -q
 ```
 
 ### CLI Subcommands
 ```bash
 # Config helpers
-beacon config --path        # Show config path (~/.config/beacon.toml)
-beacon config --default     # Print default TOML
-beacon config --validate    # Validate current config (OK/INVALID)
+claude-code-statusline config --path        # Show config path (~/.config/claude-code-statusline.toml)
+claude-code-statusline config --default     # Print default TOML
+claude-code-statusline config --validate    # Validate current config (OK/INVALID)
 
 # Module insights
-beacon modules --list       # List all registered modules
-beacon modules --enabled    # List modules enabled by current format/config
+claude-code-statusline modules --list       # List all registered modules
+claude-code-statusline modules --enabled    # List modules enabled by current format/config
 ```
 
 ## Coding Style & Naming Conventions
@@ -174,9 +174,9 @@ beacon modules --enabled    # List modules enabled by current format/config
 - **Pre-commit Hooks**: Automatic format, lint, and test on commit
 
 ### Test Coverage Focus
-- Parser logic (`crates/beacon-core/src/parser.rs`) - JSON input validation
-- Configuration (`crates/beacon-core/src/config.rs`, `.../types/config.rs`) - TOML parsing/validation
-- Module implementations (`crates/beacon-core/src/modules/*.rs`) - Status component logic
+- Parser logic (`crates/claude-code-statusline-core/src/parser.rs`) - JSON input validation
+- Configuration (`crates/claude-code-statusline-core/src/config.rs`, `.../types/config.rs`) - TOML parsing/validation
+- Module implementations (`crates/claude-code-statusline-core/src/modules/*.rs`) - Status component logic
 - Error paths and edge cases
 
 ### Writing Tests
@@ -199,7 +199,7 @@ mod tests {
 ## Architecture & Design Patterns
 
 ### Error Handling
-- Core: Structured `CoreError` via `thiserror`（`crates/beacon-core/src/error.rs`）
+- Core: Structured `CoreError` via `thiserror`（`crates/claude-code-statusline-core/src/error.rs`）
 - CLI: Boundary uses `anyhow::Result<()>`; logs via `tracing` to stderr
 - Never panic in production - graceful degradation
 - Informative error messages with context
@@ -258,7 +258,7 @@ docs: update README with installation instructions
 ## Security & Configuration
 
 ### Configuration Management
-- User config: `~/.config/beacon.toml`
+- User config: `~/.config/claude-code-statusline.toml`
 - Never commit local configurations or secrets
 - Use environment variables for sensitive data
 - Validate all external input
@@ -338,7 +338,7 @@ pub fn function(input: &str) -> Result<String> {
 1. **Build fails**: Check Rust version (`rustc --version`)
 2. **Tests fail**: Run with `--nocapture` for details
 3. **Slow performance**: Build with `--release`
-4. **Config not loading**: Check `~/.config/beacon.toml` syntax
+4. **Config not loading**: Check `~/.config/claude-code-statusline.toml` syntax
 
 ### Debug Mode
 Enable debug output in config:
@@ -372,9 +372,9 @@ debug = true
 ### Integration Points
 - Input: JSON via stdin
 - Output: ANSI-formatted text to stdout
-- Config: TOML at `~/.config/beacon.toml`
+- Config: TOML at `~/.config/claude-code-statusline.toml`
 - Logs: `tracing` to stderr, controlled by debug flag
 
 ---
 *Last updated: 2025-09-05*
-*Beacon - Fast, modular status line for AI development*
+*claude-code-statusline - Fast, modular status line for AI development*
