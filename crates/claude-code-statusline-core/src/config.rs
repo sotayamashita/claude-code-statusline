@@ -52,21 +52,41 @@ impl Config {
     /// println!("Format: {}", config.format);
     /// ```
     pub fn load() -> Result<Self, CoreError> {
-        let config_path = get_config_path();
+        // Candidate 1: XDG-style (~/.config/claude-code-statusline.toml)
+        let xdg_candidate =
+            dirs::home_dir().map(|h| h.join(".config").join("claude-code-statusline.toml"));
 
-        if config_path.exists() {
-            let contents = fs::read_to_string(&config_path).map_err(|e| CoreError::ConfigRead {
-                path: config_path.display().to_string(),
+        if let Some(ref xdg) = xdg_candidate {
+            if xdg.exists() {
+                let contents = fs::read_to_string(xdg).map_err(|e| CoreError::ConfigRead {
+                    path: xdg.display().to_string(),
+                    source: e,
+                })?;
+                let cfg: Config =
+                    toml::from_str(&contents).map_err(|e| CoreError::ConfigParse {
+                        path: xdg.display().to_string(),
+                        source: e,
+                    })?;
+                return Ok(cfg);
+            }
+        }
+
+        // Candidate 2: Platform config dir (e.g., macOS ~/Library/Application Support)
+        let primary = get_config_path();
+        if primary.exists() {
+            let contents = fs::read_to_string(&primary).map_err(|e| CoreError::ConfigRead {
+                path: primary.display().to_string(),
                 source: e,
             })?;
             let cfg: Config = toml::from_str(&contents).map_err(|e| CoreError::ConfigParse {
-                path: config_path.display().to_string(),
+                path: primary.display().to_string(),
                 source: e,
             })?;
-            Ok(cfg)
-        } else {
-            Ok(Config::default())
+            return Ok(cfg);
         }
+
+        // Default when no config file is present
+        Ok(Config::default())
     }
 }
 
@@ -82,9 +102,26 @@ impl Config {
 ///
 /// A `PathBuf` pointing to the expected configuration file location
 fn get_config_path() -> PathBuf {
-    dirs::config_dir()
-        .map(|base| base.join("claude-code-statusline.toml"))
-        .unwrap_or_else(|| PathBuf::from("~/.config/claude-code-statusline.toml"))
+    // Prefer platform config dir for display/tooling
+    if let Some(base) = dirs::config_dir() {
+        return base.join("claude-code-statusline.toml");
+    }
+    // 1) Prefer XDG-style path: ~/.config/claude-code-statusline.toml (Linux-like)
+    if let Some(home) = dirs::home_dir() {
+        let xdg_path = home.join(".config").join("claude-code-statusline.toml");
+        if xdg_path.exists() {
+            return xdg_path;
+        }
+    }
+
+    // 2) Fallback to platform config dir
+    // (e.g., macOS: ~/Library/Application Support, Windows: %APPDATA%\claude-code-statusline)
+    if let Some(base) = dirs::config_dir() {
+        return base.join("claude-code-statusline.toml");
+    }
+
+    // 3) Last resort: literal XDG-style path (no expansion, best-effort)
+    PathBuf::from("~/.config/claude-code-statusline.toml")
 }
 
 /// Public accessor for the resolved configuration file path
@@ -181,12 +218,12 @@ mod tests {
             format = "$directory $claude_model"
             command_timeout = 300
             debug = true
-            
+
             [directory]
             format = "in [$path]($style)"
             style = "bold blue"
             truncation_length = 5
-            
+
             [claude_model]
             symbol = "<"
             style = "bold yellow"
@@ -208,7 +245,7 @@ mod tests {
     fn test_partial_config_uses_defaults() {
         let toml_str = r#"
             debug = true
-            
+
             [directory]
             style = "italic green"
         "#;
