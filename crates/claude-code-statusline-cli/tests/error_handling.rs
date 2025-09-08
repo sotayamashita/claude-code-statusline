@@ -1,7 +1,6 @@
 use predicates::prelude::*;
 use std::fs;
-mod common;
-use common::cli::{ccs_cmd_with_home, config_dir_for_home};
+use test_support::cli::{ccs_cmd_with_home, config_dir_for_home};
 
 fn valid_input_json() -> String {
     // minimal valid JSON based on types

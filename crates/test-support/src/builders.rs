@@ -89,6 +89,12 @@ impl ClaudeInputBuilder {
     }
 }
 
+impl Default for ClaudeInputBuilder {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 /// Builder for creating test Context instances
 pub struct ContextBuilder {
     input: ClaudeInputBuilder,
@@ -137,5 +143,11 @@ impl ContextBuilder {
 
     pub fn build(self) -> Context {
         Context::new(self.input.build(), self.config)
+    }
+}
+
+impl Default for ContextBuilder {
+    fn default() -> Self {
+        Self::new()
     }
 }

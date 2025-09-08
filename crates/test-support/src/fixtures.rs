@@ -1,4 +1,4 @@
-use crate::common::builders::{ClaudeInputBuilder, ContextBuilder};
+use crate::builders::{ClaudeInputBuilder, ContextBuilder};
 use claude_code_statusline_core::config::Config;
 use claude_code_statusline_core::types::claude::ClaudeInput;
 use claude_code_statusline_core::types::context::Context;
@@ -88,6 +88,12 @@ impl TestRenderer {
     }
 }
 
+impl Default for TestRenderer {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 /// Fixture for TestRenderer
 #[fixture]
 pub fn test_renderer() -> TestRenderer {
@@ -101,7 +107,7 @@ pub fn model_names() -> Vec<&'static str> {
     vec!["Opus", "Sonnet", "Haiku", "Claude-3.5"]
 }
 
-/// Parameterized fixture for different directory paths  
+/// Parameterized fixture for different directory paths
 #[fixture]
 #[once]
 pub fn test_directories() -> Vec<&'static str> {

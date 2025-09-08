@@ -23,3 +23,4 @@ tempfile = "3.21.0"
 regex = "1.10.6"
 rstest = "0.26.1"
 git2 = "0.20.2"
+test-support = { path = "../test-support" }

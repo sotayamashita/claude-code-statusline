@@ -1,8 +1,7 @@
 use predicates::prelude::*;
 use rstest::*;
 use std::fs;
-mod common;
-use common::cli::{
+use test_support::cli::{
     ccs_cmd_with_home, config_dir_for_home, input_json_with_cwd, write_basic_config,
 };
 
