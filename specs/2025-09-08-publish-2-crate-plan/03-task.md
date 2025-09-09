@@ -24,9 +24,9 @@ Derived from specs/2025-09-08-publish-2-crate-plan/01-spec.md. Track and complet
 - [x] Search and replace any references to `-p claude-code-statusline` in scripts/docs with `-p claude-code-statusline-cli`.
 
 ## CI / Release Workflow
-- [ ] Add `.github/workflows/release.yml` with `workflow_dispatch` inputs: `version` (string) and `dry_run` (bool).
-- [ ] Release steps: setup Rust (1.75), cache → `cargo fmt --all -- --check` → `cargo clippy --workspace -- -D warnings` → `cargo test --workspace` → when not `dry_run`: `cargo workspaces version` to bump/tag → create GitHub Release → `cargo workspaces publish --from-git`.
-- [ ] Configure `CRATES_IO_TOKEN` secret; expose to workflow via `CARGO_REGISTRIES_CRATES_IO_TOKEN` for publish steps.
+- [x] Add `.github/workflows/release.yml` with `workflow_dispatch` inputs: `version` (string) and `dry_run` (bool).
+- [x] Release steps: setup Rust (1.75), cache → `cargo fmt --all -- --check` → `cargo clippy --workspace -- -D warnings` → `cargo test --workspace` → when not `dry_run`: `cargo workspaces version` to bump/tag → create GitHub Release → `cargo workspaces publish --from-git`.
+- [x] Configure `CRATES_IO_TOKEN` secret; expose to workflow via `CARGO_REGISTRIES_CRATES_IO_TOKEN` for publish steps.
 
 ## Versioning & Publishing
 - [ ] Align crate versions to initial `0.1.0` using `cargo workspaces version 0.1.0 --all --force-publish` (or chosen version).

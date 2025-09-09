@@ -1,0 +1,76 @@
+name: Release (manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release (e.g., 0.1.0 or minor/patch)"
+        required: true
+        type: string
+      dry_run:
+        description: "Dry run (skip tagging and publish)"
+        required: true
+        type: boolean
+        default: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Rust (1.85.0)
+        uses: dtolnay/rust-toolchain@1.85.0
+        with:
+          components: rustfmt, clippy
+
+      - name: System deps (git2 / openssl)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends pkg-config libssl-dev
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+
+      - name: rustfmt check
+        run: cargo fmt --all -- --check
+
+      - name: clippy (deny warnings)
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+      - name: Test (workspace)
+        run: cargo test --workspace -- --nocapture
+
+      - name: Install cargo-workspaces
+        run: cargo install cargo-workspaces
+
+      - name: Version bump (cargo-workspaces)
+        if: ${{ !fromJSON(github.event.inputs.dry_run) }}
+        run: |
+          cargo workspaces version "${{ github.event.inputs.version }}" --all --force-publish --yes
+
+      - name: Create GitHub Release
+        if: ${{ !fromJSON(github.event.inputs.dry_run) }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ github.event.inputs.version }}
+          name: v${{ github.event.inputs.version }}
+          body: |
+            Release ${{ github.event.inputs.version }}
+            - See commit history for details.
+
+      - name: Publish (cargo-workspaces)
+        if: ${{ !fromJSON(github.event.inputs.dry_run) }}
+        env:
+          CARGO_REGISTRIES_CRATES_IO_TOKEN: ${{ secrets.CRATES_IO_TOKEN }}
+        run: |
+          cargo workspaces publish --from-git --yes --allow-dirty
+
