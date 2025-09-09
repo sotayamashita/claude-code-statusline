@@ -29,7 +29,7 @@ Derived from specs/2025-09-08-publish-2-crate-plan/01-spec.md. Track and complet
 - [x] Configure `CARGO_REGISTRY_TOKEN` secret;
 
 ## Versioning & Publishing
-- [ ] Align crate versions to initial `0.1.0` using `cargo workspaces version 0.1.0 --all --force-publish` (or chosen version).
+- [x] Align crate versions to initial `0.1.0` using `cargo workspaces version 0.1.0 --all --force-publish` (or chosen version).
 - [ ] `cargo publish --dry-run -p claude-code-statusline-core`.
 - [ ] `cargo publish --dry-run -p claude-code-statusline-cli`.
 - [ ] Publish order: `core` first, then `cli`.
