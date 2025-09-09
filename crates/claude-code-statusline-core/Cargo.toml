@@ -1,8 +1,15 @@
 [package]
 name = "claude-code-statusline-core"
-version = "0.0.1"
+version = "0.1.0"
 edition = "2024"
 description = "Core library for claude-code-statusline: public API, types, and modules"
+license = "MIT"
+repository = "https://github.com/sotayamashita/claude-code-statusline"
+rust-version = "1.85"
+readme = "README.md"
+keywords = ["statusline", "cli", "developer-tools"]
+categories = ["development-tools"]
+include = ["src/**", "README.md", "LICENSE*"]
 
 [lib]
 name = "claude_code_statusline_core"
@@ -35,3 +42,6 @@ criterion = { version = "0.7.0", default-features = false, features = ["cargo_be
 [[bench]]
 name = "engine_bench"
 harness = false
+
+[package.metadata.docs.rs]
+all-features = true

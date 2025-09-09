@@ -5,7 +5,7 @@ use std::path::{Path, PathBuf};
 use std::sync::{Mutex, OnceLock};
 
 pub fn ccs_cmd() -> Command {
-    Command::cargo_bin(env!("CARGO_PKG_NAME")).expect("binary exists")
+    Command::cargo_bin("claude-code-statusline").expect("binary exists")
 }
 
 fn env_lock() -> &'static Mutex<()> {

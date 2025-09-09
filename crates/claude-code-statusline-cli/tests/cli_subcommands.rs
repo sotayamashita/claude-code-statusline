@@ -1,7 +1,5 @@
 use std::fs;
-
-mod common;
-use common::cli::{ccs_cmd, ccs_cmd_with_home, config_dir_for_home, write_basic_config};
+use test_support::cli::{ccs_cmd, ccs_cmd_with_home, config_dir_for_home, write_basic_config};
 
 #[test]
 fn config_path_uses_home_and_points_to_new_toml() {

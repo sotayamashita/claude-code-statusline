@@ -12,7 +12,7 @@ MODEL_DISPLAY_NAME="${MODEL_DISPLAY_NAME:-Opus4.1}"
 if [[ "${USE_INSTALLED:-0}" == "1" ]] && command -v claude-code-statusline >/dev/null 2>&1; then
   RUN=(claude-code-statusline)
 else
-  RUN=(cargo run -p claude-code-statusline -q)
+  RUN=(cargo run -p claude-code-statusline-cli -q)
 fi
 
 JSON=$(cat <<EOF

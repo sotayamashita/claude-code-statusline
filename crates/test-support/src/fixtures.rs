@@ -1,7 +1,7 @@
-use crate::common::builders::{ClaudeInputBuilder, ContextBuilder};
-use claude_code_statusline::config::Config;
-use claude_code_statusline::types::claude::ClaudeInput;
-use claude_code_statusline::types::context::Context;
+use crate::builders::{ClaudeInputBuilder, ContextBuilder};
+use claude_code_statusline_core::config::Config;
+use claude_code_statusline_core::types::claude::ClaudeInput;
+use claude_code_statusline_core::types::context::Context;
 use rstest::*;
 
 /// Default test configuration fixture
@@ -79,9 +79,18 @@ impl TestRenderer {
     }
 
     /// Render a module and return its output
-    pub fn render<M: claude_code_statusline::modules::Module>(&self, module: &M) -> String {
+    pub fn render<M: claude_code_statusline_core::modules::Module>(&self, module: &M) -> String {
         // For testing, we use EmptyConfig as default
-        module.render(&self.context, &claude_code_statusline::modules::EmptyConfig)
+        module.render(
+            &self.context,
+            &claude_code_statusline_core::modules::EmptyConfig,
+        )
+    }
+}
+
+impl Default for TestRenderer {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -98,7 +107,7 @@ pub fn model_names() -> Vec<&'static str> {
     vec!["Opus", "Sonnet", "Haiku", "Claude-3.5"]
 }
 
-/// Parameterized fixture for different directory paths  
+/// Parameterized fixture for different directory paths
 #[fixture]
 #[once]
 pub fn test_directories() -> Vec<&'static str> {

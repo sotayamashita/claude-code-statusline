@@ -1,6 +1,8 @@
-use claude_code_statusline::config::Config;
-use claude_code_statusline::types::claude::{ClaudeInput, ModelInfo, OutputStyle, WorkspaceInfo};
-use claude_code_statusline::types::context::Context;
+use claude_code_statusline_core::config::Config;
+use claude_code_statusline_core::types::claude::{
+    ClaudeInput, ModelInfo, OutputStyle, WorkspaceInfo,
+};
+use claude_code_statusline_core::types::context::Context;
 
 /// Builder for creating test ClaudeInput instances
 pub struct ClaudeInputBuilder {
@@ -87,6 +89,12 @@ impl ClaudeInputBuilder {
     }
 }
 
+impl Default for ClaudeInputBuilder {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 /// Builder for creating test Context instances
 pub struct ContextBuilder {
     input: ClaudeInputBuilder,
@@ -119,7 +127,7 @@ impl ContextBuilder {
 
     pub fn with_directory_config<F>(mut self, f: F) -> Self
     where
-        F: FnOnce(&mut claude_code_statusline::types::config::DirectoryConfig),
+        F: FnOnce(&mut claude_code_statusline_core::types::config::DirectoryConfig),
     {
         f(&mut self.config.directory);
         self
@@ -127,7 +135,7 @@ impl ContextBuilder {
 
     pub fn with_claude_model_config<F>(mut self, f: F) -> Self
     where
-        F: FnOnce(&mut claude_code_statusline::types::config::ClaudeModelConfig),
+        F: FnOnce(&mut claude_code_statusline_core::types::config::ClaudeModelConfig),
     {
         f(&mut self.config.claude_model);
         self
@@ -135,5 +143,11 @@ impl ContextBuilder {
 
     pub fn build(self) -> Context {
         Context::new(self.input.build(), self.config)
+    }
+}
+
+impl Default for ContextBuilder {
+    fn default() -> Self {
+        Self::new()
     }
 }

@@ -14,18 +14,13 @@ claude-code-statusline exists to provide a fast, embeddable status line specific
 ## Installation
 
 ```bash
-# Clone the repository
+# From crates.io (preferred; installs `claude-code-statusline` binary)
+cargo install claude-code-statusline-cli
+
+# From source
 git clone https://github.com/sotayamashita/claude-code-statusline.git && cd claude-code-statusline
-
-# Build workspace
 cargo build --workspace --release
-
-# Option A) Copy the built binary to your PATH
 cp target/release/claude-code-statusline ~/.local/bin/
-
-# Option B) Install from the CLI crate
-# Install the binary from workspace root
-cargo install --path .
 ```
 
 ## Development
@@ -119,3 +114,8 @@ style = "bold yellow"
 ## Acknowledgments
 
 This project was inspired by [Starship](https://starship.rs/), the excellent cross-shell prompt. I've adapted its modular architecture for Claude Code's statusline.
+
+## Migration
+
+The legacy root shim crate has been removed. If you previously imported
+`claude_code_statusline::...`, please migrate to `claude_code_statusline_core::...`.
