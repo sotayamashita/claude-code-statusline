@@ -116,8 +116,3 @@ style = "bold yellow"
 ## Acknowledgments
 
 This project was inspired by [Starship](https://starship.rs/), the excellent cross-shell prompt. I've adapted its modular architecture for Claude Code's statusline.
-
-## Migration
-
-The legacy root shim crate has been removed. If you previously imported
-`claude_code_statusline::...`, please migrate to `claude_code_statusline_core::...`.
