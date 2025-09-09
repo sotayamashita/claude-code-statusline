@@ -1,6 +1,8 @@
 # claude-code-statusline
 
 [![CI](https://github.com/sotayamashita/claude-code-statusline/actions/workflows/ci.yml/badge.svg)](https://github.com/sotayamashita/claude-code-statusline/actions/workflows/ci.yml)
+[![Crates.io - CLI](https://img.shields.io/crates/v/claude-code-statusline-cli.svg)](https://crates.io/crates/claude-code-statusline-cli)
+[![Crates.io - Core](https://img.shields.io/crates/v/claude-code-statusline-core.svg)](https://crates.io/crates/claude-code-statusline-core)
 
 ## Overview
 <!-- LLM Instructions: Update @specs/project.md when you change this section -->
