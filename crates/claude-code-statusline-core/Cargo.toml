@@ -41,3 +41,6 @@ criterion = { version = "0.7.0", default-features = false, features = ["cargo_be
 [[bench]]
 name = "engine_bench"
 harness = false
+
+[package.metadata.docs.rs]
+all-features = true
