@@ -18,10 +18,10 @@ Derived from specs/2025-09-08-publish-2-crate-plan/01-spec.md. Track and complet
 - [x] In `crates/claude-code-statusline-cli/Cargo.toml`, specify `version` alongside `path` for `claude-code-statusline-core` dependency (e.g., `version = "0.1.0", path = "../claude-code-statusline-core"`).
 
 ## Docs & Scripts
-- [ ] Update root `README.md` install instructions to prefer `cargo install claude-code-statusline-cli` and document that it installs a `claude-code-statusline` binary.
-- [ ] Update `scripts/check_ansi.sh` to use `cargo run -p claude-code-statusline-cli -q` when not using the installed binary.
-- [ ] Add a migration note: the root shim crate is removed; import from `claude_code_statusline_core::...` instead of `claude_code_statusline::...`.
-- [ ] Search and replace any references to `-p claude-code-statusline` in scripts/docs with `-p claude-code-statusline-cli`.
+- [x] Update root `README.md` install instructions to prefer `cargo install claude-code-statusline-cli` and document that it installs a `claude-code-statusline` binary.
+- [x] Update `scripts/check_ansi.sh` to use `cargo run -p claude-code-statusline-cli -q` when not using the installed binary.
+- [x] Add a migration note: the root shim crate is removed; import from `claude_code_statusline_core::...` instead of `claude_code_statusline::...`.
+- [x] Search and replace any references to `-p claude-code-statusline` in scripts/docs with `-p claude-code-statusline-cli`.
 
 ## CI / Release Workflow
 - [ ] Add `.github/workflows/release.yml` with `workflow_dispatch` inputs: `version` (string) and `dry_run` (bool).
