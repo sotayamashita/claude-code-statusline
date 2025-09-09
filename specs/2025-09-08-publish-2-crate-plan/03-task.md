@@ -8,7 +8,7 @@ Derived from specs/2025-09-08-publish-2-crate-plan/01-spec.md. Track and complet
 - [x] (Optional) Add `[workspace.package]` to centralize shared metadata (e.g., `edition = "2024"`, `license = "MIT"`, `repository`, `rust-version = "1.75"`).
 
 ## Crate Metadata (crates.io readiness)
-- [ ] `claude-code-statusline-core`: add `license`, `repository`, `rust-version`, `readme`, `keywords`, `categories` to `Cargo.toml`. Keep `description` accurate.
+- [x] `claude-code-statusline-core`: add `license`, `repository`, `rust-version`, `readme`, `keywords`, `categories` to `Cargo.toml`. Keep `description` accurate.
 - [ ] `claude-code-statusline-core`: add docs.rs config: `[package.metadata.docs.rs] all-features = true`.
 - [ ] `claude-code-statusline-cli`: add `description`, `license`, `repository`, `rust-version`, `readme`, `keywords`, `categories` to `Cargo.toml`.
 - [ ] Add crate-local `README.md` files for both `core` and `cli` (no cross-crate references).
