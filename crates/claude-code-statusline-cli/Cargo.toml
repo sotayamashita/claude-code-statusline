@@ -2,6 +2,13 @@
 name = "claude-code-statusline-cli"
 version = "0.0.1"
 edition = "2024"
+description = "CLI for claude-code-statusline: reads JSON on stdin and prints ANSI-formatted status line"
+license = "MIT"
+repository = "https://github.com/sotayamashita/claude-code-statusline"
+rust-version = "1.85"
+readme = "README.md"
+keywords = ["statusline", "cli", "developer-tools"]
+categories = ["command-line-utilities"]
 
 [dependencies]
 claude-code-statusline-core = { path = "../claude-code-statusline-core", features = ["git"] }
