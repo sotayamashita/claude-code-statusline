@@ -5,3 +5,10 @@ members = [
     "crates/claude-code-statusline-cli",
     "crates/test-support",
 ]
+
+# Shared package metadata (opt-in from member crates via `*.workspace = true`)
+[workspace.package]
+edition = "2024"
+license = "MIT"
+repository = "https://github.com/sotayamashita/claude-code-statusline"
+rust-version = "1.75"

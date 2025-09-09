@@ -369,6 +369,21 @@ debug = true
 - Keep responses focused and relevant
 - Follow the established patterns
 
+### Shell Tooling Rubric
+- Find files: `fd`
+- Find text: `rg` (ripgrep)
+- Find code structure (TS/TSX): `ast-grep`
+  - Default to TypeScript:
+    - `.ts` → `ast-grep --lang ts -p '<pattern>'`
+    - `.tsx` (React) → `ast-grep --lang tsx -p '<pattern>'`
+  - For other languages, set `--lang` appropriately (e.g., `--lang rust`).
+- Select among matches: pipe to `fzf`
+- JSON: `jq`
+- YAML/XML: `yq`
+
+Notes:
+- If `ast-grep` is available, prefer it for code-structure queries and avoid `rg`/`grep` unless a plain-text search is explicitly requested.
+
 ### Integration Points
 - Input: JSON via stdin
 - Output: ANSI-formatted text to stdout
@@ -376,5 +391,5 @@ debug = true
 - Logs: `tracing` to stderr, controlled by debug flag
 
 ---
-*Last updated: 2025-09-05*
+*Last updated: 2025-09-09*
 *claude-code-statusline - Fast, modular status line for AI development*
