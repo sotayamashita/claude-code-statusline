@@ -15,7 +15,7 @@ Derived from specs/2025-09-08-publish-2-crate-plan/01-spec.md. Track and complet
 - [x] (Optional) Restrict package contents via `include = ["src/**", "README.md", "LICENSE*"]`. If using `LICENSE*`, ensure a `LICENSE` file exists within each crate directory or adjust accordingly.
 
 ## Dependencies
-- [ ] In `crates/claude-code-statusline-cli/Cargo.toml`, specify `version` alongside `path` for `claude-code-statusline-core` dependency (e.g., `version = "0.1.0", path = "../claude-code-statusline-core"`).
+- [x] In `crates/claude-code-statusline-cli/Cargo.toml`, specify `version` alongside `path` for `claude-code-statusline-core` dependency (e.g., `version = "0.1.0", path = "../claude-code-statusline-core"`).
 
 ## Docs & Scripts
 - [ ] Update root `README.md` install instructions to prefer `cargo install claude-code-statusline-cli` and document that it installs a `claude-code-statusline` binary.
