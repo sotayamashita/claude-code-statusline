@@ -4,7 +4,7 @@ Derived from specs/2025-09-08-publish-2-crate-plan/01-spec.md. Track and complet
 
 ## Workspace Refactor
 - [x] Convert root to a virtual workspace: remove `[package]` from root `Cargo.toml`.
-- [ ] Remove root shim crate: delete `src/main.rs` and `src/lib.rs` under repository root.
+- [x] Remove root shim crate: delete `src/main.rs` and `src/lib.rs` under repository root.
 - [ ] (Optional) Add `[workspace.package]` to centralize shared metadata (e.g., `edition = "2024"`, `license = "MIT"`, `repository`, `rust-version = "1.75"`).
 
 ## Crate Metadata (crates.io readiness)
