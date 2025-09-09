@@ -36,7 +36,7 @@ Derived from specs/2025-09-08-publish-2-crate-plan/01-spec.md. Track and complet
 - [x] Publish order: `core` first, then `cli`.
 
 ## Validation / Acceptance
-- [ ] `cargo install claude-code-statusline-cli` installs an executable named `claude-code-statusline`.
-- [ ] Running `claude-code-statusline` with JSON via stdin produces ANSI-formatted output and passes existing tests.
-- [ ] `cargo test --workspace` passes after refactor and metadata changes.
+- [x] `cargo install claude-code-statusline-cli` installs an executable named `claude-code-statusline`.
+- [x] Running `claude-code-statusline` with JSON via stdin produces ANSI-formatted output and passes existing tests.
+- [x] `cargo test --workspace` passes after refactor and metadata changes.
 - [ ] docs.rs renders for `claude-code-statusline-core` with `all-features` enabled.
