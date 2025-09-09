@@ -31,8 +31,8 @@ Derived from specs/2025-09-08-publish-2-crate-plan/01-spec.md. Track and complet
 ## Versioning & Publishing
 - [x] Align crate versions to initial `0.1.0` using `cargo workspaces version 0.1.0 --all --force-publish` (or chosen version).
 - [x] `cargo publish --dry-run -p claude-code-statusline-core`.
-- [ ] `cargo publish --dry-run -p claude-code-statusline-cli`.
-  - Note: blocked until `claude-code-statusline-core = 0.1.0` is actually published to crates.io (dry-run checks dependency exists in index).
+- [x] `cargo publish --dry-run -p claude-code-statusline-cli`.
+  - Note: was blocked until `claude-code-statusline-core = 0.1.0` was published; now completed.
 - [ ] Publish order: `core` first, then `cli`.
 
 ## Validation / Acceptance
