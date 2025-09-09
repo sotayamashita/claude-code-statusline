@@ -9,6 +9,7 @@ rust-version = "1.85"
 readme = "README.md"
 keywords = ["statusline", "cli", "developer-tools"]
 categories = ["development-tools"]
+include = ["src/**", "README.md", "LICENSE*"]
 
 [lib]
 name = "claude_code_statusline_core"
