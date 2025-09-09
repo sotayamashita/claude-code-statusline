@@ -33,7 +33,7 @@ Derived from specs/2025-09-08-publish-2-crate-plan/01-spec.md. Track and complet
 - [x] `cargo publish --dry-run -p claude-code-statusline-core`.
 - [x] `cargo publish --dry-run -p claude-code-statusline-cli`.
   - Note: was blocked until `claude-code-statusline-core = 0.1.0` was published; now completed.
-- [ ] Publish order: `core` first, then `cli`.
+- [x] Publish order: `core` first, then `cli`.
 
 ## Validation / Acceptance
 - [ ] `cargo install claude-code-statusline-cli` installs an executable named `claude-code-statusline`.
