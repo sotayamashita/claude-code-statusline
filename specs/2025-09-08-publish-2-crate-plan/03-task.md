@@ -11,7 +11,7 @@ Derived from specs/2025-09-08-publish-2-crate-plan/01-spec.md. Track and complet
 - [x] `claude-code-statusline-core`: add `license`, `repository`, `rust-version`, `readme`, `keywords`, `categories` to `Cargo.toml`. Keep `description` accurate.
 - [x] `claude-code-statusline-core`: add docs.rs config: `[package.metadata.docs.rs] all-features = true`.
 - [x] `claude-code-statusline-cli`: add `description`, `license`, `repository`, `rust-version`, `readme`, `keywords`, `categories` to `Cargo.toml`.
-- [ ] Add crate-local `README.md` files for both `core` and `cli` (no cross-crate references).
+- [x] Add crate-local `README.md` files for both `core` and `cli` (no cross-crate references).
 - [ ] (Optional) Restrict package contents via `include = ["src/**", "README.md", "LICENSE*"]`. If using `LICENSE*`, ensure a `LICENSE` file exists within each crate directory or adjust accordingly.
 
 ## Dependencies
