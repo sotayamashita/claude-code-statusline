@@ -205,7 +205,7 @@ checksum = "b94f61472cee1439c0b966b47e3aca9ae07e45d070759512cd390ea2bebc6675"
 
 [[package]]
 name = "claude-code-statusline-cli"
-version = "0.0.1"
+version = "0.1.0"
 dependencies = [
  "anyhow",
  "assert_cmd",
@@ -225,7 +225,7 @@ dependencies = [
 
 [[package]]
 name = "claude-code-statusline-core"
-version = "0.0.1"
+version = "0.1.0"
 dependencies = [
  "criterion",
  "dirs",

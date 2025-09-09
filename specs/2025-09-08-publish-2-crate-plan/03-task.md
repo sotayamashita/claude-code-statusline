@@ -26,7 +26,7 @@ Derived from specs/2025-09-08-publish-2-crate-plan/01-spec.md. Track and complet
 ## CI / Release Workflow
 - [x] Add `.github/workflows/release.yml` with `workflow_dispatch` inputs: `version` (string) and `dry_run` (bool).
 - [x] Release steps: setup Rust (1.75), cache → `cargo fmt --all -- --check` → `cargo clippy --workspace -- -D warnings` → `cargo test --workspace` → when not `dry_run`: `cargo workspaces version` to bump/tag → create GitHub Release → `cargo workspaces publish --from-git`.
-- [x] Configure `CRATES_IO_TOKEN` secret; expose to workflow via `CARGO_REGISTRIES_CRATES_IO_TOKEN` for publish steps.
+- [x] Configure `CARGO_REGISTRY_TOKEN` secret;
 
 ## Versioning & Publishing
 - [ ] Align crate versions to initial `0.1.0` using `cargo workspaces version 0.1.0 --all --force-publish` (or chosen version).

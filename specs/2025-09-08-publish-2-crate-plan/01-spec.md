@@ -124,7 +124,7 @@ Workflow goals:
 
 Secrets:
 
-- `CRATES_IO_TOKEN` for publish (set at repo/org level), used via `CARGO_REGISTRIES_CRATES_IO_TOKEN`.
+- `CARGO_REGISTRY_TOKEN` for publish (set at repo/org level)
 
 ## Metadata and Packaging
 

@@ -70,7 +70,6 @@ jobs:
       - name: Publish (cargo-workspaces)
         if: ${{ !fromJSON(github.event.inputs.dry_run) }}
         env:
-          CARGO_REGISTRIES_CRATES_IO_TOKEN: ${{ secrets.CRATES_IO_TOKEN }}
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
         run: |
           cargo workspaces publish --from-git --yes --allow-dirty
-
