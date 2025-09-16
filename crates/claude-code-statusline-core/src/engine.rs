@@ -34,6 +34,13 @@ impl Engine {
         let module_names = extract_modules_from_format(format);
 
         // Render modules (optionally in parallel when feature enabled)
+        fn normalize_module_output(mut value: String) -> String {
+            if value.ends_with("\x1b[0m") {
+                value.truncate(value.len().saturating_sub(4));
+            }
+            value
+        }
+
         let module_outputs: HashMap<String, String> = {
             #[cfg(feature = "parallel")]
             {
@@ -45,7 +52,7 @@ impl Engine {
                             return None;
                         }
                         render_module_with_timeout(name, &context, &logger)
-                            .map(|out| (name.clone(), out))
+                            .map(|out| (name.clone(), normalize_module_output(out)))
                     })
                     .collect()
             }
@@ -58,7 +65,7 @@ impl Engine {
                         continue;
                     }
                     if let Some(out) = render_module_with_timeout(name, &context, &logger) {
-                        map.insert(name.clone(), out);
+                        map.insert(name.clone(), normalize_module_output(out));
                     }
                 }
                 map
@@ -71,10 +78,7 @@ impl Engine {
         for (k, v) in &module_outputs {
             tokens.insert(k.as_str(), v.clone());
         }
-        let mut rendered = crate::style::render_with_style_template(format, &tokens, "");
-        // Ensure a final reset to avoid leaking styles into hosts that
-        // don't strictly track nested resets.
-        rendered.push_str("\x1b[0m");
+        let rendered = crate::style::render_with_style_template(format, &tokens, "");
         Ok(rendered)
     }
 }
@@ -83,6 +87,7 @@ impl Engine {
 mod tests {
     use super::*;
     use crate::types::claude::{ClaudeInput, ModelInfo, WorkspaceInfo};
+    use crate::types::config::{ClaudeModelConfig, DirectoryConfig};
 
     #[test]
     fn engine_renders_default_format() {
@@ -108,5 +113,52 @@ mod tests {
         let plain = String::from_utf8(strip_ansi_escapes::strip(out)).unwrap();
         assert!(plain.contains("/tmp"));
         assert!(plain.contains("Opus"));
+    }
+
+    #[test]
+    fn engine_preserves_background_across_segments() {
+        let cfg = Config {
+            format: "$directory[](fg:prev_bg bg:#222324)$claude_model".into(),
+            directory: DirectoryConfig {
+                format: "[DIR]($style)".into(),
+                style: "fg:#FFFFFF bg:#111213".into(),
+                ..DirectoryConfig::default()
+            },
+            claude_model: ClaudeModelConfig {
+                format: "[CL]($style)".into(),
+                style: "fg:prev_bg bg:#333435".into(),
+                ..ClaudeModelConfig::default()
+            },
+            ..Config::default()
+        };
+
+        let engine = Engine::new(cfg);
+        let input = ClaudeInput {
+            hook_event_name: None,
+            session_id: "test-session".into(),
+            transcript_path: None,
+            cwd: "/tmp".into(),
+            model: ModelInfo {
+                id: "claude-opus".into(),
+                display_name: "Opus".into(),
+            },
+            workspace: Some(WorkspaceInfo {
+                current_dir: "/tmp".into(),
+                project_dir: Some("/tmp".into()),
+            }),
+            version: Some("1.0.0".into()),
+            output_style: None,
+        };
+
+        let rendered = engine.render(&input).expect("render ok");
+        let without_final_reset = rendered.strip_suffix("\u{1b}[0m").expect("final reset");
+        assert!(without_final_reset.contains("DIR"));
+        assert!(without_final_reset.contains("CL"));
+        // Directory background applied once
+        assert!(without_final_reset.contains("48;2;17;18;19"));
+        // Powerline separator uses previous background as foreground
+        assert!(without_final_reset.contains("38;2;17;18;19"));
+        // Ensure that no intermediate reset is injected
+        assert_eq!(without_final_reset.matches("\u{1b}[0m").count(), 0);
     }
 }
