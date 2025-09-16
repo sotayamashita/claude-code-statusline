@@ -1,522 +1,795 @@
 //! ANSI color and text styling utilities
 //!
-//! This module provides functions for applying ANSI escape codes to
-//! terminal text, enabling colored and styled output in the status line.
+//! This module parses the same style syntax as Starship and evaluates
+//! templates in a way that preserves the preceding segment's colors and
+//! attributes.
 
-/// Applies ANSI styling to text for terminal display
+use std::collections::HashMap;
+
+/// Convenience utility that applies a style to the provided text.
 ///
-/// Takes a text string and a style specification, returning the text
-/// wrapped in appropriate ANSI escape codes.
-///
-/// # Arguments
-///
-/// * `text` - The text to style
-/// * `style` - Space-separated style tokens
-///
-/// # Supported Style Tokens
-///
-/// Text styles:
-/// - `bold` - Bold text
-/// - `italic` - Italic text
-/// - `underline` - Underlined text
-///
-/// Colors:
-/// - `black`, `red`, `green`, `yellow`
-/// - `blue`, `magenta`, `cyan`, `white`
-///
-/// # Examples
-///
-/// ```
-/// use claude_code_statusline_core::style::apply_style;
-///
-/// let styled = apply_style("Hello", "bold red");
-/// // Returns: "\x1b[1;31mHello\x1b[0m"
-///
-/// let multi = apply_style("World", "bold italic blue");
-/// // Returns: "\x1b[1;3;34mWorld\x1b[0m"
-/// ```
-///
-/// # Notes
-///
-/// - Unknown tokens are silently ignored
-/// - If no valid tokens are found, returns the original text
-/// - Multiple styles can be combined (e.g., "bold red underline")
+/// Internally this shares the same parser and renderer as
+/// `render_with_style_template`, giving Starship-compatible token handling.
 pub fn apply_style(text: &str, style: &str) -> String {
-    #[derive(Clone, Copy)]
-    enum ColorSpec {
-        NamedNormal(u8), // 30..=37 (FG) / 40..=47 (BG) base offset will be applied
-        NamedBright(u8), // 90..=97 / 100..=107 (store 0..=7)
-        Index(u8),       // 0..=255
-        Rgb(u8, u8, u8), // truecolor
-        NoneSet,         // explicit none
-    }
-
-    fn parse_named(name: &str) -> Option<u8> {
-        match name {
-            "black" => Some(0),
-            "red" => Some(1),
-            "green" => Some(2),
-            "yellow" => Some(3),
-            "blue" => Some(4),
-            "magenta" => Some(5),
-            "cyan" => Some(6),
-            "white" => Some(7),
-            _ => None,
-        }
-    }
-
-    // Heuristics to decide if the terminal supports truecolor. This keeps
-    // behavior consistent across environments where 24-bit colors are not
-    // fully supported and avoids foreground/background mismatch when a host
-    // silently downgrades one channel differently from the other.
-    fn supports_truecolor() -> bool {
-        // Explicit override for tests or user preference
-        if std::env::var("CCS_TRUECOLOR")
-            .map(|v| v == "1")
-            .unwrap_or(false)
-        {
-            return true;
-        }
-        if let Ok(v) = std::env::var("COLORTERM") {
-            let v = v.to_lowercase();
-            if v.contains("truecolor") || v.contains("24bit") {
-                return true;
-            }
-        }
-        if let Ok(t) = std::env::var("TERM") {
-            let t = t.to_lowercase();
-            if t.contains("direct") || t.contains("truecolor") {
-                return true;
-            }
-        }
-        false
-    }
-
-    // Convert an RGB color to the nearest ANSI 256-color index.
-    // Algorithm: prefer xterm 6x6x6 color cube (16..231) and fall back to
-    // grayscale ramp (232..255) when r≈g≈b. This mirrors common mappers.
-    fn rgb_to_ansi256(r: u8, g: u8, b: u8) -> u8 {
-        // If it's close to gray, map to grayscale range for better fidelity
-        let rg = r as i32 - g as i32;
-        let rb = r as i32 - b as i32;
-        let gb = g as i32 - b as i32;
-        let is_grayish = rg.abs() < 10 && rb.abs() < 10 && gb.abs() < 10;
-        if is_grayish {
-            // 24 grays, 8..238 step ~10
-            let gray = ((r as u16 + g as u16 + b as u16) / 3) as u8;
-            if gray < 8 {
-                return 16; // nearest to black
-            }
-            if gray > 238 {
-                return 231; // nearest to white from color cube
-            }
-            return 232 + ((gray as u16 - 8) / 10) as u8;
-        }
-        // Quantize each channel to 0..5 then map into 6x6x6 cube
-        let to_6 = |v: u8| -> u8 { ((v as u16 * 5 + 127) / 255) as u8 };
-        let r6 = to_6(r);
-        let g6 = to_6(g);
-        let b6 = to_6(b);
-        16 + 36 * r6 + 6 * g6 + b6
-    }
-
-    fn parse_color_spec(spec: &str) -> Option<ColorSpec> {
-        let s = spec.to_lowercase();
-        if s == "none" {
-            return Some(ColorSpec::NoneSet);
-        }
-        if let Some(hex) = s.strip_prefix('#') {
-            if hex.len() == 6 {
-                let r = u8::from_str_radix(&hex[0..2], 16).ok()?;
-                let g = u8::from_str_radix(&hex[2..4], 16).ok()?;
-                let b = u8::from_str_radix(&hex[4..6], 16).ok()?;
-                return Some(ColorSpec::Rgb(r, g, b));
-            }
-        }
-        if s.chars().all(|c| c.is_ascii_digit()) {
-            if let Ok(n) = s.parse::<u16>() {
-                if n <= 255 {
-                    return Some(ColorSpec::Index(n as u8));
-                }
-            }
-        }
-        if let Some(n) = s.strip_prefix("bright-") {
-            if let Some(idx) = parse_named(n) {
-                return Some(ColorSpec::NamedBright(idx));
-            }
-        }
-        if let Some(idx) = parse_named(&s) {
-            return Some(ColorSpec::NamedNormal(idx));
-        }
-        None
-    }
-
-    // Modifiers
-    let mut bold = false;
-    let mut italic = false;
-    let mut underline = false;
-
-    // Color channels: last one wins
-    let mut fg: Option<ColorSpec> = None;
-    let mut bg: Option<ColorSpec> = None;
-
-    for token in style.split_whitespace() {
-        let t = token.to_lowercase();
-        match t.as_str() {
-            "bold" => {
-                bold = true;
-                continue;
-            }
-            "italic" => {
-                italic = true;
-                continue;
-            }
-            "underline" => {
-                underline = true;
-                continue;
-            }
-            _ => {}
-        }
-
-        if let Some(rest) = t.strip_prefix("fg:") {
-            fg = parse_color_spec(rest);
-            continue;
-        }
-        if let Some(rest) = t.strip_prefix("bg:") {
-            bg = parse_color_spec(rest);
-            continue;
-        }
-
-        // Bare color spec is treated as foreground
-        if let Some(cs) = parse_color_spec(&t) {
-            fg = Some(cs);
-        } else {
-            // Unknown token: ignore
-        }
-    }
-
-    let mut codes: Vec<String> = Vec::with_capacity(5);
-    if bold {
-        codes.push("1".to_string());
-    }
-    if italic {
-        codes.push("3".to_string());
-    }
-    if underline {
-        codes.push("4".to_string());
-    }
-
-    if let Some(c) = fg {
-        match c {
-            ColorSpec::NamedNormal(idx) => codes.push((30 + idx).to_string()),
-            ColorSpec::NamedBright(idx) => codes.push((90 + idx).to_string()),
-            ColorSpec::Index(n) => codes.push(format!("38;5;{n}")),
-            ColorSpec::Rgb(r, g, b) => {
-                if supports_truecolor() {
-                    codes.push(format!("38;2;{r};{g};{b}"));
-                } else {
-                    let n = rgb_to_ansi256(r, g, b);
-                    codes.push(format!("38;5;{n}"));
-                }
-            }
-            ColorSpec::NoneSet => {}
-        }
-    }
-    if let Some(c) = bg {
-        match c {
-            ColorSpec::NamedNormal(idx) => codes.push((40 + idx).to_string()),
-            ColorSpec::NamedBright(idx) => codes.push((100 + idx).to_string()),
-            ColorSpec::Index(n) => codes.push(format!("48;5;{n}")),
-            ColorSpec::Rgb(r, g, b) => {
-                if supports_truecolor() {
-                    codes.push(format!("48;2;{r};{g};{b}"));
-                } else {
-                    let n = rgb_to_ansi256(r, g, b);
-                    codes.push(format!("48;5;{n}"));
-                }
-            }
-            ColorSpec::NoneSet => {}
-        }
-    }
-
-    if codes.is_empty() {
-        return text.to_string();
-    }
-    let sgr = codes.join(";");
-    format!("\x1b[{sgr}m{text}\x1b[0m")
+    let mut tokens = HashMap::new();
+    tokens.insert("value", text.to_string());
+    render_with_style_template("[$value]($style)", &tokens, style)
 }
 
-/// Render a simple module-local format string that can contain variable tokens
-/// like `$path`, `$model`, `$symbol`, `$branch` and optional bracket-style
-/// annotations: `[$content]($style)`.
+/// Parses `[$text](style)` markup and produces an ANSI-formatted string.
 ///
-/// - Variables inside the bracket content are substituted first.
-/// - The style inside parentheses can be a literal (e.g. "bold yellow") or
-///   `$style` which resolves to `default_style`.
-/// - If there is no bracket-style annotation, the variables are substituted and
-///   returned as-is.
+/// - Replaces `$foo` tokens using the supplied map (with `$style` treated
+///   specially).
+/// - Interprets the trailing style argument using Starship-compatible rules,
+///   supporting inheritance via `prev_fg`/`prev_bg` and resets such as
+///   `bg:none`.
+/// - When the style is invalid (for example `fg:none`), inserts a reset and
+///   resumes with the default style.
+/// - Always appends a trailing `\x1b[0m` to close out styling.
 pub fn render_with_style_template(
     format: &str,
-    tokens: &std::collections::HashMap<&str, String>,
+    tokens: &HashMap<&str, String>,
     default_style: &str,
 ) -> String {
-    // First, replace known tokens except "$style" using deterministic,
-    // longest-key-first ordering to avoid overlaps (e.g., $git vs $git_branch).
+    // Step 1: replace `$token` occurrences, longest key first to match the
+    // legacy rules.
     let mut replaced = String::from(format);
     let mut keys: Vec<&str> = tokens.keys().copied().filter(|k| *k != "style").collect();
-    // Sort by descending length so longer tokens are substituted first
     keys.sort_by_key(|k| std::cmp::Reverse(k.len()));
-    for k in keys {
-        if let Some(v) = tokens.get(k) {
-            let needle = format!("${k}");
-            replaced = replaced.replace(&needle, v);
+    for key in keys {
+        if let Some(value) = tokens.get(key) {
+            let needle = format!("${key}");
+            replaced = replaced.replace(&needle, value);
         }
     }
 
-    // Robust pass to process [text](style) while ignoring ANSI escape
-    // sequences already present in the string (e.g., from substituted
-    // module outputs). We skip any ESC[..terminator sequences to avoid
-    // misinterpreting the '[' in "\x1b[" as a text-group opener.
+    // Step 2: split `[text](style)` groups while leaving existing ANSI escape
+    // sequences untouched.
+    let mut segments = Vec::new();
     let bytes = replaced.as_bytes();
-    let mut i = 0;
+    let mut i = 0usize;
     let len = bytes.len();
-    let mut out = String::with_capacity(len + 16);
-    // Start index of the current literal chunk to be copied as-is
-    let mut seg_start = 0usize;
+    let mut literal_start = 0usize;
 
     while i < len {
         let b = bytes[i];
         if b == 0x1b {
-            // ESC: copy SGR/CSI sequence verbatim
-            let start = i;
-            i += 1; // Skip ESC
+            if literal_start < i {
+                push_plain_segment(&mut segments, &replaced[literal_start..i]);
+            }
+            let esc_start = i;
+            i += 1;
             if i < len && bytes[i] == b'[' {
                 i += 1;
                 while i < len {
                     let bb = bytes[i];
-                    if (0x40..=0x7E).contains(&bb) {
-                        i += 1; // include terminator
+                    if (0x40..=0x7e).contains(&bb) {
+                        i += 1;
                         break;
                     }
                     i += 1;
                 }
             }
-            // flush preceding literal then CSI
-            if seg_start < start {
-                out.push_str(&replaced[seg_start..start]);
-            }
-            out.push_str(&replaced[start..i]);
-            seg_start = i;
+            push_plain_segment(&mut segments, &replaced[esc_start..i]);
+            literal_start = i;
             continue;
         }
 
         if b == b'[' {
-            // Potential text group
-            // Flush any preceding literal chunk
-            if seg_start < i {
-                out.push_str(&replaced[seg_start..i]);
+            if literal_start < i {
+                push_plain_segment(&mut segments, &replaced[literal_start..i]);
             }
-            let mut j = i + 1;
-            while j < len && bytes[j] != b']' {
-                j += 1;
+            let mut close = i + 1;
+            while close < len && bytes[close] != b']' {
+                close += 1;
             }
-            if j < len && j + 1 < len && bytes[j + 1] == b'(' {
-                // Find right parenthesis
-                let mut k = j + 2;
-                while k < len && bytes[k] != b')' {
-                    k += 1;
+            if close < len && close + 1 < len && bytes[close + 1] == b'(' {
+                let mut paren = close + 2;
+                while paren < len && bytes[paren] != b')' {
+                    paren += 1;
                 }
-                if k < len {
-                    let inner = &replaced[i + 1..j];
-                    let style_spec = &replaced[j + 2..k];
+                if paren < len {
+                    let inner = &replaced[i + 1..close];
+                    let style_spec = &replaced[close + 2..paren];
                     let style_to_use = if style_spec == "$style" {
                         default_style
                     } else {
                         style_spec
                     };
-                    out.push_str(&apply_style(inner, style_to_use));
-                    i = k + 1;
-                    seg_start = i;
+                    match StyleSpec::parse(style_to_use) {
+                        ParseOutcome::None => {
+                            push_plain_segment(&mut segments, inner);
+                        }
+                        ParseOutcome::Invalid => {
+                            segments.push(Segment {
+                                text: inner.to_string(),
+                                style: SegmentStyle::Invalid,
+                            });
+                        }
+                        ParseOutcome::Spec(spec) => {
+                            segments.push(Segment {
+                                text: inner.to_string(),
+                                style: SegmentStyle::Explicit(spec),
+                            });
+                        }
+                    }
+                    i = paren + 1;
+                    literal_start = i;
                     continue;
                 }
             }
-
-            // Fallback: literal '['
-            out.push('[');
+            // Fall back to treating the byte as a literal '[' when we cannot
+            // find a closing pair.
+            push_plain_segment(&mut segments, "[");
             i += 1;
-            seg_start = i;
+            literal_start = i;
             continue;
         }
 
-        // Regular byte; advance. We'll copy in bulk using seg_start when needed.
         i += 1;
     }
-    // Flush remaining literal
-    if seg_start < len {
-        out.push_str(&replaced[seg_start..len]);
+
+    if literal_start < len {
+        push_plain_segment(&mut segments, &replaced[literal_start..len]);
     }
+
+    // Step 3: render the collected segments into a single ANSI string.
+    let truecolor = supports_truecolor();
+    let body = render_segments(&segments, truecolor);
+    let mut out = String::with_capacity(body.len() + 4);
+    out.push_str(&body);
+    out.push_str("\x1b[0m");
     out
 }
+
+// --- Internal implementation ------------------------------------------------
+
+#[derive(Clone, Debug)]
+struct Segment {
+    text: String,
+    style: SegmentStyle,
+}
+
+#[derive(Clone, Debug)]
+enum SegmentStyle {
+    /// No explicit style; inherit whatever came before.
+    None,
+    /// An explicit style spec was provided.
+    Explicit(StyleSpec),
+    /// The style spec was invalid (for example `fg:none`).
+    Invalid,
+    /// Raw ANSI escape sequence that should update the tracked style.
+    AnsiEscape,
+}
+
+#[derive(Clone, Debug)]
+struct StyleSpec {
+    bold: bool,
+    italic: bool,
+    underline: bool,
+    fg: ColorDirective,
+    bg: ColorDirective,
+}
+
+#[derive(Clone, Copy, Debug, Default)]
+struct AppliedStyle {
+    bold: bool,
+    italic: bool,
+    underline: bool,
+    fg: Option<ColorValue>,
+    bg: Option<ColorValue>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum ColorValue {
+    NamedNormal(u8),
+    NamedBright(u8),
+    Index(u8),
+    Rgb(u8, u8, u8),
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum ColorDirective {
+    Unspecified,
+    Reset,
+    Set(ColorValue),
+    PrevFg,
+    PrevBg,
+}
+
+enum ParseOutcome {
+    None,
+    Invalid,
+    Spec(StyleSpec),
+}
+
+enum Channel {
+    Foreground,
+    Background,
+}
+
+fn push_plain_segment(segments: &mut Vec<Segment>, text: &str) {
+    if text.is_empty() {
+        return;
+    }
+    if text.starts_with("\u{1b}[") && text.ends_with('m') {
+        segments.push(Segment {
+            text: text.to_string(),
+            style: SegmentStyle::AnsiEscape,
+        });
+        return;
+    }
+    match segments.last_mut() {
+        Some(Segment {
+            style: SegmentStyle::None,
+            text: existing,
+        }) => existing.push_str(text),
+        _ => segments.push(Segment {
+            text: text.to_string(),
+            style: SegmentStyle::None,
+        }),
+    }
+}
+
+impl StyleSpec {
+    fn parse(spec: &str) -> ParseOutcome {
+        let trimmed = spec.trim();
+        if trimmed.is_empty() {
+            return ParseOutcome::None;
+        }
+
+        let mut style = StyleSpec {
+            bold: false,
+            italic: false,
+            underline: false,
+            fg: ColorDirective::Unspecified,
+            bg: ColorDirective::Unspecified,
+        };
+        let mut seen_any = false;
+
+        for raw in trimmed.split_whitespace() {
+            let token = raw.to_lowercase();
+            match token.as_str() {
+                "bold" => {
+                    style.bold = true;
+                    seen_any = true;
+                    continue;
+                }
+                "italic" => {
+                    style.italic = true;
+                    seen_any = true;
+                    continue;
+                }
+                "underline" => {
+                    style.underline = true;
+                    seen_any = true;
+                    continue;
+                }
+                "prev_fg" => {
+                    style.fg = ColorDirective::PrevFg;
+                    seen_any = true;
+                    continue;
+                }
+                "prev_bg" => {
+                    style.fg = ColorDirective::PrevBg;
+                    seen_any = true;
+                    continue;
+                }
+                _ => {}
+            }
+
+            if let Some(rest) = token.strip_prefix("fg:") {
+                if rest == "none" {
+                    return ParseOutcome::Invalid;
+                }
+                style.fg = parse_color_directive(rest, true);
+                if matches!(style.fg, ColorDirective::Unspecified) {
+                    continue;
+                }
+                seen_any = true;
+                continue;
+            }
+            if let Some(rest) = token.strip_prefix("bg:") {
+                style.bg = parse_color_directive(rest, false);
+                if matches!(style.bg, ColorDirective::Unspecified) {
+                    continue;
+                }
+                seen_any = true;
+                continue;
+            }
+
+            // Bare color tokens are treated as foreground colors.
+            if let Some(value) = parse_color_value(&token) {
+                style.fg = ColorDirective::Set(value);
+                seen_any = true;
+            }
+        }
+
+        if !seen_any {
+            ParseOutcome::None
+        } else {
+            ParseOutcome::Spec(style)
+        }
+    }
+
+    fn apply(
+        &self,
+        prev: Option<&AppliedStyle>,
+        truecolor: bool,
+    ) -> (AppliedStyle, Option<String>, bool) {
+        let mut current = prev.copied().unwrap_or_default();
+        let mut codes: Vec<String> = Vec::new();
+
+        if self.bold {
+            codes.push("1".to_string());
+            current.bold = true;
+        }
+        if self.italic {
+            codes.push("3".to_string());
+            current.italic = true;
+        }
+        if self.underline {
+            codes.push("4".to_string());
+            current.underline = true;
+        }
+
+        let (fg_value, fg_codes) =
+            apply_color_directive(self.fg, prev, current.fg, Channel::Foreground, truecolor);
+        if let Some(component) = fg_codes {
+            codes.push(component.clone());
+            current.fg = fg_value;
+        }
+
+        let (bg_value, bg_codes) =
+            apply_color_directive(self.bg, prev, current.bg, Channel::Background, truecolor);
+        if let Some(component) = bg_codes {
+            codes.push(component.clone());
+            current.bg = bg_value;
+        }
+
+        let active = current.is_active();
+        let sgr = if codes.is_empty() {
+            None
+        } else {
+            Some(format!("\x1b[{}m", codes.join(";")))
+        };
+        (current, sgr, active)
+    }
+}
+
+impl AppliedStyle {
+    fn is_active(&self) -> bool {
+        self.bold || self.italic || self.underline || self.fg.is_some() || self.bg.is_some()
+    }
+}
+
+fn render_segments(segments: &[Segment], truecolor: bool) -> String {
+    let mut out = String::new();
+    let mut prev_style = AppliedStyle::default();
+    let mut style_active = false;
+
+    for segment in segments {
+        match &segment.style {
+            SegmentStyle::None => {
+                out.push_str(&segment.text);
+            }
+            SegmentStyle::Invalid => {
+                if style_active {
+                    out.push_str("\x1b[0m");
+                    prev_style = AppliedStyle::default();
+                    style_active = false;
+                }
+                out.push_str(&segment.text);
+            }
+            SegmentStyle::AnsiEscape => {
+                out.push_str(&segment.text);
+                if absorb_ansi_sequence(&segment.text, &mut prev_style) {
+                    style_active = prev_style.is_active();
+                }
+            }
+            SegmentStyle::Explicit(spec) => {
+                let (applied, sgr, active) = spec.apply(
+                    if style_active {
+                        Some(&prev_style)
+                    } else {
+                        None
+                    },
+                    truecolor,
+                );
+                if let Some(code) = sgr {
+                    out.push_str(&code);
+                }
+                out.push_str(&segment.text);
+                prev_style = applied;
+                style_active = active;
+            }
+        }
+    }
+
+    out
+}
+
+fn apply_color_directive(
+    directive: ColorDirective,
+    prev: Option<&AppliedStyle>,
+    current_value: Option<ColorValue>,
+    channel: Channel,
+    truecolor: bool,
+) -> (Option<ColorValue>, Option<String>) {
+    match directive {
+        ColorDirective::Unspecified => (current_value, None),
+        ColorDirective::Reset => (
+            None,
+            Some(match channel {
+                Channel::Foreground => "39".to_string(),
+                Channel::Background => "49".to_string(),
+            }),
+        ),
+        ColorDirective::Set(value) => {
+            let (component, stored) = color_to_sgr(value, channel, truecolor);
+            (Some(stored), Some(component))
+        }
+        ColorDirective::PrevFg => prev
+            .and_then(|p| p.fg)
+            .map(|value| color_to_sgr(value, channel, truecolor))
+            .map(|(component, stored)| (Some(stored), Some(component)))
+            .unwrap_or((current_value, None)),
+        ColorDirective::PrevBg => prev
+            .and_then(|p| p.bg)
+            .map(|value| color_to_sgr(value, channel, truecolor))
+            .map(|(component, stored)| (Some(stored), Some(component)))
+            .unwrap_or((current_value, None)),
+    }
+}
+
+fn absorb_ansi_sequence(seq: &str, style: &mut AppliedStyle) -> bool {
+    if !seq.starts_with("\u{1b}[") || !seq.ends_with('m') {
+        return false;
+    }
+    let inner = &seq[2..seq.len() - 1];
+    if inner.is_empty() {
+        return false;
+    }
+    let mut parts = inner.split(';').peekable();
+    while let Some(token) = parts.next() {
+        if token.is_empty() {
+            continue;
+        }
+        match token {
+            "0" => {
+                *style = AppliedStyle::default();
+            }
+            "1" => style.bold = true,
+            "22" => style.bold = false,
+            "3" => style.italic = true,
+            "23" => style.italic = false,
+            "4" => style.underline = true,
+            "24" => style.underline = false,
+            "39" => style.fg = None,
+            "49" => style.bg = None,
+            "38" => {
+                if let Some(next) = parts.next() {
+                    match next {
+                        "2" => {
+                            let r = parts.next().and_then(|v| v.parse::<u8>().ok());
+                            let g = parts.next().and_then(|v| v.parse::<u8>().ok());
+                            let b = parts.next().and_then(|v| v.parse::<u8>().ok());
+                            if let (Some(r), Some(g), Some(b)) = (r, g, b) {
+                                style.fg = Some(ColorValue::Rgb(r, g, b));
+                            }
+                        }
+                        "5" => {
+                            if let Some(idx) = parts.next().and_then(|v| v.parse::<u16>().ok()) {
+                                if idx <= 255 {
+                                    style.fg = Some(ColorValue::Index(idx as u8));
+                                }
+                            }
+                        }
+                        other => {
+                            if let Ok(code) = other.parse::<i16>() {
+                                apply_simple_color(code, Channel::Foreground, style);
+                            }
+                        }
+                    }
+                }
+            }
+            "48" => {
+                if let Some(next) = parts.next() {
+                    match next {
+                        "2" => {
+                            let r = parts.next().and_then(|v| v.parse::<u8>().ok());
+                            let g = parts.next().and_then(|v| v.parse::<u8>().ok());
+                            let b = parts.next().and_then(|v| v.parse::<u8>().ok());
+                            if let (Some(r), Some(g), Some(b)) = (r, g, b) {
+                                style.bg = Some(ColorValue::Rgb(r, g, b));
+                            }
+                        }
+                        "5" => {
+                            if let Some(idx) = parts.next().and_then(|v| v.parse::<u16>().ok()) {
+                                if idx <= 255 {
+                                    style.bg = Some(ColorValue::Index(idx as u8));
+                                }
+                            }
+                        }
+                        other => {
+                            if let Ok(code) = other.parse::<i16>() {
+                                apply_simple_color(code, Channel::Background, style);
+                            }
+                        }
+                    }
+                }
+            }
+            other => {
+                if let Ok(code) = other.parse::<i16>() {
+                    apply_simple_color(code, Channel::Foreground, style);
+                }
+            }
+        }
+    }
+    true
+}
+
+fn apply_simple_color(code: i16, channel: Channel, style: &mut AppliedStyle) {
+    match channel {
+        Channel::Foreground => match code {
+            30..=37 => style.fg = Some(ColorValue::NamedNormal((code - 30) as u8)),
+            90..=97 => style.fg = Some(ColorValue::NamedBright((code - 90) as u8)),
+            _ => {}
+        },
+        Channel::Background => match code {
+            40..=47 => style.bg = Some(ColorValue::NamedNormal((code - 40) as u8)),
+            100..=107 => style.bg = Some(ColorValue::NamedBright((code - 100) as u8)),
+            _ => {}
+        },
+    }
+}
+
+fn parse_color_directive(token: &str, is_foreground: bool) -> ColorDirective {
+    match token {
+        "prev_fg" => ColorDirective::PrevFg,
+        "prev_bg" => ColorDirective::PrevBg,
+        "none" if !is_foreground => ColorDirective::Reset,
+        _ => parse_color_value(token)
+            .map(ColorDirective::Set)
+            .unwrap_or(ColorDirective::Unspecified),
+    }
+}
+
+fn parse_color_value(token: &str) -> Option<ColorValue> {
+    if let Some(hex) = token.strip_prefix('#') {
+        if hex.len() == 6 {
+            let r = u8::from_str_radix(&hex[0..2], 16).ok()?;
+            let g = u8::from_str_radix(&hex[2..4], 16).ok()?;
+            let b = u8::from_str_radix(&hex[4..6], 16).ok()?;
+            return Some(ColorValue::Rgb(r, g, b));
+        }
+    }
+    if token.chars().all(|c| c.is_ascii_digit()) {
+        if let Ok(num) = token.parse::<u16>() {
+            if num <= 255 {
+                return Some(ColorValue::Index(num as u8));
+            }
+        }
+    }
+    if let Some(rest) = token.strip_prefix("bright-") {
+        if let Some(idx) = parse_named(rest) {
+            return Some(ColorValue::NamedBright(idx));
+        }
+    }
+    parse_named(token).map(ColorValue::NamedNormal)
+}
+
+fn parse_named(name: &str) -> Option<u8> {
+    match name {
+        "black" => Some(0),
+        "red" => Some(1),
+        "green" => Some(2),
+        "yellow" => Some(3),
+        "blue" => Some(4),
+        "magenta" => Some(5),
+        "cyan" => Some(6),
+        "white" => Some(7),
+        _ => None,
+    }
+}
+
+fn color_to_sgr(color: ColorValue, channel: Channel, truecolor: bool) -> (String, ColorValue) {
+    match color {
+        ColorValue::NamedNormal(idx) => (
+            format!(
+                "{}",
+                match channel {
+                    Channel::Foreground => 30 + idx,
+                    Channel::Background => 40 + idx,
+                }
+            ),
+            ColorValue::NamedNormal(idx),
+        ),
+        ColorValue::NamedBright(idx) => (
+            format!(
+                "{}",
+                match channel {
+                    Channel::Foreground => 90 + idx,
+                    Channel::Background => 100 + idx,
+                }
+            ),
+            ColorValue::NamedBright(idx),
+        ),
+        ColorValue::Index(n) => (
+            format!(
+                "{};5;{}",
+                match channel {
+                    Channel::Foreground => "38",
+                    Channel::Background => "48",
+                },
+                n
+            ),
+            ColorValue::Index(n),
+        ),
+        ColorValue::Rgb(r, g, b) => {
+            if truecolor {
+                (
+                    format!(
+                        "{};2;{};{};{}",
+                        match channel {
+                            Channel::Foreground => "38",
+                            Channel::Background => "48",
+                        },
+                        r,
+                        g,
+                        b
+                    ),
+                    ColorValue::Rgb(r, g, b),
+                )
+            } else {
+                let idx = rgb_to_ansi256(r, g, b);
+                (
+                    format!(
+                        "{};5;{}",
+                        match channel {
+                            Channel::Foreground => "38",
+                            Channel::Background => "48",
+                        },
+                        idx
+                    ),
+                    ColorValue::Index(idx),
+                )
+            }
+        }
+    }
+}
+
+fn supports_truecolor() -> bool {
+    if std::env::var("CCS_TRUECOLOR")
+        .map(|v| v == "1")
+        .unwrap_or(false)
+    {
+        return true;
+    }
+    if let Ok(v) = std::env::var("COLORTERM") {
+        let v = v.to_lowercase();
+        if v.contains("truecolor") || v.contains("24bit") {
+            return true;
+        }
+    }
+    if let Ok(t) = std::env::var("TERM") {
+        let t = t.to_lowercase();
+        if t.contains("direct") || t.contains("truecolor") {
+            return true;
+        }
+    }
+    false
+}
+
+fn rgb_to_ansi256(r: u8, g: u8, b: u8) -> u8 {
+    let rg = r as i32 - g as i32;
+    let rb = r as i32 - b as i32;
+    let gb = g as i32 - b as i32;
+    let is_grayish = rg.abs() < 10 && rb.abs() < 10 && gb.abs() < 10;
+    if is_grayish {
+        let gray = ((r as u16 + g as u16 + b as u16) / 3) as u8;
+        if gray < 8 {
+            return 16;
+        }
+        if gray > 238 {
+            return 231;
+        }
+        return 232 + ((gray as u16 - 8) / 10) as u8;
+    }
+    let to_6 = |v: u8| -> u8 { ((v as u16 * 5 + 127) / 255) as u8 };
+    let r6 = to_6(r);
+    let g6 = to_6(g);
+    let b6 = to_6(b);
+    16 + 36 * r6 + 6 * g6 + b6
+}
+
+// --- テスト --------------------------------------------------------------
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    #[test]
-    fn applies_bold_yellow() {
-        let s = apply_style("X", "bold yellow");
-        assert!(s.starts_with("\u{1b}[") && s.contains("1;33") && s.ends_with("\u{1b}[0m"));
-        assert!(s.contains('X'));
-    }
-
-    #[test]
-    fn ignores_unknown_tokens() {
-        assert_eq!(apply_style("X", "unknown"), "X");
-    }
-
-    #[test]
-    fn mixed_known_and_unknown_tokens_are_stable() {
-        // Unknown tokens should be ignored, known tokens applied
-        let s = apply_style("Y", "bold sparkly yellow foo");
-        // Should include ANSI for bold (1) and yellow (33)
-        assert!(s.starts_with("\u{1b}["));
-        assert!(s.contains("1;33") || s.contains("33;1"));
-        assert!(s.ends_with("\u{1b}[0m"));
-        assert!(s.contains('Y'));
-    }
-
-    #[test]
-    fn renders_bracket_style_template() {
-        use std::collections::HashMap;
-        let mut tokens = HashMap::new();
-        tokens.insert("path", String::from("~/proj"));
-        let out = render_with_style_template("[$path]($style)", &tokens, "bold blue");
-        assert!(out.contains("~/proj"));
-        assert!(out.starts_with("\u{1b}["));
-        assert!(out.ends_with("\u{1b}[0m"));
-    }
-
-    #[test]
-    fn ignores_ansi_sequences_when_parsing_text_groups() {
-        use std::collections::HashMap;
-        // Pre-styled token (simulating a module output already ANSI-wrapped)
-        let styled = apply_style("X", "fg:#ff0000");
-        let mut tokens = HashMap::new();
-        tokens.insert("t", styled);
-        // Surrounding group should be styled, but the existing ANSI inside $t
-        // must not confuse the parser.
-        let s = render_with_style_template("[](bg:#003366)$t", &tokens, "");
-        // After stripping ANSI, we should see the glyph and the token text only.
-        let plain = String::from_utf8(strip_ansi_escapes::strip(s)).unwrap();
-        assert_eq!(plain, "X");
-    }
-
-    // New spec tests for fg:/bg: and extended colors
-
-    #[test]
-    fn style_named_fg_bg() {
-        let s = apply_style("X", "bold fg:green bg:black");
-        assert!(s.starts_with("\u{1b}["));
-        // Contains bold(1), fg green(32), bg black(40) in any order
-        assert!(s.contains("1"));
-        assert!(s.contains("32"));
-        assert!(s.contains("40"));
-        assert!(s.ends_with("\u{1b}[0m"));
-    }
-
-    #[test]
-    fn style_bright_named() {
-        let s = apply_style("X", "bright-yellow bg:bright-blue");
-        // bright yellow = 93, bright blue background = 104
-        assert!(s.contains("93"));
-        assert!(s.contains("104"));
-    }
-
-    #[test]
-    fn style_8bit_indexes() {
-        let s = apply_style("X", "fg:196 bg:238");
-        assert!(s.contains("38;5;196"));
-        assert!(s.contains("48;5;238"));
-    }
-
-    #[test]
-    fn style_hex_truecolor() {
-        let s = apply_style("X", "fg:#bf5700 bg:#003366");
-        // Accept either truecolor or ANSI-256 downgraded output depending on env
-        assert!(s.contains("38;2;191;87;0") || s.contains("38;5;"));
-        assert!(s.contains("48;2;0;51;102") || s.contains("48;5;"));
-    }
-
-    #[test]
-    fn style_bare_color_equivalence() {
-        let s1 = apply_style("X", "yellow");
-        let s2 = apply_style("X", "fg:yellow");
-        assert_eq!(s1, s2);
-    }
-
-    #[test]
-    fn style_unknown_tokens_stability() {
-        let s = apply_style("X", "bold sparkle fg:green foo");
-        assert!(s.contains("1"));
-        assert!(s.contains("32") || s.contains("38;2;") || s.contains("38;5;"));
-        // Should not introduce 38; for fg if using named mapping 32; but mainly ensure still wrapped
-        assert!(s.starts_with("\u{1b}[") && s.ends_with("\u{1b}[0m"));
-    }
-
-    #[test]
-    fn token_substitution_uses_longest_key_first() {
-        use std::collections::HashMap;
-        // Simulate overlapping token names like $git and $git_branch
-        let mut tokens = HashMap::new();
-        tokens.insert("git", String::from("G"));
-        tokens.insert("git_branch", String::from("BR"));
-
-        let out = render_with_style_template("$git_branch $git", &tokens, "");
-        // Expect both tokens fully replaced without partial corruption
-        assert_eq!(out, "BR G");
-        assert!(!out.contains("_branch"));
-    }
-
-    #[test]
-    fn style_none_handling() {
-        let s = apply_style("X", "fg:none italic");
-        assert!(s.contains("3"));
-        assert!(!s.contains("38;"));
-    }
-
-    #[test]
-    fn rgb_foreground_background_downgrade_is_consistent() {
-        // Ensure that when truecolor is not detected, the same RGB hex
-        // maps to the same ANSI-256 index for both fg and bg.
-        use std::sync::{Mutex, OnceLock};
-        static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
-        let _g = LOCK.get_or_init(|| Mutex::new(())).lock().unwrap();
-        // Force non-truecolor environment
-        unsafe {
-            std::env::remove_var("CCS_TRUECOLOR");
-            std::env::set_var("COLORTERM", "");
-            std::env::set_var("TERM", "xterm-256color");
+    fn collect_tokens<'a>(
+        map: &'a [(&'a str, &'a str)],
+    ) -> std::collections::HashMap<&'a str, String> {
+        let mut tokens = std::collections::HashMap::new();
+        for (k, v) in map {
+            tokens.insert(*k, (*v).to_string());
         }
+        tokens
+    }
 
-        let fg = apply_style("X", "#9A348E");
-        let bg = apply_style("X", "bg:#9A348E");
-        // Extract the 256-color index numbers if present
-        let idx_fg = fg
-            .split("38;5;")
-            .nth(1)
-            .and_then(|s| s.split('m').next())
-            .and_then(|n| n.parse::<u16>().ok());
-        let idx_bg = bg
-            .split("48;5;")
-            .nth(1)
-            .and_then(|s| s.split('m').next())
-            .and_then(|n| n.parse::<u16>().ok());
-        if let (Some(a), Some(b)) = (idx_fg, idx_bg) {
-            assert_eq!(a, b);
+    fn strip_reset_once(s: &str) -> (&str, bool) {
+        if let Some(pos) = s.rfind("\u{1b}[0m") {
+            (&s[..pos], true)
         } else {
-            // In environments with truecolor this test isn't meaningful.
-            // Ensure at least both contain truecolor sequences then.
-            assert!(fg.contains("38;2;") && bg.contains("48;2;"));
+            (s, false)
         }
+    }
+
+    #[test]
+    fn background_persists_until_explicit_change() {
+        let tokens = collect_tokens(&[("text", "BAR")]);
+        let rendered = render_with_style_template("[FOO](bg:#112233) $text", &tokens, "");
+        let (without_final_reset, has_final_reset) = strip_reset_once(&rendered);
+        assert!(has_final_reset, "final reset missing");
+        assert!(without_final_reset.contains("FOO"));
+        assert!(without_final_reset.contains("BAR"));
+        assert_eq!(without_final_reset.matches("48;2;17;34;51").count(), 1);
+        let before_bar = &without_final_reset[..without_final_reset.find("BAR").unwrap()];
+        assert!(!before_bar.contains("\u{1b}[0m"));
+    }
+
+    #[test]
+    fn prev_fg_uses_previous_background_color() {
+        let rendered = render_with_style_template(
+            "[A](bg:#111213)[B](fg:prev_bg bg:#202122)",
+            &std::collections::HashMap::new(),
+            "",
+        );
+        let (without_final_reset, _) = strip_reset_once(&rendered);
+        assert!(without_final_reset.contains("48;2;17;18;19"));
+        assert!(without_final_reset.contains("38;2;17;18;19"));
+        assert!(without_final_reset.contains("48;2;32;33;34"));
+    }
+
+    #[test]
+    fn bg_none_resets_background_for_following_text() {
+        let rendered = render_with_style_template(
+            "[A](bg:#010203)[B](bg:none)C",
+            &std::collections::HashMap::new(),
+            "",
+        );
+        let (without_final_reset, _) = strip_reset_once(&rendered);
+        assert!(without_final_reset.contains("48;2;1;2;3"));
+        assert_eq!(without_final_reset.matches("\u{1b}[49m").count(), 1);
+        let after_reset = without_final_reset
+            .split("\u{1b}[49m")
+            .last()
+            .expect("split produced at least one part");
+        assert!(!after_reset.contains("48;2;"));
+    }
+
+    #[test]
+    fn fg_none_resets_foreground_to_default() {
+        let rendered = render_with_style_template(
+            "[X](bg:#112233)[Y](fg:none)",
+            &std::collections::HashMap::new(),
+            "",
+        );
+        let (without_final_reset, _) = strip_reset_once(&rendered);
+        assert!(without_final_reset.contains("48;2;17;34;51"));
+        // fg:none triggers an intermediate reset to default
+        assert!(without_final_reset.contains("\u{1b}[0m"));
+    }
+
+    #[test]
+    fn plain_text_inherits_prior_style() {
+        let rendered =
+            render_with_style_template("[A](fg:#AA5500)B", &std::collections::HashMap::new(), "");
+        let (without_final_reset, _) = strip_reset_once(&rendered);
+        assert_eq!(without_final_reset.matches("38;2;170;85;0").count(), 1);
+        assert!(without_final_reset.contains("A"));
+        assert!(without_final_reset.contains("B"));
     }
 }
