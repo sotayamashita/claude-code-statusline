@@ -85,11 +85,12 @@ _**[Learn more about Claude Code status line integration](https://docs.anthropic
 - `git_branch`
 - `git_status`
 - `claude_model`
+- `context_window`
 
 ### Default Style
 
 ```toml
-Format = "$directory $git_branch $git_status $claude_model"
+Format = "$directory $git_branch $git_status $claude_model $context_window"
 
 [directory]
 style = "bold cyan"
@@ -102,6 +103,13 @@ style = "bold red"
 
 [claude_model]
 style = "bold yellow"
+
+[context_window]
+symbol = "ctx "
+use_dynamic_color = true
+style_low = "green"           # < 50%
+style_medium = "yellow"       # 50-79%
+style_high = "red"            # ≥ 80%
 ```
 
 ### Presets Styles

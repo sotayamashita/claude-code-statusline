@@ -44,7 +44,7 @@ Tokens: `$path`
 
 例:
 
-```
+```text
 # 例1: repo 直下
 truncate_to_repo = true
 truncation_length = 3
@@ -125,6 +125,51 @@ Tokens: `$all_status`, `$ahead_behind`
  - ライブラリ利用時（`claude-code-statusline-core` を直接依存する場合）にこのモジュールを使うには
    crate の feature `git` を有効にしてください。CLI バイナリは既定で有効です。
 
+### Module: `context_window`
+
+```toml
+[context_window]
+format = "[$symbol$percentage%]($style)"
+symbol = "ctx "
+style = "bold"
+use_dynamic_color = true
+style_low = "green"
+style_medium = "yellow"
+style_high = "red"
+disabled = false
+```
+
+Tokens: `$percentage`, `$symbol`
+
+振る舞い:
+- コンテキストウィンドウの使用率をパーセンテージで表示します。
+- `use_dynamic_color = true` の場合、使用率に応じて自動的にスタイルを変更します:
+  - `style_low`: 50%未満の使用率（既定: "green"）
+  - `style_medium`: 50-79%の使用率（既定: "yellow"）
+  - `style_high`: 80%以上の使用率（既定: "red"）
+- `use_dynamic_color = false` の場合、固定の `style` を使用します。
+- 計算には `current_usage` データを使用し、キャッシュされたトークン（system prompt、tools、agents）を含む実際の使用量を正確に反映します。
+
+例:
+
+```toml
+# カスタマイズされた閾値スタイル
+[context_window]
+symbol = "🔵 "
+use_dynamic_color = true
+style_low = "bold green"
+style_medium = "bold yellow"
+style_high = "bold underline red"
+```
+
+```toml
+# 固定スタイル（動的カラーなし）
+[context_window]
+symbol = "ctx "
+use_dynamic_color = false
+style = "bold blue"
+```
+
 ### ANSI スタイル指定
 
 `[$text]($style)` 構文で装飾を付けられます。`($style)` が `$style` の場合は、そのモジュール設定の `style` 値を適用します。
@@ -145,7 +190,7 @@ Tokens: `$all_status`, `$ahead_behind`
 
 例:
 
-```
+```text
 style = "bold fg:green bg:black"        # 太字 + 前景緑 + 背景黒
 style = "bright-yellow bg:bright-blue"    # 明るい黄(前景) + 明るい青(背景)
 style = "fg:196 bg:238"                  # 8bit インデックス色
