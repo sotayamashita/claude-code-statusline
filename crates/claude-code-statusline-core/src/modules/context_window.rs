@@ -42,8 +42,13 @@ impl ContextWindowModule {
     fn calculate_percentage(context: &Context) -> Option<u64> {
         let ctx_window = context.input.context_window.as_ref()?;
 
-        // Use total_input_tokens directly from Claude Code
-        let total_tokens = ctx_window.total_input_tokens;
+        // Prefer current_usage breakdown if available (includes cached tokens)
+        let total_tokens = if let Some(usage) = &ctx_window.current_usage {
+            usage.input_tokens + usage.cache_creation_input_tokens + usage.cache_read_input_tokens
+        } else {
+            // Fallback to total_input_tokens if current_usage not available
+            ctx_window.total_input_tokens
+        };
 
         if ctx_window.context_window_size == 0 {
             return None;
@@ -52,14 +57,14 @@ impl ContextWindowModule {
         Some((total_tokens * 100) / ctx_window.context_window_size)
     }
 
-    /// Get the color style based on percentage
-    fn get_color_for_percentage(percentage: u64) -> &'static str {
+    /// Get the style based on percentage and config
+    fn get_style_for_percentage(percentage: u64, config: &crate::types::config::ContextWindowConfig) -> String {
         if percentage < 50 {
-            "green"
+            config.style_low.clone()
         } else if percentage < 80 {
-            "yellow"
+            config.style_medium.clone()
         } else {
-            "red"
+            config.style_high.clone()
         }
     }
 }
@@ -105,10 +110,9 @@ impl Module for ContextWindowModule {
             tokens.insert("percentage", percentage.to_string());
             tokens.insert("symbol", cfg.symbol.clone());
 
-            // Determine color based on percentage
-            let color = Self::get_color_for_percentage(percentage);
+            // Determine style based on percentage
             let style = if cfg.use_dynamic_color {
-                color.to_string()
+                Self::get_style_for_percentage(percentage, cfg)
             } else {
                 cfg.style.clone()
             };
@@ -125,7 +129,7 @@ impl Module for ContextWindowModule {
 mod tests {
     use super::*;
     use crate::config::Config;
-    use crate::types::claude::{ClaudeInput, ContextWindow, CurrentUsage, ModelInfo};
+    use crate::types::claude::{ClaudeInput, ContextWindow, ModelInfo};
     use crate::types::context::Context;
     use rstest::*;
 
@@ -177,9 +181,26 @@ mod tests {
     #[case(79, "yellow")]
     #[case(80, "red")]
     #[case(95, "red")]
-    fn test_color_for_percentage(#[case] percentage: u64, #[case] expected_color: &str) {
-        let color = ContextWindowModule::get_color_for_percentage(percentage);
-        assert_eq!(color, expected_color);
+    fn test_style_for_percentage(#[case] percentage: u64, #[case] expected_style: &str) {
+        use crate::types::config::ContextWindowConfig;
+        let config = ContextWindowConfig::default();
+        let style = ContextWindowModule::get_style_for_percentage(percentage, &config);
+        assert_eq!(style, expected_style);
+    }
+
+    #[rstest]
+    #[case(30, "bold green")]
+    #[case(50, "bold yellow")]
+    #[case(80, "bold red")]
+    fn test_custom_threshold_styles(#[case] percentage: u64, #[case] expected_style: &str) {
+        use crate::types::config::ContextWindowConfig;
+        let mut config = ContextWindowConfig::default();
+        config.style_low = "bold green".to_string();
+        config.style_medium = "bold yellow".to_string();
+        config.style_high = "bold red".to_string();
+
+        let style = ContextWindowModule::get_style_for_percentage(percentage, &config);
+        assert_eq!(style, expected_style);
     }
 
     #[rstest]

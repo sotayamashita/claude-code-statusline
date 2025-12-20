@@ -261,6 +261,18 @@ pub struct ContextWindowConfig {
     #[serde(default = "default_context_window_use_dynamic_color")]
     pub use_dynamic_color: bool,
 
+    /// Style for low usage (< 50%)
+    #[serde(default = "default_context_window_style_low")]
+    pub style_low: String,
+
+    /// Style for medium usage (50-79%)
+    #[serde(default = "default_context_window_style_medium")]
+    pub style_medium: String,
+
+    /// Style for high usage (≥ 80%)
+    #[serde(default = "default_context_window_style_high")]
+    pub style_high: String,
+
     #[serde(default = "default_disabled")]
     pub disabled: bool,
 }
@@ -272,6 +284,9 @@ impl Default for ContextWindowConfig {
             style: default_context_window_style(),
             symbol: default_context_window_symbol(),
             use_dynamic_color: default_context_window_use_dynamic_color(),
+            style_low: default_context_window_style_low(),
+            style_medium: default_context_window_style_medium(),
+            style_high: default_context_window_style_high(),
             disabled: default_disabled(),
         }
     }
@@ -400,6 +415,18 @@ fn default_context_window_symbol() -> String {
 
 fn default_context_window_use_dynamic_color() -> bool {
     true
+}
+
+fn default_context_window_style_low() -> String {
+    "green".to_string()
+}
+
+fn default_context_window_style_medium() -> String {
+    "yellow".to_string()
+}
+
+fn default_context_window_style_high() -> String {
+    "red".to_string()
 }
 
 // ModuleConfig implementations
