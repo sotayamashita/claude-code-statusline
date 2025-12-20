@@ -75,6 +75,22 @@ impl ClaudeInputBuilder {
         self
     }
 
+    /// Builds a `ClaudeInput` from the builder's current fields.
+    ///
+    /// The returned `ClaudeInput` will contain the values configured on this builder; its
+    /// `context_window` field is set to `None`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let input = ClaudeInputBuilder::new()
+    ///     .with_cwd("/tmp")
+    ///     .with_session_id("sess-1")
+    ///     .build();
+    /// assert_eq!(input.cwd, "/tmp");
+    /// assert_eq!(input.session_id, "sess-1");
+    /// assert_eq!(input.context_window, None);
+    /// ```
     pub fn build(self) -> ClaudeInput {
         ClaudeInput {
             hook_event_name: self.hook_event_name,
@@ -85,6 +101,7 @@ impl ClaudeInputBuilder {
             workspace: self.workspace,
             version: self.version,
             output_style: self.output_style,
+            context_window: None,
         }
     }
 }

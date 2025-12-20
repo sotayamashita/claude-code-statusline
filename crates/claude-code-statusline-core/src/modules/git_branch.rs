@@ -173,6 +173,17 @@ mod tests {
     use tempfile::tempdir;
 
     // Helper: ClaudeInput -> Context 生成
+    /// Creates a test Context populated with a ClaudeInput whose working directory and workspace
+    /// point to the given `cwd`.
+    ///
+    /// The returned Context uses default configuration values suitable for unit tests.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let ctx = make_context("/tmp/project");
+    /// // `ctx` can now be passed to module methods in tests
+    /// ```
     fn make_context(cwd: &str) -> Context {
         let input = ClaudeInput {
             hook_event_name: None,
@@ -189,6 +200,7 @@ mod tests {
             }),
             version: Some("1.0.0".to_string()),
             output_style: None,
+            context_window: None,
         };
         Context::new(input, Config::default())
     }

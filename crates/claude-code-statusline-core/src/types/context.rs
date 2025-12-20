@@ -140,7 +140,23 @@ mod tests {
     #[cfg(feature = "git")]
     use git2::Repository as GitRepository;
 
-    /// Helper to create test ClaudeInput
+    /// Construct a ClaudeInput populated with sensible defaults for use in tests.
+    ///
+    /// The returned `ClaudeInput` has the provided current working directory, model
+    /// information, and an optional workspace mapping; other fields are set to
+    /// stable test-friendly defaults.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let input = create_claude_input("/repo", "x1", None);
+    /// assert_eq!(input.cwd, "/repo");
+    /// assert_eq!(input.model.display_name, "x1");
+    ///
+    /// let ws = create_claude_input("/repo/sub", "x1", Some(("/repo/sub", "/repo")));
+    /// assert_eq!(ws.workspace.as_ref().unwrap().current_dir, "/repo/sub");
+    /// assert_eq!(ws.workspace.as_ref().unwrap().project_dir.as_deref(), Some("/repo"));
+    /// ```
     fn create_claude_input(cwd: &str, model: &str, workspace: Option<(&str, &str)>) -> ClaudeInput {
         ClaudeInput {
             hook_event_name: None,
@@ -157,6 +173,7 @@ mod tests {
             }),
             version: Some("1.0.0".to_string()),
             output_style: None,
+            context_window: None,
         }
     }
 

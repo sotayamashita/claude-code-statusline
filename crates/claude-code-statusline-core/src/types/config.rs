@@ -54,6 +54,9 @@ pub struct Config {
     #[serde(default)]
     pub git_status: GitStatusConfig,
 
+    #[serde(default)]
+    pub context_window: ContextWindowConfig,
+
     /// Unrecognized/extra top-level tables (e.g., third-party modules)
     /// Captures unknown sections like `[my_custom_module]` without losing them.
     #[serde(flatten)]
@@ -105,6 +108,16 @@ pub struct ClaudeModelConfig {
 }
 
 impl Default for Config {
+    /// Constructs a `Config` populated with all module and global default values.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let cfg = Config::default();
+    /// assert_eq!(cfg.format, default_format());
+    /// assert_eq!(cfg.command_timeout, default_command_timeout());
+    /// assert!(!cfg.debug == false); // debug defaults to false
+    /// ```
     fn default() -> Self {
         Config {
             format: default_format(),
@@ -114,6 +127,7 @@ impl Default for Config {
             claude_model: ClaudeModelConfig::default(),
             git_branch: GitBranchConfig::default(),
             git_status: GitStatusConfig::default(),
+            context_window: ContextWindowConfig::default(),
             extra_modules: toml::value::Table::new(),
         }
     }
@@ -229,6 +243,17 @@ pub struct GitStatusConfig {
 }
 
 impl Default for GitStatusConfig {
+    /// Creates a Git status configuration populated with the crate's default values.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let cfg = GitStatusConfig::default();
+    /// assert_eq!(cfg.format, default_git_status_format());
+    /// assert_eq!(cfg.style, default_git_status_style());
+    /// assert_eq!(cfg.symbols, GitStatusSymbolsConfig::default());
+    /// assert_eq!(cfg.disabled, default_disabled());
+    /// ```
     fn default() -> Self {
         GitStatusConfig {
             format: default_git_status_format(),
@@ -239,7 +264,72 @@ impl Default for GitStatusConfig {
     }
 }
 
+/// Configuration for the context window module
+///
+/// Controls how the context window usage percentage is displayed.
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct ContextWindowConfig {
+    #[serde(default = "default_context_window_format")]
+    pub format: String,
+
+    #[serde(default = "default_context_window_style")]
+    pub style: String,
+
+    #[serde(default = "default_context_window_symbol")]
+    pub symbol: String,
+
+    /// Use dynamic color based on percentage (green/yellow/red)
+    #[serde(default = "default_context_window_use_dynamic_color")]
+    pub use_dynamic_color: bool,
+
+    /// Style for low usage (< 50%)
+    #[serde(default = "default_context_window_style_low")]
+    pub style_low: String,
+
+    /// Style for medium usage (50-79%)
+    #[serde(default = "default_context_window_style_medium")]
+    pub style_medium: String,
+
+    /// Style for high usage (≥ 80%)
+    #[serde(default = "default_context_window_style_high")]
+    pub style_high: String,
+
+    #[serde(default = "default_disabled")]
+    pub disabled: bool,
+}
+
+impl Default for ContextWindowConfig {
+    /// Creates a ContextWindowConfig populated with the crate's default values for every field.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let cfg = ContextWindowConfig::default();
+    /// // defaults provide a non-empty format string and other sane defaults
+    /// assert!(!cfg.format.is_empty());
+    /// ```
+    fn default() -> Self {
+        ContextWindowConfig {
+            format: default_context_window_format(),
+            style: default_context_window_style(),
+            symbol: default_context_window_symbol(),
+            use_dynamic_color: default_context_window_use_dynamic_color(),
+            style_low: default_context_window_style_low(),
+            style_medium: default_context_window_style_medium(),
+            style_high: default_context_window_style_high(),
+            disabled: default_disabled(),
+        }
+    }
+}
+
 // Default value functions
+/// Default top-level format string for the statusline.
+///
+/// # Examples
+///
+/// ```
+/// assert_eq!(default_format(), "$directory $claude_model".to_string());
+/// ```
 fn default_format() -> String {
     "$directory $claude_model".to_string()
 }
@@ -343,12 +433,125 @@ fn default_git_status_symbol_ahead() -> String {
 fn default_git_status_symbol_behind() -> String {
     "⇣".to_string()
 }
+/// Default symbol used to indicate a diverged Git branch in the status display.
+///
+/// Returns the symbol used when local and remote branches have diverged.
+///
+/// # Examples
+///
+/// ```
+/// let sym = default_git_status_symbol_diverged();
+/// assert_eq!(sym, "⇕");
+/// ```
 fn default_git_status_symbol_diverged() -> String {
     "⇕".to_string()
 }
 
+// Context Window module defaults
+/// Default format string for the context window module.
+///
+/// The returned string contains the `$symbol`, `$percentage`, and `$style` tokens used when rendering the context window.
+///
+/// # Examples
+///
+/// ```
+/// let fmt = default_context_window_format();
+/// assert_eq!(fmt, "[$symbol$percentage%]($style)");
+/// ```
+fn default_context_window_format() -> String {
+    "[$symbol$percentage%]($style)".to_string()
+}
+
+/// Default style token for the context window module.
+///
+/// # Examples
+///
+/// ```
+/// assert_eq!(default_context_window_style(), "bold".to_string());
+/// ```
+fn default_context_window_style() -> String {
+    "bold".to_string()
+}
+
+/// Default symbol for the context window module.
+///
+/// The returned string is "ctx ".
+///
+/// # Examples
+///
+/// ```
+/// let s = default_context_window_symbol();
+/// assert_eq!(s, "ctx ");
+/// ```
+fn default_context_window_symbol() -> String {
+    "ctx ".to_string()
+}
+
+/// Default value for ContextWindowConfig.use_dynamic_color.
+///
+/// # Examples
+///
+/// ```
+/// let enabled = default_context_window_use_dynamic_color();
+/// assert!(enabled);
+/// ```
+///
+/// # Returns
+///
+/// `true` if dynamic coloring should be enabled by default, `false` otherwise.
+fn default_context_window_use_dynamic_color() -> bool {
+    true
+}
+
+/// Default style token used for low context window usage.
+///
+/// # Examples
+///
+/// ```
+/// let s = default_context_window_style_low();
+/// assert_eq!(s, "green");
+/// ```
+fn default_context_window_style_low() -> String {
+    "green".to_string()
+}
+
+/// Default style for medium context-window usage.
+///
+/// # Examples
+///
+/// ```
+/// let s = default_context_window_style_medium();
+/// assert_eq!(s, "yellow");
+/// ```
+fn default_context_window_style_medium() -> String {
+    "yellow".to_string()
+}
+
+/// Default style used for high context window usage.
+///
+/// Returns a `String` with the value "red".
+///
+/// # Examples
+///
+/// ```
+/// let s = default_context_window_style_high();
+/// assert_eq!(s, "red");
+/// ```
+fn default_context_window_style_high() -> String {
+    "red".to_string()
+}
+
 // ModuleConfig implementations
 impl ModuleConfig for DirectoryConfig {
+    /// Provides a reference to the value as a `dyn Any` for downcasting.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let cfg = DirectoryConfig::default();
+    /// let any = cfg.as_any();
+    /// assert!(any.downcast_ref::<DirectoryConfig>().is_some());
+    /// ```
     fn as_any(&self) -> &dyn Any {
         self
     }
@@ -399,13 +602,93 @@ impl ModuleConfig for GitStatusConfig {
         &self.format
     }
 
+    /// Get the module's style string.
+    ///
+    /// # Returns
+    ///
+    /// `&str` with the module's style specification.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let cfg = DirectoryConfig::default();
+    /// assert_eq!(cfg.style(), &cfg.style);
+    /// ```
+    fn style(&self) -> &str {
+        &self.style
+    }
+}
+
+impl ModuleConfig for ContextWindowConfig {
+    /// Provides a reference to the value as a `dyn Any` for downcasting.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let cfg = DirectoryConfig::default();
+    /// let any = cfg.as_any();
+    /// assert!(any.downcast_ref::<DirectoryConfig>().is_some());
+    /// ```
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    /// Accesses the module's format template.
+    ///
+    /// Returns the format template string.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let cfg = DirectoryConfig::default();
+    /// let fmt = cfg.format();
+    /// assert!(!fmt.is_empty());
+    /// ```
+    fn format(&self) -> &str {
+        &self.format
+    }
+
+    /// Get the module's style string.
+    ///
+    /// # Returns
+    ///
+    /// `&str` with the module's style specification.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let cfg = DirectoryConfig::default();
+    /// assert_eq!(cfg.style(), &cfg.style);
+    /// ```
     fn style(&self) -> &str {
         &self.style
     }
 }
 
 impl Config {
-    /// Validate configuration values. Returns an error for clearly invalid values.
+    /// Validate configuration fields and ensure values fall within allowed ranges.
+    
+    ///
+    
+    /// Currently this enforces that the `command_timeout` value is between 50 and 600_000
+    
+    /// milliseconds (inclusive). If a value is outside this range, the function returns
+    
+    /// `CoreError::InvalidConfig` describing the invalid value.
+    
+    ///
+    
+    /// # Examples
+    
+    ///
+    
+    /// ```
+    
+    /// let cfg = Config::default();
+    
+    /// cfg.validate().unwrap();
+    
+    /// ```
     pub fn validate(&self) -> Result<(), CoreError> {
         // Milliseconds; enforce sane bounds (50ms ..= 600_000ms)
         if self.command_timeout < 50 || self.command_timeout > 600_000 {
@@ -417,9 +700,25 @@ impl Config {
         Ok(())
     }
 
-    /// Collect non-fatal warnings about style/format configuration.
-    /// Unknown style tokens or unknown variables in format strings should not
-    /// break the program, but we surface them as warnings.
+    /// Collects non-fatal warnings for style and top-level format configuration.
+    ///
+    /// Validates per-module style tokens (e.g., `bold`, `fg:#rrggbb`, `bg:bright-red`) and
+    /// checks top-level format variables prefixed with `$`. Unknown or malformed tokens are
+    /// reported as user-facing warning messages.
+    ///
+    /// # Returns
+    ///
+    /// A vector of warning strings; the vector is empty when no issues are found.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use claude_code_statusline_core::types::config::Config;
+    ///
+    /// let cfg = Config::default();
+    /// let warnings = cfg.collect_warnings();
+    /// assert!(warnings.is_empty());
+    /// ```
     pub fn collect_warnings(&self) -> Vec<String> {
         let mut warnings = Vec::new();
         fn is_named(name: &str) -> bool {
@@ -486,13 +785,14 @@ impl Config {
         check_style("claude_model", &self.claude_model.style, &mut warnings);
         check_style("git_branch", &self.git_branch.style, &mut warnings);
         check_style("git_status", &self.git_status.style, &mut warnings);
+        check_style("context_window", &self.context_window.style, &mut warnings);
 
         // Unknown $tokens in top-level format
         for part in self.format.split_whitespace() {
             if let Some(tok) = part.strip_prefix('$') {
                 match tok {
                     "directory" | "claude_model" | "git_branch" | "git_status"
-                    | "claude_session" | "character" => {}
+                    | "context_window" | "claude_session" | "character" => {}
                     other => warnings.push(crate::messages::warn_unknown_format_token(other)),
                 }
             }
