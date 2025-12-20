@@ -79,7 +79,9 @@ impl ContextWindowModule {
             return None;
         }
 
-        Some((total_tokens * 100) / ctx_window.context_window_size)
+        total_tokens
+            .checked_mul(100)?
+            .checked_div(ctx_window.context_window_size)
     }
 
     /// Selects a style string from the config based on a usage percentage.
