@@ -238,6 +238,7 @@ mod tests {
             }),
             version: Some("1.0.0".into()),
             output_style: None,
+            context_window: None,
         };
         Context::new(input, Config::default())
     }

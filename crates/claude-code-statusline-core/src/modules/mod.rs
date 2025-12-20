@@ -15,6 +15,7 @@
 //!
 //! - `directory`: Current directory display
 //! - `claude_model`: Claude model information
+//! - `context_window`: Context window usage percentage
 //! - `git_branch`: Current git branch
 //! - `git_status`: Git repository status
 
@@ -83,6 +84,7 @@ pub trait Module: Send + Sync {
 
 // Re-export module implementations
 pub mod claude_model;
+pub mod context_window;
 pub mod directory;
 #[cfg(feature = "git")]
 pub mod git_branch;
@@ -91,6 +93,7 @@ pub mod git_status;
 pub mod registry;
 
 pub use claude_model::ClaudeModelModule;
+pub use context_window::ContextWindowModule;
 pub use directory::DirectoryModule;
 pub use registry::{ModuleFactory, Registry};
 
@@ -254,6 +257,7 @@ mod timeout_tests {
             }),
             version: Some("1.0.0".into()),
             output_style: None,
+            context_window: None,
         };
         let cfg = Config {
             command_timeout: timeout_ms,

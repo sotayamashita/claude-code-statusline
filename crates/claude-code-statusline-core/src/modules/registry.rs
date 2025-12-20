@@ -4,7 +4,10 @@
 //! without hard-coded dispatcher matches. This enables pluggable modules
 //! and paves the way for external/extra modules via configuration.
 
-use super::{Module, ModuleConfig, claude_model::ClaudeModelModule, directory::DirectoryModule};
+use super::{
+    claude_model::ClaudeModelModule, context_window::ContextWindowModule,
+    directory::DirectoryModule, Module, ModuleConfig,
+};
 #[cfg(feature = "git")]
 use super::{git_branch::GitBranchModule, git_status::GitStatusModule};
 use crate::types::context::Context;
@@ -39,6 +42,7 @@ impl Registry {
         let mut reg = Self::new();
         reg.register_factory(DirectoryFactory);
         reg.register_factory(ClaudeModelFactory);
+        reg.register_factory(ContextWindowFactory);
         #[cfg(feature = "git")]
         {
             reg.register_factory(GitBranchFactory);
@@ -109,6 +113,19 @@ impl ModuleFactory for ClaudeModelFactory {
     }
 }
 
+struct ContextWindowFactory;
+impl ModuleFactory for ContextWindowFactory {
+    fn name(&self) -> &'static str {
+        "context_window"
+    }
+    fn create(&self, context: &Context) -> Box<dyn Module> {
+        Box::new(ContextWindowModule::from_context(context))
+    }
+    fn config<'a>(&self, context: &'a Context) -> Option<&'a dyn ModuleConfig> {
+        Some(&context.config.context_window)
+    }
+}
+
 #[cfg(feature = "git")]
 struct GitBranchFactory;
 #[cfg(feature = "git")]
@@ -152,6 +169,7 @@ mod tests {
         let names = reg.list();
         assert!(names.contains(&"directory"));
         assert!(names.contains(&"claude_model"));
+        assert!(names.contains(&"context_window"));
         #[cfg(feature = "git")]
         {
             assert!(names.contains(&"git_branch"));
@@ -174,6 +192,7 @@ mod tests {
             workspace: None,
             version: None,
             output_style: None,
+            context_window: None,
         };
         let ctx = Context::new(input, cfg);
         let reg = Registry::with_defaults();

@@ -85,6 +85,7 @@ impl ClaudeInputBuilder {
             workspace: self.workspace,
             version: self.version,
             output_style: self.output_style,
+            context_window: None,
         }
     }
 }

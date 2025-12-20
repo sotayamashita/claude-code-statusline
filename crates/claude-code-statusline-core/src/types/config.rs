@@ -54,6 +54,9 @@ pub struct Config {
     #[serde(default)]
     pub git_status: GitStatusConfig,
 
+    #[serde(default)]
+    pub context_window: ContextWindowConfig,
+
     /// Unrecognized/extra top-level tables (e.g., third-party modules)
     /// Captures unknown sections like `[my_custom_module]` without losing them.
     #[serde(flatten)]
@@ -114,6 +117,7 @@ impl Default for Config {
             claude_model: ClaudeModelConfig::default(),
             git_branch: GitBranchConfig::default(),
             git_status: GitStatusConfig::default(),
+            context_window: ContextWindowConfig::default(),
             extra_modules: toml::value::Table::new(),
         }
     }
@@ -239,6 +243,40 @@ impl Default for GitStatusConfig {
     }
 }
 
+/// Configuration for the context window module
+///
+/// Controls how the context window usage percentage is displayed.
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct ContextWindowConfig {
+    #[serde(default = "default_context_window_format")]
+    pub format: String,
+
+    #[serde(default = "default_context_window_style")]
+    pub style: String,
+
+    #[serde(default = "default_context_window_symbol")]
+    pub symbol: String,
+
+    /// Use dynamic color based on percentage (green/yellow/red)
+    #[serde(default = "default_context_window_use_dynamic_color")]
+    pub use_dynamic_color: bool,
+
+    #[serde(default = "default_disabled")]
+    pub disabled: bool,
+}
+
+impl Default for ContextWindowConfig {
+    fn default() -> Self {
+        ContextWindowConfig {
+            format: default_context_window_format(),
+            style: default_context_window_style(),
+            symbol: default_context_window_symbol(),
+            use_dynamic_color: default_context_window_use_dynamic_color(),
+            disabled: default_disabled(),
+        }
+    }
+}
+
 // Default value functions
 fn default_format() -> String {
     "$directory $claude_model".to_string()
@@ -347,6 +385,23 @@ fn default_git_status_symbol_diverged() -> String {
     "⇕".to_string()
 }
 
+// Context Window module defaults
+fn default_context_window_format() -> String {
+    "[$symbol$percentage%]($style)".to_string()
+}
+
+fn default_context_window_style() -> String {
+    "bold".to_string()
+}
+
+fn default_context_window_symbol() -> String {
+    "ctx ".to_string()
+}
+
+fn default_context_window_use_dynamic_color() -> bool {
+    true
+}
+
 // ModuleConfig implementations
 impl ModuleConfig for DirectoryConfig {
     fn as_any(&self) -> &dyn Any {
@@ -391,6 +446,20 @@ impl ModuleConfig for GitBranchConfig {
 }
 
 impl ModuleConfig for GitStatusConfig {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn format(&self) -> &str {
+        &self.format
+    }
+
+    fn style(&self) -> &str {
+        &self.style
+    }
+}
+
+impl ModuleConfig for ContextWindowConfig {
     fn as_any(&self) -> &dyn Any {
         self
     }
@@ -486,13 +555,14 @@ impl Config {
         check_style("claude_model", &self.claude_model.style, &mut warnings);
         check_style("git_branch", &self.git_branch.style, &mut warnings);
         check_style("git_status", &self.git_status.style, &mut warnings);
+        check_style("context_window", &self.context_window.style, &mut warnings);
 
         // Unknown $tokens in top-level format
         for part in self.format.split_whitespace() {
             if let Some(tok) = part.strip_prefix('$') {
                 match tok {
                     "directory" | "claude_model" | "git_branch" | "git_status"
-                    | "claude_session" | "character" => {}
+                    | "context_window" | "claude_session" | "character" => {}
                     other => warnings.push(crate::messages::warn_unknown_format_token(other)),
                 }
             }

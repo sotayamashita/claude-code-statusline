@@ -208,6 +208,7 @@ mod tests {
             }),
             version: Some("1.0.0".to_string()),
             output_style: None,
+            context_window: None,
         };
         Context::new(input, Config::default())
     }
@@ -229,6 +230,7 @@ mod tests {
             }),
             version: Some("1.0.0".to_string()),
             output_style: None,
+            context_window: None,
         };
         Context::new(input, Config::default())
     }
@@ -327,6 +329,7 @@ mod tests {
             }),
             version: Some("1.0.0".into()),
             output_style: None,
+            context_window: None,
         };
         let mut cfg = crate::config::Config::default();
         cfg.directory.truncate_to_repo = true;
@@ -364,6 +367,7 @@ mod tests {
             }),
             version: Some("1.0.0".into()),
             output_style: None,
+            context_window: None,
         };
         let mut cfg = crate::config::Config::default();
         cfg.directory.truncate_to_repo = true;
@@ -404,6 +408,7 @@ mod tests {
             }),
             version: Some("1.0.0".into()),
             output_style: None,
+            context_window: None,
         };
         let mut cfg = crate::config::Config::default();
         cfg.directory.truncate_to_repo = true;
@@ -444,6 +449,7 @@ mod tests {
             }),
             version: Some("1.0.0".into()),
             output_style: None,
+            context_window: None,
         };
         let mut cfg = crate::config::Config::default();
         cfg.directory.truncate_to_repo = true;
@@ -482,6 +488,7 @@ mod tests {
             }),
             version: Some("1.0.0".into()),
             output_style: None,
+            context_window: None,
         };
         let mut cfg = crate::config::Config::default();
         cfg.directory.truncate_to_repo = true;
@@ -521,6 +528,7 @@ mod tests {
             }),
             version: Some("1.0.0".into()),
             output_style: None,
+            context_window: None,
         };
         let mut cfg = crate::config::Config::default();
         cfg.directory.truncate_to_repo = true;
