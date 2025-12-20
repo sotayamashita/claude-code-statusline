@@ -15,6 +15,7 @@
 //!
 //! - `directory`: Current directory display
 //! - `claude_model`: Claude model information
+//! - `context_window`: Context window usage percentage
 //! - `git_branch`: Current git branch
 //! - `git_status`: Git repository status
 
@@ -83,6 +84,7 @@ pub trait Module: Send + Sync {
 
 // Re-export module implementations
 pub mod claude_model;
+pub mod context_window;
 pub mod directory;
 #[cfg(feature = "git")]
 pub mod git_branch;
@@ -91,6 +93,7 @@ pub mod git_status;
 pub mod registry;
 
 pub use claude_model::ClaudeModelModule;
+pub use context_window::ContextWindowModule;
 pub use directory::DirectoryModule;
 pub use registry::{ModuleFactory, Registry};
 
@@ -238,6 +241,21 @@ mod timeout_tests {
         }
     }
 
+    /// Creates a test Context with the given current working directory and command timeout.
+    ///
+    /// The returned Context is constructed from a minimal ClaudeInput suitable for tests:
+    /// - `session_id` is "test-session"
+    /// - `model` is set to `claude-opus` / "Opus"
+    /// - `workspace.current_dir` and `workspace.project_dir` are set to `cwd`
+    /// - `context_window` is `None`
+    /// The Config used sets `command_timeout` to `timeout_ms`; other fields use defaults.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let ctx = make_context("/tmp/myproj", 50);
+    /// assert_eq!(ctx.config.command_timeout, 50);
+    /// ```
     fn make_context(cwd: &str, timeout_ms: u64) -> Context {
         let input = ClaudeInput {
             hook_event_name: None,
@@ -254,6 +272,7 @@ mod timeout_tests {
             }),
             version: Some("1.0.0".into()),
             output_style: None,
+            context_window: None,
         };
         let cfg = Config {
             command_timeout: timeout_ms,
