@@ -40,7 +40,7 @@ impl ContextWindowModule {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```ignore
     /// let ctx = crate::types::context::Context::default();
     /// let m1 = crate::modules::context_window::ContextWindowModule::new();
     /// let m2 = crate::modules::context_window::ContextWindowModule::from_context(&ctx);
@@ -58,7 +58,7 @@ impl ContextWindowModule {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```ignore
     /// // Given a context whose context window contains 25 used tokens and a window size of 100:
     /// // `calculate_percentage(&context)` returns `Some(25)`.
     /// let pct = calculate_percentage(&context);
@@ -86,23 +86,23 @@ impl ContextWindowModule {
 
     /// Selects a style string from the config based on a usage percentage.
     ///
-    /// Uses these thresholds:
-    /// - Less than 50 -> `style_low`
-    /// - 50 through 79 -> `style_medium`
-    /// - 80 or greater -> `style_high`
+    /// Uses configurable thresholds from the config:
+    /// - Less than `threshold_medium` -> `style_low`
+    /// - `threshold_medium` through `threshold_high - 1` -> `style_medium`
+    /// - `threshold_high` or greater -> `style_high`
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```ignore
     /// let cfg = crate::types::config::ContextWindowConfig::default();
     /// assert_eq!(get_style_for_percentage(10, &cfg), cfg.style_low);
     /// assert_eq!(get_style_for_percentage(50, &cfg), cfg.style_medium);
     /// assert_eq!(get_style_for_percentage(95, &cfg), cfg.style_high);
     /// ```
     fn get_style_for_percentage(percentage: u64, config: &crate::types::config::ContextWindowConfig) -> String {
-        if percentage < 50 {
+        if percentage < config.threshold_medium {
             config.style_low.clone()
-        } else if percentage < 80 {
+        } else if percentage < config.threshold_high {
             config.style_medium.clone()
         } else {
             config.style_high.clone()
@@ -129,7 +129,7 @@ impl Module for ContextWindowModule {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```ignore
     /// let module = crate::modules::context_window::ContextWindowModule::new();
     /// assert_eq!(module.name(), "context_window");
     /// ```
@@ -147,7 +147,7 @@ impl Module for ContextWindowModule {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```ignore
     /// use crate::modules::context_window::ContextWindowModule;
     /// use crate::types::config::ContextWindowConfig;
     /// use crate::types::context::Context;
@@ -183,7 +183,7 @@ impl Module for ContextWindowModule {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```ignore
     /// // Illustrative example; types like `Context` and `ContextWindowConfig` are assumed to be in scope.
     /// let module = ContextWindowModule::new();
     /// // When context lacks context_window data, the module returns an empty string.

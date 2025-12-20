@@ -294,6 +294,14 @@ pub struct ContextWindowConfig {
     #[serde(default = "default_context_window_style_high")]
     pub style_high: String,
 
+    /// Threshold for medium usage level (default: 50)
+    #[serde(default = "default_context_window_threshold_medium")]
+    pub threshold_medium: u64,
+
+    /// Threshold for high usage level (default: 80)
+    #[serde(default = "default_context_window_threshold_high")]
+    pub threshold_high: u64,
+
     #[serde(default = "default_disabled")]
     pub disabled: bool,
 }
@@ -317,6 +325,8 @@ impl Default for ContextWindowConfig {
             style_low: default_context_window_style_low(),
             style_medium: default_context_window_style_medium(),
             style_high: default_context_window_style_high(),
+            threshold_medium: default_context_window_threshold_medium(),
+            threshold_high: default_context_window_threshold_high(),
             disabled: default_disabled(),
         }
     }
@@ -539,6 +549,14 @@ fn default_context_window_style_medium() -> String {
 /// ```
 fn default_context_window_style_high() -> String {
     "red".to_string()
+}
+
+fn default_context_window_threshold_medium() -> u64 {
+    50
+}
+
+fn default_context_window_threshold_high() -> u64 {
+    80
 }
 
 // ModuleConfig implementations
