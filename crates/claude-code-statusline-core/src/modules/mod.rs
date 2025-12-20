@@ -241,6 +241,21 @@ mod timeout_tests {
         }
     }
 
+    /// Creates a test Context with the given current working directory and command timeout.
+    ///
+    /// The returned Context is constructed from a minimal ClaudeInput suitable for tests:
+    /// - `session_id` is "test-session"
+    /// - `model` is set to `claude-opus` / "Opus"
+    /// - `workspace.current_dir` and `workspace.project_dir` are set to `cwd`
+    /// - `context_window` is `None`
+    /// The Config used sets `command_timeout` to `timeout_ms`; other fields use defaults.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let ctx = make_context("/tmp/myproj", 50);
+    /// assert_eq!(ctx.config.command_timeout, 50);
+    /// ```
     fn make_context(cwd: &str, timeout_ms: u64) -> Context {
         let input = ClaudeInput {
             hook_event_name: None,

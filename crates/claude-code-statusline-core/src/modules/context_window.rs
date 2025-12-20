@@ -33,12 +33,37 @@ impl ContextWindowModule {
         Self
     }
 
-    /// Create from Context (kept for compatibility)
+    /// Creates a new ContextWindowModule while preserving the older API that accepted a `Context`.
+    ///
+    /// The supplied `context` parameter is unused and kept only for compatibility with call sites that
+    /// previously constructed the module from a `Context`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let ctx = crate::types::context::Context::default();
+    /// let m1 = crate::modules::context_window::ContextWindowModule::new();
+    /// let m2 = crate::modules::context_window::ContextWindowModule::from_context(&ctx);
+    /// // Both constructors produce equivalent module instances (no internal state).
+    /// ```
     pub fn from_context(_context: &Context) -> Self {
         Self::new()
     }
 
-    /// Calculate the usage percentage from context window data
+    /// Computes the context window usage as a percentage of the configured window size.
+    ///
+    /// When available, the calculation uses the breakdown in `current_usage` (sum of `input_tokens`,
+    /// `cache_creation_input_tokens`, and `cache_read_input_tokens`); otherwise it falls back to
+    /// `total_input_tokens`. Returns `None` when `context_window_size` is zero.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// // Given a context whose context window contains 25 used tokens and a window size of 100:
+    /// // `calculate_percentage(&context)` returns `Some(25)`.
+    /// let pct = calculate_percentage(&context);
+    /// assert_eq!(pct, Some(25));
+    /// ```
     fn calculate_percentage(context: &Context) -> Option<u64> {
         let ctx_window = context.input.context_window.as_ref()?;
 
@@ -57,7 +82,21 @@ impl ContextWindowModule {
         Some((total_tokens * 100) / ctx_window.context_window_size)
     }
 
-    /// Get the style based on percentage and config
+    /// Selects a style string from the config based on a usage percentage.
+    ///
+    /// Uses these thresholds:
+    /// - Less than 50 -> `style_low`
+    /// - 50 through 79 -> `style_medium`
+    /// - 80 or greater -> `style_high`
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let cfg = crate::types::config::ContextWindowConfig::default();
+    /// assert_eq!(get_style_for_percentage(10, &cfg), cfg.style_low);
+    /// assert_eq!(get_style_for_percentage(50, &cfg), cfg.style_medium);
+    /// assert_eq!(get_style_for_percentage(95, &cfg), cfg.style_high);
+    /// ```
     fn get_style_for_percentage(percentage: u64, config: &crate::types::config::ContextWindowConfig) -> String {
         if percentage < 50 {
             config.style_low.clone()
@@ -70,16 +109,53 @@ impl ContextWindowModule {
 }
 
 impl Default for ContextWindowModule {
+    /// Constructs a new ContextWindowModule with default settings.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let module = ContextWindowModule::default();
+    /// let _module2 = ContextWindowModule::new();
+    /// ```
     fn default() -> Self {
         Self::new()
     }
 }
 
 impl Module for ContextWindowModule {
+    /// Module identifier for the context window module.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let module = crate::modules::context_window::ContextWindowModule::new();
+    /// assert_eq!(module.name(), "context_window");
+    /// ```
+    ///
+    /// # Returns
+    ///
+    /// `"context_window"` — the module's identifier string.
     fn name(&self) -> &str {
         "context_window"
     }
 
+    /// Determine whether the module should be shown for the given context and configuration.
+    ///
+    /// Returns `true` if the context contains context window data and the `ContextWindowConfig` is not disabled, `false` otherwise.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use crate::modules::context_window::ContextWindowModule;
+    /// use crate::types::config::ContextWindowConfig;
+    /// use crate::types::context::Context;
+    ///
+    /// let module = ContextWindowModule::new();
+    /// let ctx = Context::default();
+    /// let cfg = ContextWindowConfig::default();
+    /// // With a default context that has no context_window data this returns false.
+    /// assert!(!module.should_display(&ctx, &cfg));
+    /// ```
     fn should_display(&self, context: &Context, config: &dyn ModuleConfig) -> bool {
         // Check if the module is disabled in config
         if let Some(cfg) = config
@@ -95,6 +171,27 @@ impl Module for ContextWindowModule {
         Self::calculate_percentage(context).is_some()
     }
 
+    /// Renders the context window usage as a styled percentage string.
+    ///
+    /// If the context contains a context window and a percentage can be calculated, this returns
+    /// the configured formatted string with tokens `percentage` and `symbol`, using dynamic color
+    /// tiers when enabled. If the context has no usable context window data, an empty string is
+    /// returned. If the provided `config` cannot be downcast to `ContextWindowConfig`, a simple
+    /// fallback string in the form `"[ctx {percentage}%]"` is returned.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// // Illustrative example; types like `Context` and `ContextWindowConfig` are assumed to be in scope.
+    /// let module = ContextWindowModule::new();
+    /// // When context lacks context_window data, the module returns an empty string.
+    /// let empty = module.render(&Context::default(), &SomeOtherConfig {});
+    /// assert_eq!(empty, "");
+    ///
+    /// // When a context and config are provided and downcasting succeeds, the output contains the percentage.
+    /// // let output = module.render(&populated_context, &context_window_config);
+    /// // assert!(output.contains("25")); // e.g., "25" appears in the rendered string
+    /// ```
     fn render(&self, context: &Context, config: &dyn ModuleConfig) -> String {
         let percentage = match Self::calculate_percentage(context) {
             Some(p) => p,
@@ -133,7 +230,17 @@ mod tests {
     use crate::types::context::Context;
     use rstest::*;
 
-    /// Helper to create context with specific context window data
+    /// Creates a test `Context` containing a `ContextWindow` with the specified
+    /// total input tokens, total output tokens, and context window size.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let ctx = context_with_usage(100, 50, 400);
+    /// assert_eq!(ctx.input.context_window.unwrap().total_input_tokens, 100);
+    /// assert_eq!(ctx.input.context_window.unwrap().total_output_tokens, 50);
+    /// assert_eq!(ctx.input.context_window.unwrap().context_window_size, 400);
+    /// ```
     fn context_with_usage(total_input: u64, total_output: u64, window_size: u64) -> Context {
         let input = ClaudeInput {
             hook_event_name: None,

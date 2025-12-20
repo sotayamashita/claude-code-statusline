@@ -213,7 +213,17 @@ mod tests {
         Context::new(input, Config::default())
     }
 
-    /// Helper to create context with specific cwd
+    /// Create a test Context whose current working directory and workspace are set to `cwd`.
+    ///
+    /// This helper constructs a ClaudeInput populated with `cwd` and default test values, then
+    /// wraps it in a default Config to produce a Context suitable for unit tests.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let ctx = context_with_cwd("/tmp/project");
+    /// // use `ctx` in tests, e.g. pass to module renderers
+    /// ```
     fn context_with_cwd(cwd: &str) -> Context {
         let input = ClaudeInput {
             hook_event_name: None,
@@ -306,6 +316,19 @@ mod tests {
         repo
     }
 
+    /// Verifies that rendering from a repository root, with truncation to the repository enabled,
+    /// produces only the repository name.
+    ///
+    /// Sets the directory truncation mode to use the repository as the root and a truncation
+    /// length that preserves only the repository name, then asserts the rendered (ANSI-stripped)
+    /// output equals the repository directory name.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// // Creates a temporary git repo, configures truncation to repo, and asserts rendering:
+    /// // `plain == repo_name`
+    /// ```
     #[cfg(feature = "git")]
     #[rstest]
     fn repo_root_displays_repo_name_only() {
@@ -464,6 +487,15 @@ mod tests {
         assert_eq!(plain, format!("{}/…/{}", repo_name, "d"));
     }
 
+    /// Verifies that when truncation_length exactly equals the repository name plus the tail segments, the truncation symbol is not inserted into the rendered path.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// // With a repository at `root` and current directory `root/src/module`,
+    /// // setting `truncation_length = 3` (repo + 2 segments) should render:
+    /// // "repoName/src/module" — no truncation symbol should appear.
+    /// ```
     #[cfg(feature = "git")]
     #[rstest]
     fn no_symbol_when_not_truncated_in_repo() {

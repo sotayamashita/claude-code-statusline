@@ -37,7 +37,20 @@ impl Registry {
         }
     }
 
-    /// Default registry with built-in modules
+    /// Creates a Registry pre-populated with the built-in module factories.
+    ///
+    /// The returned registry includes the core module factories. If the `git` feature is
+    /// enabled at compile time, the corresponding Git-related factories are included as well.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let reg = Registry::with_defaults();
+    /// let names = reg.list();
+    /// assert!(names.contains(&"directory"));
+    /// assert!(names.contains(&"claude_model"));
+    /// assert!(names.contains(&"context_window"));
+    /// ```
     pub fn with_defaults() -> Self {
         let mut reg = Self::new();
         reg.register_factory(DirectoryFactory);
@@ -108,6 +121,15 @@ impl ModuleFactory for ClaudeModelFactory {
     fn create(&self, context: &Context) -> Box<dyn Module> {
         Box::new(ClaudeModelModule::from_context(context))
     }
+    /// Accesses the Claude model configuration stored in the provided context.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// // given a `context` value populated from the application's configuration:
+    /// let cfg_opt = ClaudeModelFactory.config(&context);
+    /// assert!(cfg_opt.is_some());
+    /// ```
     fn config<'a>(&self, context: &'a Context) -> Option<&'a dyn ModuleConfig> {
         Some(&context.config.claude_model)
     }
@@ -115,12 +137,52 @@ impl ModuleFactory for ClaudeModelFactory {
 
 struct ContextWindowFactory;
 impl ModuleFactory for ContextWindowFactory {
+    /// Canonical module name for the ContextWindowFactory.
+    ///
+    /// # Returns
+    ///
+    /// The string `"context_window"`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let f = ContextWindowFactory;
+    /// assert_eq!(f.name(), "context_window");
+    /// ```
     fn name(&self) -> &'static str {
         "context_window"
     }
+    /// Creates a new ContextWindow module instance configured from the provided Context.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// let factory = ContextWindowFactory;
+    /// let ctx = /* construct or obtain a `Context` */ unimplemented!();
+    /// let module = factory.create(&ctx);
+    /// assert_eq!(module.name(), "context_window");
+    /// ```
     fn create(&self, context: &Context) -> Box<dyn Module> {
         Box::new(ContextWindowModule::from_context(context))
     }
+    /// Get the Context Window module's config view from the given Context.
+    ///
+    /// # Parameters
+    ///
+    /// - `context`: The execution context containing application configuration.
+    ///
+    /// # Returns
+    ///
+    /// `Some` containing the Context Window module's config view from `context`, or `None` if not available.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let factory = ContextWindowFactory;
+    /// let ctx = Context::default();
+    /// let cfg = factory.config(&ctx);
+    /// assert!(cfg.is_some());
+    /// ```
     fn config<'a>(&self, context: &'a Context) -> Option<&'a dyn ModuleConfig> {
         Some(&context.config.context_window)
     }
