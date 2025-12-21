@@ -4,7 +4,10 @@
 //! without hard-coded dispatcher matches. This enables pluggable modules
 //! and paves the way for external/extra modules via configuration.
 
-use super::{Module, ModuleConfig, claude_model::ClaudeModelModule, directory::DirectoryModule};
+use super::{
+    claude_model::ClaudeModelModule, context_window::ContextWindowModule,
+    directory::DirectoryModule, Module, ModuleConfig,
+};
 #[cfg(feature = "git")]
 use super::{git_branch::GitBranchModule, git_status::GitStatusModule};
 use crate::types::context::Context;
@@ -34,11 +37,25 @@ impl Registry {
         }
     }
 
-    /// Default registry with built-in modules
+    /// Creates a Registry pre-populated with the built-in module factories.
+    ///
+    /// The returned registry includes the core module factories. If the `git` feature is
+    /// enabled at compile time, the corresponding Git-related factories are included as well.
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// let reg = Registry::with_defaults();
+    /// let names = reg.list();
+    /// assert!(names.contains(&"directory"));
+    /// assert!(names.contains(&"claude_model"));
+    /// assert!(names.contains(&"context_window"));
+    /// ```
     pub fn with_defaults() -> Self {
         let mut reg = Self::new();
         reg.register_factory(DirectoryFactory);
         reg.register_factory(ClaudeModelFactory);
+        reg.register_factory(ContextWindowFactory);
         #[cfg(feature = "git")]
         {
             reg.register_factory(GitBranchFactory);
@@ -104,8 +121,70 @@ impl ModuleFactory for ClaudeModelFactory {
     fn create(&self, context: &Context) -> Box<dyn Module> {
         Box::new(ClaudeModelModule::from_context(context))
     }
+    /// Accesses the Claude model configuration stored in the provided context.
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// // given a `context` value populated from the application's configuration:
+    /// let cfg_opt = ClaudeModelFactory.config(&context);
+    /// assert!(cfg_opt.is_some());
+    /// ```
     fn config<'a>(&self, context: &'a Context) -> Option<&'a dyn ModuleConfig> {
         Some(&context.config.claude_model)
+    }
+}
+
+struct ContextWindowFactory;
+impl ModuleFactory for ContextWindowFactory {
+    /// Canonical module name for the ContextWindowFactory.
+    ///
+    /// # Returns
+    ///
+    /// The string `"context_window"`.
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// let f = ContextWindowFactory;
+    /// assert_eq!(f.name(), "context_window");
+    /// ```
+    fn name(&self) -> &'static str {
+        "context_window"
+    }
+    /// Creates a new ContextWindow module instance configured from the provided Context.
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// let factory = ContextWindowFactory;
+    /// let ctx = /* construct or obtain a `Context` */ unimplemented!();
+    /// let module = factory.create(&ctx);
+    /// assert_eq!(module.name(), "context_window");
+    /// ```
+    fn create(&self, context: &Context) -> Box<dyn Module> {
+        Box::new(ContextWindowModule::from_context(context))
+    }
+    /// Get the Context Window module's config view from the given Context.
+    ///
+    /// # Parameters
+    ///
+    /// - `context`: The execution context containing application configuration.
+    ///
+    /// # Returns
+    ///
+    /// `Some` containing the Context Window module's config view from `context`, or `None` if not available.
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// let factory = ContextWindowFactory;
+    /// let ctx = Context::default();
+    /// let cfg = factory.config(&ctx);
+    /// assert!(cfg.is_some());
+    /// ```
+    fn config<'a>(&self, context: &'a Context) -> Option<&'a dyn ModuleConfig> {
+        Some(&context.config.context_window)
     }
 }
 
@@ -152,6 +231,7 @@ mod tests {
         let names = reg.list();
         assert!(names.contains(&"directory"));
         assert!(names.contains(&"claude_model"));
+        assert!(names.contains(&"context_window"));
         #[cfg(feature = "git")]
         {
             assert!(names.contains(&"git_branch"));
@@ -174,6 +254,7 @@ mod tests {
             workspace: None,
             version: None,
             output_style: None,
+            context_window: None,
         };
         let ctx = Context::new(input, cfg);
         let reg = Registry::with_defaults();

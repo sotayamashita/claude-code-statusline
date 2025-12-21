@@ -112,7 +112,16 @@ mod tests {
     use crate::types::context::Context;
     use rstest::*;
 
-    /// Helper to create context with specific model
+    /// Creates a test `Context` populated with a `ClaudeInput` that uses the provided model display name.
+    ///
+    /// The returned `Context` contains fixed test values for session, paths, workspace, version, and output fields. The embedded `ModelInfo` will have `id` set to `claude-{lowercased model_name}` and `display_name` set to `model_name`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let ctx = context_with_model("Sonnet 4");
+    /// assert!(ctx.model_display_name().contains("Sonnet 4"));
+    /// ```
     fn context_with_model(model_name: &str) -> Context {
         let input = ClaudeInput {
             hook_event_name: None,
@@ -129,6 +138,7 @@ mod tests {
             }),
             version: Some("1.0.0".to_string()),
             output_style: None,
+            context_window: None,
         };
         Context::new(input, Config::default())
     }

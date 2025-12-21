@@ -44,6 +44,8 @@ pub struct ClaudeInput {
     pub version: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub output_style: Option<OutputStyle>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub context_window: Option<ContextWindow>,
 }
 
 /// Information about the current Claude model
@@ -77,4 +79,34 @@ pub struct WorkspaceInfo {
 pub struct OutputStyle {
     /// Name of the output style
     pub name: String,
+}
+
+/// Context window usage information
+///
+/// Contains information about token usage and context window size.
+/// Matches the structure sent by Claude Code.
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct ContextWindow {
+    /// Total input tokens used
+    pub total_input_tokens: u64,
+    /// Total output tokens generated
+    pub total_output_tokens: u64,
+    /// Total context window size
+    pub context_window_size: u64,
+    /// Detailed current usage breakdown (may be null)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub current_usage: Option<CurrentUsage>,
+}
+
+/// Breakdown of current token usage (when available)
+///
+/// Tracks different types of tokens being used in the current context.
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct CurrentUsage {
+    /// Regular input tokens
+    pub input_tokens: u64,
+    /// Tokens used for cache creation
+    pub cache_creation_input_tokens: u64,
+    /// Tokens read from cache
+    pub cache_read_input_tokens: u64,
 }

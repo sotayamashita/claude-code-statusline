@@ -222,6 +222,18 @@ mod tests {
     use std::path::{Path, PathBuf};
     use tempfile::tempdir;
 
+    /// Create a test `Context` populated with a minimal `ClaudeInput` using the given working directory.
+    ///
+    /// The returned `Context` is constructed with default configuration and fields appropriate for unit tests:
+    /// session id "test-session", the provided `cwd` as workspace/current dir, a default model, and other optional
+    /// fields left unset.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let ctx = make_context("/tmp/repo");
+    /// let _ = ctx; // use `ctx` in tests
+    /// ```
     fn make_context(cwd: &str) -> Context {
         let input = ClaudeInput {
             hook_event_name: None,
@@ -238,6 +250,7 @@ mod tests {
             }),
             version: Some("1.0.0".into()),
             output_style: None,
+            context_window: None,
         };
         Context::new(input, Config::default())
     }
