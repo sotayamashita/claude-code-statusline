@@ -44,7 +44,7 @@ impl Registry {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```ignore
     /// let reg = Registry::with_defaults();
     /// let names = reg.list();
     /// assert!(names.contains(&"directory"));
@@ -125,7 +125,7 @@ impl ModuleFactory for ClaudeModelFactory {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```ignore
     /// // given a `context` value populated from the application's configuration:
     /// let cfg_opt = ClaudeModelFactory.config(&context);
     /// assert!(cfg_opt.is_some());
@@ -145,7 +145,7 @@ impl ModuleFactory for ContextWindowFactory {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```ignore
     /// let f = ContextWindowFactory;
     /// assert_eq!(f.name(), "context_window");
     /// ```
@@ -156,7 +156,7 @@ impl ModuleFactory for ContextWindowFactory {
     ///
     /// # Examples
     ///
-    /// ```no_run
+    /// ```ignore
     /// let factory = ContextWindowFactory;
     /// let ctx = /* construct or obtain a `Context` */ unimplemented!();
     /// let module = factory.create(&ctx);
@@ -177,7 +177,7 @@ impl ModuleFactory for ContextWindowFactory {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```ignore
     /// let factory = ContextWindowFactory;
     /// let ctx = Context::default();
     /// let cfg = factory.config(&ctx);

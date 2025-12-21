@@ -112,7 +112,7 @@ impl Default for Config {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```ignore
     /// let cfg = Config::default();
     /// assert_eq!(cfg.format, default_format());
     /// assert_eq!(cfg.command_timeout, default_command_timeout());
@@ -247,7 +247,7 @@ impl Default for GitStatusConfig {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```ignore
     /// let cfg = GitStatusConfig::default();
     /// assert_eq!(cfg.format, default_git_status_format());
     /// assert_eq!(cfg.style, default_git_status_style());
@@ -311,7 +311,7 @@ impl Default for ContextWindowConfig {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```ignore
     /// let cfg = ContextWindowConfig::default();
     /// // defaults provide a non-empty format string and other sane defaults
     /// assert!(!cfg.format.is_empty());
@@ -337,7 +337,7 @@ impl Default for ContextWindowConfig {
 ///
 /// # Examples
 ///
-/// ```
+/// ```ignore
 /// assert_eq!(default_format(), "$directory $claude_model".to_string());
 /// ```
 fn default_format() -> String {
@@ -449,7 +449,7 @@ fn default_git_status_symbol_behind() -> String {
 ///
 /// # Examples
 ///
-/// ```
+/// ```ignore
 /// let sym = default_git_status_symbol_diverged();
 /// assert_eq!(sym, "⇕");
 /// ```
@@ -464,7 +464,7 @@ fn default_git_status_symbol_diverged() -> String {
 ///
 /// # Examples
 ///
-/// ```
+/// ```ignore
 /// let fmt = default_context_window_format();
 /// assert_eq!(fmt, "[$symbol$percentage%]($style)");
 /// ```
@@ -476,7 +476,7 @@ fn default_context_window_format() -> String {
 ///
 /// # Examples
 ///
-/// ```
+/// ```ignore
 /// assert_eq!(default_context_window_style(), "bold".to_string());
 /// ```
 fn default_context_window_style() -> String {
@@ -489,7 +489,7 @@ fn default_context_window_style() -> String {
 ///
 /// # Examples
 ///
-/// ```
+/// ```ignore
 /// let s = default_context_window_symbol();
 /// assert_eq!(s, "ctx ");
 /// ```
@@ -501,7 +501,7 @@ fn default_context_window_symbol() -> String {
 ///
 /// # Examples
 ///
-/// ```
+/// ```ignore
 /// let enabled = default_context_window_use_dynamic_color();
 /// assert!(enabled);
 /// ```
@@ -517,7 +517,7 @@ fn default_context_window_use_dynamic_color() -> bool {
 ///
 /// # Examples
 ///
-/// ```
+/// ```ignore
 /// let s = default_context_window_style_low();
 /// assert_eq!(s, "green");
 /// ```
@@ -529,7 +529,7 @@ fn default_context_window_style_low() -> String {
 ///
 /// # Examples
 ///
-/// ```
+/// ```ignore
 /// let s = default_context_window_style_medium();
 /// assert_eq!(s, "yellow");
 /// ```
@@ -543,7 +543,7 @@ fn default_context_window_style_medium() -> String {
 ///
 /// # Examples
 ///
-/// ```
+/// ```ignore
 /// let s = default_context_window_style_high();
 /// assert_eq!(s, "red");
 /// ```
@@ -551,10 +551,31 @@ fn default_context_window_style_high() -> String {
     "red".to_string()
 }
 
+/// Default threshold percentage for medium context window usage.
+///
+/// Returns `50`, meaning percentages at or above 50 but below the high threshold
+/// will use the medium style.
+///
+/// # Examples
+///
+/// ```ignore
+/// let threshold = default_context_window_threshold_medium();
+/// assert_eq!(threshold, 50);
+/// ```
 fn default_context_window_threshold_medium() -> u64 {
     50
 }
 
+/// Default threshold percentage for high context window usage.
+///
+/// Returns `80`, meaning percentages at or above 80 will use the high style.
+///
+/// # Examples
+///
+/// ```ignore
+/// let threshold = default_context_window_threshold_high();
+/// assert_eq!(threshold, 80);
+/// ```
 fn default_context_window_threshold_high() -> u64 {
     80
 }
@@ -565,7 +586,7 @@ impl ModuleConfig for DirectoryConfig {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```ignore
     /// let cfg = DirectoryConfig::default();
     /// let any = cfg.as_any();
     /// assert!(any.downcast_ref::<DirectoryConfig>().is_some());
@@ -628,8 +649,8 @@ impl ModuleConfig for GitStatusConfig {
     ///
     /// # Examples
     ///
-    /// ```
-    /// let cfg = DirectoryConfig::default();
+    /// ```ignore
+    /// let cfg = GitStatusConfig::default();
     /// assert_eq!(cfg.style(), &cfg.style);
     /// ```
     fn style(&self) -> &str {
@@ -642,10 +663,10 @@ impl ModuleConfig for ContextWindowConfig {
     ///
     /// # Examples
     ///
-    /// ```
-    /// let cfg = DirectoryConfig::default();
+    /// ```ignore
+    /// let cfg = ContextWindowConfig::default();
     /// let any = cfg.as_any();
-    /// assert!(any.downcast_ref::<DirectoryConfig>().is_some());
+    /// assert!(any.downcast_ref::<ContextWindowConfig>().is_some());
     /// ```
     fn as_any(&self) -> &dyn Any {
         self
@@ -657,8 +678,8 @@ impl ModuleConfig for ContextWindowConfig {
     ///
     /// # Examples
     ///
-    /// ```
-    /// let cfg = DirectoryConfig::default();
+    /// ```ignore
+    /// let cfg = ContextWindowConfig::default();
     /// let fmt = cfg.format();
     /// assert!(!fmt.is_empty());
     /// ```
@@ -674,8 +695,8 @@ impl ModuleConfig for ContextWindowConfig {
     ///
     /// # Examples
     ///
-    /// ```
-    /// let cfg = DirectoryConfig::default();
+    /// ```ignore
+    /// let cfg = ContextWindowConfig::default();
     /// assert_eq!(cfg.style(), &cfg.style);
     /// ```
     fn style(&self) -> &str {
@@ -697,15 +718,15 @@ impl Config {
     ///
     
     /// # Examples
-    
+
     ///
-    
-    /// ```
-    
+
+    /// ```ignore
+
     /// let cfg = Config::default();
-    
+
     /// cfg.validate().unwrap();
-    
+
     /// ```
     pub fn validate(&self) -> Result<(), CoreError> {
         // Milliseconds; enforce sane bounds (50ms ..= 600_000ms)

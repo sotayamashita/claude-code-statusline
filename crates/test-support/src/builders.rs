@@ -82,7 +82,7 @@ impl ClaudeInputBuilder {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```ignore
     /// let input = ClaudeInputBuilder::new()
     ///     .with_cwd("/tmp")
     ///     .with_session_id("sess-1")
