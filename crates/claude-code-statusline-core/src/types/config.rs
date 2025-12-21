@@ -116,7 +116,7 @@ impl Default for Config {
     /// let cfg = Config::default();
     /// assert_eq!(cfg.format, default_format());
     /// assert_eq!(cfg.command_timeout, default_command_timeout());
-    /// assert!(!cfg.debug == false); // debug defaults to false
+    /// assert_eq!(cfg.debug, false); // debug defaults to false
     /// ```
     fn default() -> Self {
         Config {
