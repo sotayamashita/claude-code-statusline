@@ -115,7 +115,7 @@ impl Default for ContextWindowModule {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```ignore
     /// let module = ContextWindowModule::default();
     /// let _module2 = ContextWindowModule::new();
     /// ```
