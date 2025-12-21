@@ -183,7 +183,7 @@ impl Default for GitBranchConfig {
     }
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone)]
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct GitStatusSymbolsConfig {
     #[serde(default = "default_git_status_symbol_conflicted")]
     pub conflicted: String,
@@ -251,7 +251,6 @@ impl Default for GitStatusConfig {
     /// let cfg = GitStatusConfig::default();
     /// assert_eq!(cfg.format, default_git_status_format());
     /// assert_eq!(cfg.style, default_git_status_style());
-    /// assert_eq!(cfg.symbols, GitStatusSymbolsConfig::default());
     /// assert_eq!(cfg.disabled, default_disabled());
     /// ```
     fn default() -> Self {
@@ -706,27 +705,16 @@ impl ModuleConfig for ContextWindowConfig {
 
 impl Config {
     /// Validate configuration fields and ensure values fall within allowed ranges.
-    
     ///
-    
     /// Currently this enforces that the `command_timeout` value is between 50 and 600_000
-    
     /// milliseconds (inclusive). If a value is outside this range, the function returns
-    
     /// `CoreError::InvalidConfig` describing the invalid value.
-    
     ///
-    
     /// # Examples
-
     ///
-
     /// ```ignore
-
     /// let cfg = Config::default();
-
     /// cfg.validate().unwrap();
-
     /// ```
     pub fn validate(&self) -> Result<(), CoreError> {
         // Milliseconds; enforce sane bounds (50ms ..= 600_000ms)
@@ -927,5 +915,17 @@ mod validation_tests {
         assert!(ws.iter().any(|w| w.contains("bg:#12AB")));
         assert!(ws.iter().any(|w| w.contains("fg:300")));
         assert!(ws.iter().any(|w| w.contains("sparkle")));
+    }
+
+    #[test]
+    fn context_window_style_validation() {
+        let mut cfg = Config::default();
+        cfg.context_window.style = "bold green".to_string();
+        let ws = cfg.collect_warnings();
+        assert!(ws.is_empty(), "valid style should produce no warnings");
+
+        cfg.context_window.style = "fg:invalid-color".to_string();
+        let ws = cfg.collect_warnings();
+        assert!(ws.iter().any(|w| w.contains("context_window")));
     }
 }

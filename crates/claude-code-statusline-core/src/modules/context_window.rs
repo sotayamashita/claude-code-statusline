@@ -69,7 +69,9 @@ impl ContextWindowModule {
 
         // Prefer current_usage breakdown if available (includes cached tokens)
         let total_tokens = if let Some(usage) = &ctx_window.current_usage {
-            usage.input_tokens + usage.cache_creation_input_tokens + usage.cache_read_input_tokens
+            usage.input_tokens
+                .saturating_add(usage.cache_creation_input_tokens)
+                .saturating_add(usage.cache_read_input_tokens)
         } else {
             // Fallback to total_input_tokens if current_usage not available
             ctx_window.total_input_tokens
