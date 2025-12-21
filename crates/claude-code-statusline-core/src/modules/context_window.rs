@@ -313,6 +313,24 @@ mod tests {
     }
 
     #[rstest]
+    #[case(30, "green")]   // Below custom threshold_medium (60)
+    #[case(59, "green")]   // Just below threshold_medium
+    #[case(60, "yellow")]  // At threshold_medium
+    #[case(89, "yellow")]  // Just below threshold_high
+    #[case(90, "red")]     // At threshold_high
+    #[case(95, "red")]     // Above threshold_high
+    fn test_custom_threshold_values(#[case] percentage: u64, #[case] expected_style: &str) {
+        use crate::types::config::ContextWindowConfig;
+        let mut config = ContextWindowConfig::default();
+        // Set custom thresholds: 60% for medium, 90% for high
+        config.threshold_medium = 60;
+        config.threshold_high = 90;
+
+        let style = ContextWindowModule::get_style_for_percentage(percentage, &config);
+        assert_eq!(style, expected_style);
+    }
+
+    #[rstest]
     fn test_should_display_with_context_window() {
         let module = ContextWindowModule::new();
         let context = context_with_usage(50000, 0, 200000);
